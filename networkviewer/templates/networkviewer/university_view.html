@@ -1,0 +1,79 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>University Network Viewer</title>
+</head>
+<body style ='background-color: white'>
+    {% include "networkviewer/tabs.html" %}
+    <div style="background-color: #0b4e86; padding: 40px 10px; color: white;">
+        <h1>University Network Viewer</h1>
+        <form method="post">
+            {% csrf_token %}
+            <label for="university">Enter university Name:</label>
+            <input type="text" name="university" id="university" list="university-suggestions" value="{{ university|default_if_none:'' }}">
+            <datalist id="university-suggestions">
+                {% for name in all_university_names %}
+                    <option value="{{ name }}">{{ name }}</option>
+                {% endfor %}
+            </datalist>
+            <br><br>
+            <div style="margin-top: 5px;">
+            <h3 style="color:white;">Try:
+                {% for example in example_universities %}
+                    <a href="#" onclick="fillAndSubmit('{{ example }}'); return false;" style="color: #ffd700;">{{ example }}</a>
+                {% endfor %}
+            </h3>
+        </div>
+        <script>
+        function fillAndSubmit(university) {
+            document.getElementById('university').value = university;
+        }
+        </script>
+            <label for="category">Category:</label>
+            <select name="category" id="category">
+                {% for option in category_options %}
+                    <option value="{{ option }}" {% if option == category %}selected{% endif %}>{{ option }}</option>
+                {% endfor %}
+            </select>
+            </select>
+            <br><br>
+            <label for="chemical_group">Chemical Group:</label>
+            <select name="chemical_group" id="chemical_group">
+                {% for option in chemical_group_options %}
+                    <option value="{{ option }}" {% if option == chemical_group %}selected{% endif %}>{{ option }}</option>
+                {% endfor %}
+            </select>
+            <br><br>
+            <button type="submit">Show Network</button>
+        </form>
+        {% if message %}
+            <p style="color: red; background-color: white; padding: 5px 5px">{{ message|safe }}</p>
+        {% endif %}
+        {% if iframe %}
+            <h2>Network for: {{ university }}</h2>
+            <iframe src="{{ iframe }}" width="100%" height="600px" frameborder="0"></iframe>
+        {% endif %}
+        {% if connections %}
+        <div style="margin-top: 40px; background: #0b4e86; padding: 20px; border-radius: 8px;">
+            <h3> Connections</h3>
+            <ul>
+                {% for key, items in connections.items %}
+                    <li><strong>{{ key }}:</strong>
+                        <ul>
+                            {% if key == "Inchikey" or key == "Affiliation(s)" %}
+                                <li>{{ items }}</li>
+                            {% else %}
+                                {% for item in items %}
+                                    <li>{{ item }}</li>
+                                {% endfor %}
+                            {% endif %}
+                        </ul>
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+    {% endif %}
+    </div>
+</body>
+</html>

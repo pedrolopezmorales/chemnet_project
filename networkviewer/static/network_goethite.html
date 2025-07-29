@@ -1,0 +1,178 @@
+<html>
+    <head>
+        <meta charset="utf-8">
+        
+            <script src="lib/bindings/utils.js"></script>
+            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.2/dist/dist/vis-network.min.css" integrity="sha512-WgxfT5LWjfszlPHXRmBWHkV2eceiWTOBvrKCNbdgDYTHrT2AeLCGbF4sZlZw3UMN3WtL0tGUoIAKsu8mllg/XA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.2/dist/vis-network.min.js" integrity="sha512-LnvoEWDFrqGHlHmDD2101OrLcbsfkrzoSpvtSQtxK3RMnRV0eOkhhBN2dXHKRrUU8p2DGRTk35n4O8nWSVe1mQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+            
+        
+<center>
+<h1></h1>
+</center>
+
+<!-- <link rel="stylesheet" href="../node_modules/vis/dist/vis.min.css" type="text/css" />
+<script type="text/javascript" src="../node_modules/vis/dist/vis.js"> </script>-->
+        <link
+          href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/css/bootstrap.min.css"
+          rel="stylesheet"
+          integrity="sha384-eOJMYsd53ii+scO/bJGFsiCZc+5NDVN2yr8+0RDqr0Ql0h+rP48ckxlpbzKgwra6"
+          crossorigin="anonymous"
+        />
+        <script
+          src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.bundle.min.js"
+          integrity="sha384-JEW9xMcG8R+pH31jmWH6WWP0WintQrMb4s7ZOdauHnUtxwoG2vI5DkLtS3qm9Ekf"
+          crossorigin="anonymous"
+        ></script>
+
+
+        <center>
+          <h1></h1>
+        </center>
+        <style type="text/css">
+
+             #mynetwork {
+                 width: 100%;
+                 height: 600px;
+                 background-color: #ffffff;
+                 border: 1px solid lightgray;
+                 position: relative;
+                 float: left;
+             }
+
+             
+
+             
+
+             
+        </style>
+    </head>
+
+
+    <body>
+        <div class="card" style="width: 100%">
+            
+            
+            <div id="mynetwork" class="card-body"></div>
+        </div>
+
+        
+        
+
+        <script type="text/javascript">
+
+              // initialize global variables.
+              var edges;
+              var nodes;
+              var allNodes;
+              var allEdges;
+              var nodeColors;
+              var originalNodes;
+              var network;
+              var container;
+              var options, data;
+              var filter = {
+                  item : '',
+                  property : '',
+                  value : []
+              };
+
+              
+
+              
+
+              // This method is responsible for drawing the graph, returns the drawn network
+              function drawGraph() {
+                  var container = document.getElementById('mynetwork');
+
+                  
+
+                  // parsing and collecting nodes and edges from the python
+                  nodes = new vis.DataSet([{"color": "lightgreen", "font": {"color": "black"}, "id": "Goethite", "label": "Goethite", "shape": "ellipse", "size": 55, "title": "Inchikey: AEIXRCIKZIZYPM-UHFFFAOYSA-M"}, {"color": "lightblue", "font": {"color": "black"}, "id": "Division of Earth Sciences", "label": "Division of Earth Sciences", "shape": "ellipse", "size": 15, "title": "Division of Earth Sciences"}, {"color": "lightblue", "font": {"color": "black"}, "id": "Division of Electrical, Communications and Cyber Systems", "label": "Division of Electrical, Communications and Cyber Systems", "shape": "ellipse", "size": 15, "title": "Division of Electrical, Communications and Cyber Systems"}, {"color": "lightblue", "font": {"color": "black"}, "id": "Geological Society of America", "label": "Geological Society of America", "shape": "ellipse", "size": 15, "title": "Geological Society of America"}, {"color": "lightblue", "font": {"color": "black"}, "id": "Commonwealth Scientific and Industrial Research Organisation", "label": "Commonwealth Scientific and Industrial Research Organisation", "shape": "ellipse", "size": 15, "title": "Commonwealth Scientific and Industrial Research Organisation"}, {"color": "lightblue", "font": {"color": "black"}, "id": "European Research Council", "label": "European Research Council", "shape": "ellipse", "size": 15, "title": "European Research Council"}, {"color": "lightblue", "font": {"color": "black"}, "id": "Villum Fonden", "label": "Villum Fonden", "shape": "ellipse", "size": 15, "title": "Villum Fonden"}, {"color": "lightblue", "font": {"color": "black"}, "id": "Sino-Danish Center", "label": "Sino-Danish Center", "shape": "ellipse", "size": 15, "title": "Sino-Danish Center"}, {"color": "lightblue", "font": {"color": "black"}, "id": "H.C. ?rsted Fond", "label": "H.C. ?rsted Fond", "shape": "ellipse", "size": 15, "title": "H.C. ?rsted Fond"}, {"color": "lightblue", "font": {"color": "black"}, "id": "Biological and Environmental Research", "label": "Biological and Environmental Research", "shape": "ellipse", "size": 15, "title": "Biological and Environmental Research"}, {"color": "lightblue", "font": {"color": "black"}, "id": "Office of Environmental Management", "label": "Office of Environmental Management", "shape": "ellipse", "size": 15, "title": "Office of Environmental Management"}, {"color": "lightblue", "font": {"color": "black"}, "id": "National Natural Science Foundation of China", "label": "National Natural Science Foundation of China", "shape": "ellipse", "size": 15, "title": "National Natural Science Foundation of China"}, {"color": "lightblue", "font": {"color": "black"}, "id": "Natural Science Foundation of Zhejiang Province", "label": "Natural Science Foundation of Zhejiang Province", "shape": "ellipse", "size": 15, "title": "Natural Science Foundation of Zhejiang Province"}, {"color": "lightblue", "font": {"color": "black"}, "id": "National Key Research and Development Program of China", "label": "National Key Research and Development Program of China", "shape": "ellipse", "size": 15, "title": "National Key Research and Development Program of China"}, {"color": "lightblue", "font": {"color": "black"}, "id": "Guangdong Academy of Sciences", "label": "Guangdong Academy of Sciences", "shape": "ellipse", "size": 15, "title": "Guangdong Academy of Sciences"}, {"color": "lightblue", "font": {"color": "black"}, "id": "China Association for Science and Technology", "label": "China Association for Science and Technology", "shape": "ellipse", "size": 15, "title": "China Association for Science and Technology"}, {"color": "lightblue", "font": {"color": "black"}, "id": "Guangdong Foundation for Program of Science and Technology Research", "label": "Guangdong Foundation for Program of Science and Technology Research", "shape": "ellipse", "size": 15, "title": "Guangdong Foundation for Program of Science and Technology Research"}, {"color": "lightblue", "font": {"color": "black"}, "id": "University of Manchester", "label": "University of Manchester", "shape": "ellipse", "size": 15, "title": "University of Manchester"}, {"color": "lightblue", "font": {"color": "black"}, "id": "Yunnan Provincial Science and Technology Department", "label": "Yunnan Provincial Science and Technology Department", "shape": "ellipse", "size": 15, "title": "Yunnan Provincial Science and Technology Department"}, {"color": "lightblue", "font": {"color": "black"}, "id": "Natural Environment Research Council", "label": "Natural Environment Research Council", "shape": "ellipse", "size": 15, "title": "Natural Environment Research Council"}, {"color": "lightblue", "font": {"color": "black"}, "id": "Svenska Forskningsr?det Formas", "label": "Svenska Forskningsr?det Formas", "shape": "ellipse", "size": 15, "title": "Svenska Forskningsr?det Formas"}, {"color": "lightblue", "font": {"color": "black"}, "id": "Vetenskapsr?det", "label": "Vetenskapsr?det", "shape": "ellipse", "size": 15, "title": "Vetenskapsr?det"}, {"color": "lightblue", "font": {"color": "black"}, "id": "Agence de l\u0027Environnement et de la Ma?trise de l\u0027Energie", "label": "Agence de l\u0027Environnement et de la Ma?trise de l\u0027Energie", "shape": "ellipse", "size": 15, "title": "Agence de l\u0027Environnement et de la Ma?trise de l\u0027Energie"}, {"color": "lightblue", "font": {"color": "black"}, "id": "Centre National de la Recherche Scientifique", "label": "Centre National de la Recherche Scientifique", "shape": "ellipse", "size": 15, "title": "Centre National de la Recherche Scientifique"}, {"color": "lightblue", "font": {"color": "black"}, "id": "Department of Science and Technology of Inner Mongolia Autonomous Region", "label": "Department of Science and Technology of Inner Mongolia Autonomous Region", "shape": "ellipse", "size": 15, "title": "Department of Science and Technology of Inner Mongolia Autonomous Region"}, {"color": "lightblue", "font": {"color": "black"}, "id": "Fundamental Research Funds for the Central Universities", "label": "Fundamental Research Funds for the Central Universities", "shape": "ellipse", "size": 15, "title": "Fundamental Research Funds for the Central Universities"}, {"color": "lightblue", "font": {"color": "black"}, "id": "Youth Innovation Promotion Association, Chinese Academy of Sciences", "label": "Youth Innovation Promotion Association, Chinese Academy of Sciences", "shape": "ellipse", "size": 15, "title": "Youth Innovation Promotion Association, Chinese Academy of Sciences"}, {"color": "lightblue", "font": {"color": "black"}, "id": "Basic Energy Sciences", "label": "Basic Energy Sciences", "shape": "ellipse", "size": 15, "title": "Basic Energy Sciences"}, {"color": "lightblue", "font": {"color": "black"}, "id": "Division of Graduate Education", "label": "Division of Graduate Education", "shape": "ellipse", "size": 15, "title": "Division of Graduate Education"}, {"color": "lightblue", "font": {"color": "black"}, "id": "Washington University in St. Louis", "label": "Washington University in St. Louis", "shape": "ellipse", "size": 15, "title": "Washington University in St. Louis"}, {"color": "lightblue", "font": {"color": "black"}, "id": "H2020 European Research Council", "label": "H2020 European Research Council", "shape": "ellipse", "size": 15, "title": "H2020 European Research Council"}, {"color": "lightblue", "font": {"color": "black"}, "id": "Chemical Sciences, Geosciences, and Biosciences Division", "label": "Chemical Sciences, Geosciences, and Biosciences Division", "shape": "ellipse", "size": 15, "title": "Chemical Sciences, Geosciences, and Biosciences Division"}, {"color": "lightblue", "font": {"color": "black"}, "id": "Agence Nationale de la Recherche", "label": "Agence Nationale de la Recherche", "shape": "ellipse", "size": 15, "title": "Agence Nationale de la Recherche"}, {"color": "lightblue", "font": {"color": "black"}, "id": "European Commission", "label": "European Commission", "shape": "ellipse", "size": 15, "title": "European Commission"}]);
+                  edges = new vis.DataSet([{"color": "red", "from": "Goethite", "title": "Appearances: 1", "to": "Division of Earth Sciences", "width": 1}, {"color": "red", "from": "Goethite", "title": "Appearances: 1", "to": "Division of Electrical, Communications and Cyber Systems", "width": 1}, {"color": "red", "from": "Goethite", "title": "Appearances: 1", "to": "Geological Society of America", "width": 1}, {"color": "red", "from": "Goethite", "title": "Appearances: 3", "to": "Commonwealth Scientific and Industrial Research Organisation", "width": 3}, {"color": "red", "from": "Goethite", "title": "Appearances: 2", "to": "European Research Council", "width": 2}, {"color": "red", "from": "Goethite", "title": "Appearances: 2", "to": "H2020 European Research Council", "width": 2}, {"color": "red", "from": "Goethite", "title": "Appearances: 1", "to": "Villum Fonden", "width": 1}, {"color": "red", "from": "Goethite", "title": "Appearances: 2", "to": "Sino-Danish Center", "width": 2}, {"color": "red", "from": "Goethite", "title": "Appearances: 2", "to": "H.C. ?rsted Fond", "width": 2}, {"color": "red", "from": "Goethite", "title": "Appearances: 1", "to": "Biological and Environmental Research", "width": 1}, {"color": "red", "from": "Goethite", "title": "Appearances: 1", "to": "Office of Environmental Management", "width": 1}, {"color": "red", "from": "Goethite", "title": "Appearances: 15", "to": "National Natural Science Foundation of China", "width": 15}, {"color": "red", "from": "Goethite", "title": "Appearances: 1", "to": "Natural Science Foundation of Zhejiang Province", "width": 1}, {"color": "red", "from": "Goethite", "title": "Appearances: 3", "to": "National Key Research and Development Program of China", "width": 3}, {"color": "red", "from": "Goethite", "title": "Appearances: 1", "to": "Guangdong Academy of Sciences", "width": 1}, {"color": "red", "from": "Goethite", "title": "Appearances: 1", "to": "China Association for Science and Technology", "width": 1}, {"color": "red", "from": "Goethite", "title": "Appearances: 1", "to": "Guangdong Foundation for Program of Science and Technology Research", "width": 1}, {"color": "red", "from": "Goethite", "title": "Appearances: 1", "to": "University of Manchester", "width": 1}, {"color": "red", "from": "Goethite", "title": "Appearances: 1", "to": "Yunnan Provincial Science and Technology Department", "width": 1}, {"color": "red", "from": "Goethite", "title": "Appearances: 1", "to": "Natural Environment Research Council", "width": 1}, {"color": "red", "from": "Goethite", "title": "Appearances: 2", "to": "Svenska Forskningsr?det Formas", "width": 2}, {"color": "red", "from": "Goethite", "title": "Appearances: 1", "to": "Vetenskapsr?det", "width": 1}, {"color": "red", "from": "Goethite", "title": "Appearances: 1", "to": "Agence de l\u0027Environnement et de la Ma?trise de l\u0027Energie", "width": 1}, {"color": "red", "from": "Goethite", "title": "Appearances: 1", "to": "Centre National de la Recherche Scientifique", "width": 1}, {"color": "red", "from": "Goethite", "title": "Appearances: 1", "to": "Department of Science and Technology of Inner Mongolia Autonomous Region", "width": 1}, {"color": "red", "from": "Goethite", "title": "Appearances: 1", "to": "Fundamental Research Funds for the Central Universities", "width": 1}, {"color": "red", "from": "Goethite", "title": "Appearances: 1", "to": "Youth Innovation Promotion Association, Chinese Academy of Sciences", "width": 1}, {"color": "red", "from": "Goethite", "title": "Appearances: 1", "to": "Basic Energy Sciences", "width": 1}, {"color": "red", "from": "Goethite", "title": "Appearances: 1", "to": "Division of Graduate Education", "width": 1}, {"color": "red", "from": "Goethite", "title": "Appearances: 1", "to": "Washington University in St. Louis", "width": 1}, {"color": "red", "from": "Goethite", "title": "Appearances: 1", "to": "Chemical Sciences, Geosciences, and Biosciences Division", "width": 1}, {"color": "red", "from": "Goethite", "title": "Appearances: 1", "to": "Agence Nationale de la Recherche", "width": 1}, {"color": "red", "from": "Goethite", "title": "Appearances: 1", "to": "European Commission", "width": 1}]);
+
+                  nodeColors = {};
+                  allNodes = nodes.get({ returnType: "Object" });
+                  for (nodeId in allNodes) {
+                    nodeColors[nodeId] = allNodes[nodeId].color;
+                  }
+                  allEdges = edges.get({ returnType: "Object" });
+                  // adding nodes and edges to the graph
+                  data = {nodes: nodes, edges: edges};
+
+                  var options = {
+    "configure": {
+        "enabled": false
+    },
+    "edges": {
+        "color": {
+            "inherit": true
+        },
+        "smooth": {
+            "enabled": true,
+            "type": "dynamic"
+        }
+    },
+    "interaction": {
+        "dragNodes": true,
+        "hideEdgesOnDrag": false,
+        "hideNodesOnDrag": false
+    },
+    "physics": {
+        "barnesHut": {
+            "avoidOverlap": 0,
+            "centralGravity": 0.3,
+            "damping": 0.09,
+            "gravitationalConstant": -500,
+            "springConstant": 0.002,
+            "springLength": 60
+        },
+        "enabled": true,
+        "minVelocity": 0.75,
+        "stabilization": {
+            "enabled": true,
+            "fit": true,
+            "iterations": 1000,
+            "onlyDynamicEdges": false,
+            "updateInterval": 50
+        }
+    }
+};
+
+                  
+
+
+                  
+
+                  network = new vis.Network(container, data, options);
+
+                  
+
+                  
+
+                  
+
+
+                  
+
+                  return network;
+
+              }
+              drawGraph();
+        </script>
+    
+    <div id="study-info" style="margin-top:20px; background:#fff; color:#222; padding:10px; border-radius:8px;"></div>
+    <script type="text/javascript">
+        var companyStudyMap = {"Division of Earth Sciences": "Goethite and Hematite Nucleation and Growth from Ferrihydrite: Effects of Oxyanion Surface Complexes (DOI: 10.1021/acs.est.3c09955)", "Division of Electrical, Communications and Cyber Systems": "Goethite and Hematite Nucleation and Growth from Ferrihydrite: Effects of Oxyanion Surface Complexes (DOI: 10.1021/acs.est.3c09955)", "Geological Society of America": "Goethite and Hematite Nucleation and Growth from Ferrihydrite: Effects of Oxyanion Surface Complexes (DOI: 10.1021/acs.est.3c09955)", "Commonwealth Scientific and Industrial Research Organisation": "Fe(II)-Catalyzed Recrystallization Drives Phosphorus and Aluminum Release from Goethite (DOI: 10.1021/acs.est.4c03574)", "European Research Council": "Iron Oxyhydroxide Transformation in a Flooded Rice Paddy Field and the Effect of Adsorbed Phosphate (DOI: 10.1021/acs.est.4c01519)<br>Speciation Controls the Kinetics of Iron Hydroxide Precipitation and Transformation at Alkaline pH (DOI: 10.1021/acs.est.4c06818)", "Villum Fonden": "Multicomponent and Surface Charge Effects on PFOS Sorption and Transport in Goethite-Coated Porous Media under Variable Hydrochemical Conditions (DOI: 10.1021/acs.est.4c02164)", "Sino-Danish Center": "Multicomponent and Surface Charge Effects on PFOS Sorption and Transport in Goethite-Coated Porous Media under Variable Hydrochemical Conditions (DOI: 10.1021/acs.est.4c02164)<br>Impact of Variable Water Chemistry on PFOS-Goethite Interactions: Experimental Evidence and Surface Complexation Modeling (DOI: 10.1021/acs.est.3c09501)", "H.C. ?rsted Fond": "No studies found for this connection.", "Biological and Environmental Research": "Uranium Biogeochemistry in the Rhizosphere of a Contaminated Wetland (DOI: 10.1021/acs.est.3c10481)", "Office of Environmental Management": "Uranium Biogeochemistry in the Rhizosphere of a Contaminated Wetland (DOI: 10.1021/acs.est.3c10481)", "National Natural Science Foundation of China": "Unveiling the Mechanism and Kinetics of Pollutant Attenuation by Free Radicals Triggered from Goethite in Water Distribution Systems (DOI: 10.1021/acs.est.4c04022)<br>Quantitative Insights into Phosphate-Enhanced Lead Immobilization on Goethite (DOI: 10.1021/acs.est.4c03927)<br>Sequestration of Labile Organic Matter by Secondary Fe Minerals from Chemodenitrification: Insight into Mineral Protection Mechanisms (DOI: 10.1021/acs.est.3c10134)<br>Triplet-Excited Riboflavin Promotes Labile Fe(III) Accumulation and Changes Mineralization Pathways in Fe(II)-Catalyzed Ferrihydrite Transformation (DOI: 10.1021/acs.est.4c08589)<br>The Mobility of Mo during Microbially Mediated Ferrihydrite Phase Transformation (DOI: 10.1021/acs.est.4c09144)<br>Heavy-Metal Ions Control on PFAS Adsorption on Goethite in Aquatic Systems (DOI: 10.1021/acs.est.4c10068)<br>Water Vapor Condensation Triggers Simultaneous Oxidation and Hydrolysis of Organic Pollutants on Iron Mineral Surfaces (DOI: 10.1021/acs.est.4c03195)<br>Chromium(VI) Adsorption and Reduction in Soils under Anoxic Conditions: The Relative Roles of Iron (oxyhr)oxides, Iron(II), Organic Matters, and Microbes (DOI: 10.1021/acs.est.4c08677)<br>Uranium Repartitioning during Microbial Driven Reductive Transformation of U(VI)-Sorbed Schwertmannite and Jarosite (DOI: 10.1021/acs.est.4c03645)<br>The Influence of Seawater on Fe(II)-Catalyzed Ferrihydrite Transformation and Its Subsequent Consequences for C Dynamics (DOI: 10.1021/acs.est.4c05300)<br>Elucidating Phosphate and Cadmium Cosorption Mechanisms on Mineral Surfaces with Direct Spectroscopic and Modeling Evidence (DOI: 10.1021/acs.est.4c08847)<br>Novel Insights into Sb(III) Oxidation and Immobilization during Ferrous Iron Oxygenation: The Overlooked Roles of Singlet Oxygen and Fe (oxyhydr)oxides Formation (DOI: 10.1021/acs.est.4c02006)", "Natural Science Foundation of Zhejiang Province": "Unveiling the Mechanism and Kinetics of Pollutant Attenuation by Free Radicals Triggered from Goethite in Water Distribution Systems (DOI: 10.1021/acs.est.4c04022)", "National Key Research and Development Program of China": "Quantitative Insights into Phosphate-Enhanced Lead Immobilization on Goethite (DOI: 10.1021/acs.est.4c03927)<br>Water Vapor Condensation Triggers Simultaneous Oxidation and Hydrolysis of Organic Pollutants on Iron Mineral Surfaces (DOI: 10.1021/acs.est.4c03195)<br>Elucidating Phosphate and Cadmium Cosorption Mechanisms on Mineral Surfaces with Direct Spectroscopic and Modeling Evidence (DOI: 10.1021/acs.est.4c08847)", "Guangdong Academy of Sciences": "Sequestration of Labile Organic Matter by Secondary Fe Minerals from Chemodenitrification: Insight into Mineral Protection Mechanisms (DOI: 10.1021/acs.est.3c10134)", "China Association for Science and Technology": "Sequestration of Labile Organic Matter by Secondary Fe Minerals from Chemodenitrification: Insight into Mineral Protection Mechanisms (DOI: 10.1021/acs.est.3c10134)", "Guangdong Foundation for Program of Science and Technology Research": "Sequestration of Labile Organic Matter by Secondary Fe Minerals from Chemodenitrification: Insight into Mineral Protection Mechanisms (DOI: 10.1021/acs.est.3c10134)", "University of Manchester": "The Mobility of Mo during Microbially Mediated Ferrihydrite Phase Transformation (DOI: 10.1021/acs.est.4c09144)", "Yunnan Provincial Science and Technology Department": "The Mobility of Mo during Microbially Mediated Ferrihydrite Phase Transformation (DOI: 10.1021/acs.est.4c09144)", "Natural Environment Research Council": "The Mobility of Mo during Microbially Mediated Ferrihydrite Phase Transformation (DOI: 10.1021/acs.est.4c09144)", "Svenska Forskningsr?det Formas": "No studies found for this connection.", "Vetenskapsr?det": "No studies found for this connection.", "Agence de l'Environnement et de la Ma?trise de l'Energie": "No studies found for this connection.", "Centre National de la Recherche Scientifique": "Heavy-Metal Ions Control on PFAS Adsorption on Goethite in Aquatic Systems (DOI: 10.1021/acs.est.4c10068)", "Department of Science and Technology of Inner Mongolia Autonomous Region": "Chromium(VI) Adsorption and Reduction in Soils under Anoxic Conditions: The Relative Roles of Iron (oxyhr)oxides, Iron(II), Organic Matters, and Microbes (DOI: 10.1021/acs.est.4c08677)", "Fundamental Research Funds for the Central Universities": "Chromium(VI) Adsorption and Reduction in Soils under Anoxic Conditions: The Relative Roles of Iron (oxyhr)oxides, Iron(II), Organic Matters, and Microbes (DOI: 10.1021/acs.est.4c08677)", "Youth Innovation Promotion Association, Chinese Academy of Sciences": "Chromium(VI) Adsorption and Reduction in Soils under Anoxic Conditions: The Relative Roles of Iron (oxyhr)oxides, Iron(II), Organic Matters, and Microbes (DOI: 10.1021/acs.est.4c08677)", "Basic Energy Sciences": "Irreversible Trace Metal Binding to Goethite Controlled by the Ion Size (DOI: 10.1021/acs.est.3c06516)", "Division of Graduate Education": "Irreversible Trace Metal Binding to Goethite Controlled by the Ion Size (DOI: 10.1021/acs.est.3c06516)", "Washington University in St. Louis": "Irreversible Trace Metal Binding to Goethite Controlled by the Ion Size (DOI: 10.1021/acs.est.3c06516)", "H2020 European Research Council": "Speciation Controls the Kinetics of Iron Hydroxide Precipitation and Transformation at Alkaline pH (DOI: 10.1021/acs.est.4c06818)", "Chemical Sciences, Geosciences, and Biosciences Division": "Elucidating Phosphate and Cadmium Cosorption Mechanisms on Mineral Surfaces with Direct Spectroscopic and Modeling Evidence (DOI: 10.1021/acs.est.4c08847)", "Agence Nationale de la Recherche": "Facet-Dependent Adsorption of Rare Earth Elements (REEs) and Actinides onto Goethite: REE Pattern Variability and Cerium Anomaly (DOI: 10.1021/acs.est.4c04406)", "European Commission": "Facet-Dependent Adsorption of Rare Earth Elements (REEs) and Actinides onto Goethite: REE Pattern Variability and Cerium Anomaly (DOI: 10.1021/acs.est.4c04406)"};
+        network.on("click", function(params) {
+            if (params.nodes.length > 0) {
+                var nodeId = params.nodes[0];
+                var node = nodes.get(nodeId);
+                var studies = companyStudyMap[node.label] || "No studies found for this connection.";
+                document.getElementById("study-info").innerHTML = "<h3>Studies for " + node.label + ":</h3>" + studies;
+            }
+        });
+    </script>
+    
+</body>
+</html>

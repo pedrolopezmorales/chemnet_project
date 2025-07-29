@@ -1,0 +1,48 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Chemical Source Database Finder</title>
+    <style>
+        .center-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 40px;
+        }
+        .rect-link {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            width: 180px;
+            height: 120px;
+            margin: 20px;
+            background-color: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            text-decoration: none;
+            color: #333;
+            font-size: 1.2em;
+            transition: background 0.2s;
+        }
+        .rect-link:hover {
+            background-color: #b2b0af;
+        }
+    </style>
+</head>
+<body style="background-color: #ffffff">
+    {% include "networkviewer/tabs.html" %}
+    <div style="background-color: #0b4e86; padding: 40px 10px; color: white;">
+        <h1 style="text-align: center;">Prototype for Searching Connections between studies</h1>
+        <h2 style="text-align: center">Select a category below to search for possible connections</h2>
+
+        <div class="center-container">
+            <a href="{% url 'chemical_view' %}" class="rect-link">Chemical</a>
+            <a href="{% url 'company_view' %}" class="rect-link">Company</a>
+            <a href="{% url 'university_view' %}" class="rect-link">University</a>
+            <a href="{% url 'researcher_view' %}" class="rect-link">Researcher</a>
+        </div>
+    </div>
+</body>
+</html>

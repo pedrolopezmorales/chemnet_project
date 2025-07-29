@@ -1,0 +1,82 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Researcher Network Viewer</title>
+</head>
+<body style ='background-color: white'>
+    {% include "networkviewer/tabs.html" %}
+    <div style="background-color: #0b4e86; padding: 40px 10px; color: white;">
+        <h1>Researcher Network Viewer</h1>
+        <form method="post">
+            {% csrf_token %}
+            <label for="researcher">Enter Researcher Name:</label>
+            <input type="text" name="researcher" id="researcher" list="researcher-suggestions" value="{{ researcher|default_if_none:'' }}">
+            <datalist id="researcher-suggestions">
+                    {% for name in all_researcher_names %}
+                        <option value="{{ name }}">{{ name }}</option>
+                    {% endfor %}
+                </datalist>
+            <div style="margin-top: 5px;">
+            <h3 style="color:white;">Try:
+                {% for example in example_researchers %}
+                    <a href="#" onclick="fillAndSubmit('{{ example }}'); return false;" style="color: #ffd700;">{{ example }}</a>
+                {% endfor %}
+            </h3>
+        </div>
+        <script>
+        function fillAndSubmit(researcher) {
+            document.getElementById('researcher').value = researcher;
+            document.querySelector('form').submit();
+        }
+        </script>
+            <button type="submit">Search</button>
+        </form>
+        {% if matches and not iframe %}
+            <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="researcher" value="{{ researcher }}">
+                <ul>
+                {% for match in matches %}
+                    <li>
+                        <input type="radio" name="selected_index" value="{{ forloop.counter0 }}">
+                        <b>Affiliation:</b> {{ match.Affiliation }}<br>
+                        <b>Companies:</b> {{ match.Companies|join:", " }}
+                    </li>
+                {% endfor %}
+                </ul>
+                <input type="checkbox" name="combine" id="combine">
+                <label for="combine">Combine all entries</label><br>
+                <button type="submit">Show Network</button>
+            </form>
+        {% endif %}
+        {% if message %}
+            <p style="color: red; background-color: white; padding: 5px 5px;">{{ message|safe }}</p>
+        {% endif %}
+        {% if iframe %}
+            <h2>Network for: {{ researcher }}</h2>
+            <iframe src="{{ iframe }}" width="100%" height="600px" frameborder="0"></iframe>
+        {% endif %}
+        {% if connections %}
+        <div style="margin-top: 40px; background: #0b4e86; padding: 20px; border-radius: 8px;">
+            <h3> Connections</h3>
+            <ul>
+                {% for key, items in connections.items %}
+                    <li><strong>{{ key }}:</strong>
+                        <ul>
+                            {% if key == "Inchikey" or key == "Affiliation(s)" %}
+                                <li>{{ items }}</li>
+                            {% else %}
+                                {% for item in items %}
+                                    <li>{{ item }}</li>
+                                {% endfor %}
+                            {% endif %}
+                        </ul>
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+    {% endif %}
+    </div>
+</body>
+</html>

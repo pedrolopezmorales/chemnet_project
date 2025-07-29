@@ -1,0 +1,178 @@
+<html>
+    <head>
+        <meta charset="utf-8">
+        
+            <script src="lib/bindings/utils.js"></script>
+            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.2/dist/dist/vis-network.min.css" integrity="sha512-WgxfT5LWjfszlPHXRmBWHkV2eceiWTOBvrKCNbdgDYTHrT2AeLCGbF4sZlZw3UMN3WtL0tGUoIAKsu8mllg/XA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.2/dist/vis-network.min.js" integrity="sha512-LnvoEWDFrqGHlHmDD2101OrLcbsfkrzoSpvtSQtxK3RMnRV0eOkhhBN2dXHKRrUU8p2DGRTk35n4O8nWSVe1mQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+            
+        
+<center>
+<h1></h1>
+</center>
+
+<!-- <link rel="stylesheet" href="../node_modules/vis/dist/vis.min.css" type="text/css" />
+<script type="text/javascript" src="../node_modules/vis/dist/vis.js"> </script>-->
+        <link
+          href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/css/bootstrap.min.css"
+          rel="stylesheet"
+          integrity="sha384-eOJMYsd53ii+scO/bJGFsiCZc+5NDVN2yr8+0RDqr0Ql0h+rP48ckxlpbzKgwra6"
+          crossorigin="anonymous"
+        />
+        <script
+          src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.bundle.min.js"
+          integrity="sha384-JEW9xMcG8R+pH31jmWH6WWP0WintQrMb4s7ZOdauHnUtxwoG2vI5DkLtS3qm9Ekf"
+          crossorigin="anonymous"
+        ></script>
+
+
+        <center>
+          <h1></h1>
+        </center>
+        <style type="text/css">
+
+             #mynetwork {
+                 width: 100%;
+                 height: 600px;
+                 background-color: #ffffff;
+                 border: 1px solid lightgray;
+                 position: relative;
+                 float: left;
+             }
+
+             
+
+             
+
+             
+        </style>
+    </head>
+
+
+    <body>
+        <div class="card" style="width: 100%">
+            
+            
+            <div id="mynetwork" class="card-body"></div>
+        </div>
+
+        
+        
+
+        <script type="text/javascript">
+
+              // initialize global variables.
+              var edges;
+              var nodes;
+              var allNodes;
+              var allEdges;
+              var nodeColors;
+              var originalNodes;
+              var network;
+              var container;
+              var options, data;
+              var filter = {
+                  item : '',
+                  property : '',
+                  value : []
+              };
+
+              
+
+              
+
+              // This method is responsible for drawing the graph, returns the drawn network
+              function drawGraph() {
+                  var container = document.getElementById('mynetwork');
+
+                  
+
+                  // parsing and collecting nodes and edges from the python
+                  nodes = new vis.DataSet([{"color": "red", "font": {"color": "black"}, "id": "Stanford University", "label": "Stanford University", "shape": "ellipse", "size": 55}, {"color": "lightblue", "font": {"color": "black"}, "id": "Stanford University Center for Innovation in Global Health", "label": "Stanford University Center for Innovation in Global Health", "shape": "ellipse", "size": 15, "title": "Stanford University Center for Innovation in Global Health"}, {"color": "lightblue", "font": {"color": "black"}, "id": "National Aeronautics and Space Administration", "label": "National Aeronautics and Space Administration", "shape": "ellipse", "size": 15, "title": "National Aeronautics and Space Administration"}, {"color": "lightblue", "font": {"color": "black"}, "id": "Division of Earth Sciences", "label": "Division of Earth Sciences", "shape": "ellipse", "size": 15, "title": "Division of Earth Sciences"}, {"color": "lightblue", "font": {"color": "black"}, "id": "Division of Electrical, Communications and Cyber Systems", "label": "Division of Electrical, Communications and Cyber Systems", "shape": "ellipse", "size": 15, "title": "Division of Electrical, Communications and Cyber Systems"}, {"color": "lightblue", "font": {"color": "black"}, "id": "Geological Society of America", "label": "Geological Society of America", "shape": "ellipse", "size": 15, "title": "Geological Society of America"}, {"color": "lightblue", "font": {"color": "black"}, "id": "Not Found", "label": "Not Found", "shape": "ellipse", "size": 15, "title": "Not Found"}, {"color": "lightblue", "font": {"color": "black"}, "id": "Bundesamt f\u00fcr Energie", "label": "Bundesamt f\u00fcr Energie", "shape": "ellipse", "size": 15, "title": "Bundesamt f\u00fcr Energie"}, {"color": "lightblue", "font": {"color": "black"}, "id": "Board of the Swiss Federal Institutes of Technology", "label": "Board of the Swiss Federal Institutes of Technology", "shape": "ellipse", "size": 15, "title": "Board of the Swiss Federal Institutes of Technology"}, {"color": "lightblue", "font": {"color": "black"}, "id": "National Science Foundation Graduate Research Fellowship Program", "label": "National Science Foundation Graduate Research Fellowship Program", "shape": "ellipse", "size": 15, "title": "National Science Foundation Graduate Research Fellowship Program"}, {"color": "lightblue", "font": {"color": "black"}, "id": "Biological and Environmental Research", "label": "Biological and Environmental Research", "shape": "ellipse", "size": 15, "title": "Biological and Environmental Research"}, {"color": "lightblue", "font": {"color": "black"}, "id": "Stanford Precourt Institute for Energy", "label": "Stanford Precourt Institute for Energy", "shape": "ellipse", "size": 15, "title": "Stanford Precourt Institute for Energy"}, {"color": "lightblue", "font": {"color": "black"}, "id": "Alberta Upstream Petroleum Research Fund", "label": "Alberta Upstream Petroleum Research Fund", "shape": "ellipse", "size": 15, "title": "Alberta Upstream Petroleum Research Fund"}, {"color": "lightblue", "font": {"color": "black"}, "id": "Air Force Office of Scientific Research", "label": "Air Force Office of Scientific Research", "shape": "ellipse", "size": 15, "title": "Air Force Office of Scientific Research"}, {"color": "lightblue", "font": {"color": "black"}, "id": "King Fahd University of Petroleum and Minerals", "label": "King Fahd University of Petroleum and Minerals", "shape": "ellipse", "size": 15, "title": "King Fahd University of Petroleum and Minerals"}, {"color": "lightblue", "font": {"color": "black"}, "id": "National Science Foundation", "label": "National Science Foundation", "shape": "ellipse", "size": 15, "title": "National Science Foundation"}, {"color": "lightblue", "font": {"color": "black"}, "id": "Stanford Doerr School of Sustainability", "label": "Stanford Doerr School of Sustainability", "shape": "ellipse", "size": 15, "title": "Stanford Doerr School of Sustainability"}, {"color": "lightblue", "font": {"color": "black"}, "id": "State Key Laboratory of Urban Water Resource and Environment", "label": "State Key Laboratory of Urban Water Resource and Environment", "shape": "ellipse", "size": 15, "title": "State Key Laboratory of Urban Water Resource and Environment"}, {"color": "lightblue", "font": {"color": "black"}, "id": "Stanford Woods Institute for the Environment", "label": "Stanford Woods Institute for the Environment", "shape": "ellipse", "size": 15, "title": "Stanford Woods Institute for the Environment"}, {"color": "lightblue", "font": {"color": "black"}, "id": "China Postdoctoral Science Foundation", "label": "China Postdoctoral Science Foundation", "shape": "ellipse", "size": 15, "title": "China Postdoctoral Science Foundation"}, {"color": "lightblue", "font": {"color": "black"}, "id": "National Natural Science Foundation of China", "label": "National Natural Science Foundation of China", "shape": "ellipse", "size": 15, "title": "National Natural Science Foundation of China"}, {"color": "lightblue", "font": {"color": "black"}, "id": "Fundamental Research Funds for the Central Universities", "label": "Fundamental Research Funds for the Central Universities", "shape": "ellipse", "size": 15, "title": "Fundamental Research Funds for the Central Universities"}, {"color": "lightblue", "font": {"color": "black"}, "id": "China Baowu Low Carbon Metallurgy Innovation Foundation", "label": "China Baowu Low Carbon Metallurgy Innovation Foundation", "shape": "ellipse", "size": 15, "title": "China Baowu Low Carbon Metallurgy Innovation Foundation"}, {"color": "lightblue", "font": {"color": "black"}, "id": "Shanghai Science and Technology Innovation Action Plan", "label": "Shanghai Science and Technology Innovation Action Plan", "shape": "ellipse", "size": 15, "title": "Shanghai Science and Technology Innovation Action Plan"}, {"color": "lightblue", "font": {"color": "black"}, "id": "Water Research Foundation", "label": "Water Research Foundation", "shape": "ellipse", "size": 15, "title": "Water Research Foundation"}, {"color": "lightblue", "font": {"color": "black"}, "id": "Carollo Engineers, Inc", "label": "Carollo Engineers, Inc", "shape": "ellipse", "size": 15, "title": "Carollo Engineers, Inc"}, {"color": "lightblue", "font": {"color": "black"}, "id": "Division of Graduate Education", "label": "Division of Graduate Education", "shape": "ellipse", "size": 15, "title": "Division of Graduate Education"}, {"color": "lightblue", "font": {"color": "black"}, "id": "National Social Science Fund of China", "label": "National Social Science Fund of China", "shape": "ellipse", "size": 15, "title": "National Social Science Fund of China"}, {"color": "lightblue", "font": {"color": "black"}, "id": "Woods Institute for Environment, Stanford University", "label": "Woods Institute for Environment, Stanford University", "shape": "ellipse", "size": 15, "title": "Woods Institute for Environment, Stanford University"}, {"color": "lightblue", "font": {"color": "black"}, "id": "State Key Laboratory of Environmental Geochemistry, Chinese Academy of Sciences", "label": "State Key Laboratory of Environmental Geochemistry, Chinese Academy of Sciences", "shape": "ellipse", "size": 15, "title": "State Key Laboratory of Environmental Geochemistry, Chinese Academy of Sciences"}, {"color": "lightblue", "font": {"color": "black"}, "id": "Science and Technology Program of Guizhou Province", "label": "Science and Technology Program of Guizhou Province", "shape": "ellipse", "size": 15, "title": "Science and Technology Program of Guizhou Province"}, {"color": "lightblue", "font": {"color": "black"}, "id": "Guizhou Provincial Science and Technology Department", "label": "Guizhou Provincial Science and Technology Department", "shape": "ellipse", "size": 15, "title": "Guizhou Provincial Science and Technology Department"}, {"color": "lightblue", "font": {"color": "black"}, "id": "Alexander von Humboldt-Stiftung", "label": "Alexander von Humboldt-Stiftung", "shape": "ellipse", "size": 15, "title": "Alexander von Humboldt-Stiftung"}, {"color": "lightblue", "font": {"color": "black"}, "id": "Guizhou thousand talents innovation and entrepreneurship plan", "label": "Guizhou thousand talents innovation and entrepreneurship plan", "shape": "ellipse", "size": 15, "title": "Guizhou thousand talents innovation and entrepreneurship plan"}, {"color": "lightblue", "font": {"color": "black"}, "id": "Division of Chemical, Bioengineering, Environmental, and Transport Systems", "label": "Division of Chemical, Bioengineering, Environmental, and Transport Systems", "shape": "ellipse", "size": 15, "title": "Division of Chemical, Bioengineering, Environmental, and Transport Systems"}, {"color": "lightblue", "font": {"color": "black"}, "id": "University of Michigan", "label": "University of Michigan", "shape": "ellipse", "size": 15, "title": "University of Michigan"}, {"color": "lightblue", "font": {"color": "black"}, "id": "Environmental Defense Fund", "label": "Environmental Defense Fund", "shape": "ellipse", "size": 15, "title": "Environmental Defense Fund"}, {"color": "lightblue", "font": {"color": "black"}, "id": "Alfred P. Sloan Foundation", "label": "Alfred P. Sloan Foundation", "shape": "ellipse", "size": 15, "title": "Alfred P. Sloan Foundation"}, {"color": "lightblue", "font": {"color": "black"}, "id": "Scientific Aviation", "label": "Scientific Aviation", "shape": "ellipse", "size": 15, "title": "Scientific Aviation"}, {"color": "lightblue", "font": {"color": "black"}, "id": "National Key Research and Development Program of China", "label": "National Key Research and Development Program of China", "shape": "ellipse", "size": 15, "title": "National Key Research and Development Program of China"}, {"color": "lightblue", "font": {"color": "black"}, "id": "Tsinghua University", "label": "Tsinghua University", "shape": "ellipse", "size": 15, "title": "Tsinghua University"}, {"color": "lightblue", "font": {"color": "black"}, "id": "Alibaba Innovative Research Program", "label": "Alibaba Innovative Research Program", "shape": "ellipse", "size": 15, "title": "Alibaba Innovative Research Program"}, {"color": "lightblue", "font": {"color": "black"}, "id": "Office of Science", "label": "Office of Science", "shape": "ellipse", "size": 15, "title": "Office of Science"}, {"color": "lightblue", "font": {"color": "black"}, "id": "United Nations Environmental Program - International Methane Emissions Observatory", "label": "United Nations Environmental Program - International Methane Emissions Observatory", "shape": "ellipse", "size": 15, "title": "United Nations Environmental Program - International Methane Emissions Observatory"}, {"color": "lightblue", "font": {"color": "black"}, "id": "Global Methane Hub", "label": "Global Methane Hub", "shape": "ellipse", "size": 15, "title": "Global Methane Hub"}, {"color": "lightblue", "font": {"color": "black"}, "id": "Stanford Natural Gas Initiative", "label": "Stanford Natural Gas Initiative", "shape": "ellipse", "size": 15, "title": "Stanford Natural Gas Initiative"}, {"color": "lightblue", "font": {"color": "black"}, "id": "Heilongjiang Touyan Innovation Team Program", "label": "Heilongjiang Touyan Innovation Team Program", "shape": "ellipse", "size": 15, "title": "Heilongjiang Touyan Innovation Team Program"}]);
+                  edges = new vis.DataSet([{"from": "Stanford University", "title": "Appearances: 1", "to": "Stanford University Center for Innovation in Global Health", "width": 1}, {"from": "Stanford University", "title": "Appearances: 2", "to": "National Aeronautics and Space Administration", "width": 2}, {"from": "Stanford University", "title": "Appearances: 1", "to": "Division of Earth Sciences", "width": 1}, {"from": "Stanford University", "title": "Appearances: 4", "to": "Division of Electrical, Communications and Cyber Systems", "width": 4}, {"from": "Stanford University", "title": "Appearances: 1", "to": "Geological Society of America", "width": 1}, {"from": "Stanford University", "title": "Appearances: 4", "to": "Not Found", "width": 4}, {"from": "Stanford University", "title": "Appearances: 1", "to": "Bundesamt f\u00fcr Energie", "width": 1}, {"from": "Stanford University", "title": "Appearances: 1", "to": "Board of the Swiss Federal Institutes of Technology", "width": 1}, {"from": "Stanford University", "title": "Appearances: 6", "to": "National Science Foundation Graduate Research Fellowship Program", "width": 6}, {"from": "Stanford University", "title": "Appearances: 7", "to": "Biological and Environmental Research", "width": 7}, {"from": "Stanford University", "title": "Appearances: 6", "to": "Stanford Precourt Institute for Energy", "width": 6}, {"from": "Stanford University", "title": "Appearances: 1", "to": "Alberta Upstream Petroleum Research Fund", "width": 1}, {"from": "Stanford University", "title": "Appearances: 2", "to": "Air Force Office of Scientific Research", "width": 2}, {"from": "Stanford University", "title": "Appearances: 2", "to": "King Fahd University of Petroleum and Minerals", "width": 2}, {"from": "Stanford University", "title": "Appearances: 8", "to": "Woods Institute for Environment, Stanford University", "width": 8}, {"from": "Stanford University", "title": "Appearances: 5", "to": "National Science Foundation", "width": 5}, {"from": "Stanford University", "title": "Appearances: 5", "to": "Stanford Doerr School of Sustainability", "width": 5}, {"from": "Stanford University", "title": "Appearances: 2", "to": "State Key Laboratory of Urban Water Resource and Environment", "width": 2}, {"from": "Stanford University", "title": "Appearances: 2", "to": "Stanford Woods Institute for the Environment", "width": 2}, {"from": "Stanford University", "title": "Appearances: 2", "to": "China Postdoctoral Science Foundation", "width": 2}, {"from": "Stanford University", "title": "Appearances: 7", "to": "National Natural Science Foundation of China", "width": 7}, {"from": "Stanford University", "title": "Appearances: 1", "to": "Fundamental Research Funds for the Central Universities", "width": 1}, {"from": "Stanford University", "title": "Appearances: 1", "to": "China Baowu Low Carbon Metallurgy Innovation Foundation", "width": 1}, {"from": "Stanford University", "title": "Appearances: 1", "to": "Shanghai Science and Technology Innovation Action Plan", "width": 1}, {"from": "Stanford University", "title": "Appearances: 4", "to": "Water Research Foundation", "width": 4}, {"from": "Stanford University", "title": "Appearances: 2", "to": "Carollo Engineers, Inc", "width": 2}, {"from": "Stanford University", "title": "Appearances: 3", "to": "Division of Graduate Education", "width": 3}, {"from": "Stanford University", "title": "Appearances: 1", "to": "National Social Science Fund of China", "width": 1}, {"from": "Stanford University", "title": "Appearances: 1", "to": "State Key Laboratory of Environmental Geochemistry, Chinese Academy of Sciences", "width": 1}, {"from": "Stanford University", "title": "Appearances: 1", "to": "Science and Technology Program of Guizhou Province", "width": 1}, {"from": "Stanford University", "title": "Appearances: 1", "to": "Guizhou Provincial Science and Technology Department", "width": 1}, {"from": "Stanford University", "title": "Appearances: 1", "to": "Alexander von Humboldt-Stiftung", "width": 1}, {"from": "Stanford University", "title": "Appearances: 1", "to": "Guizhou thousand talents innovation and entrepreneurship plan", "width": 1}, {"from": "Stanford University", "title": "Appearances: 2", "to": "Division of Chemical, Bioengineering, Environmental, and Transport Systems", "width": 2}, {"from": "Stanford University", "title": "Appearances: 1", "to": "University of Michigan", "width": 1}, {"from": "Stanford University", "title": "Appearances: 9", "to": "Environmental Defense Fund", "width": 9}, {"from": "Stanford University", "title": "Appearances: 2", "to": "Alfred P. Sloan Foundation", "width": 2}, {"from": "Stanford University", "title": "Appearances: 1", "to": "Scientific Aviation", "width": 1}, {"from": "Stanford University", "title": "Appearances: 1", "to": "National Key Research and Development Program of China", "width": 1}, {"from": "Stanford University", "title": "Appearances: 1", "to": "Tsinghua University", "width": 1}, {"from": "Stanford University", "title": "Appearances: 1", "to": "Alibaba Innovative Research Program", "width": 1}, {"from": "Stanford University", "title": "Appearances: 1", "to": "Office of Science", "width": 1}, {"from": "Stanford University", "title": "Appearances: 8", "to": "United Nations Environmental Program - International Methane Emissions Observatory", "width": 8}, {"from": "Stanford University", "title": "Appearances: 8", "to": "Global Methane Hub", "width": 8}, {"from": "Stanford University", "title": "Appearances: 8", "to": "Stanford Natural Gas Initiative", "width": 8}, {"from": "Stanford University", "title": "Appearances: 1", "to": "Heilongjiang Touyan Innovation Team Program", "width": 1}]);
+
+                  nodeColors = {};
+                  allNodes = nodes.get({ returnType: "Object" });
+                  for (nodeId in allNodes) {
+                    nodeColors[nodeId] = allNodes[nodeId].color;
+                  }
+                  allEdges = edges.get({ returnType: "Object" });
+                  // adding nodes and edges to the graph
+                  data = {nodes: nodes, edges: edges};
+
+                  var options = {
+    "configure": {
+        "enabled": false
+    },
+    "edges": {
+        "color": {
+            "inherit": true
+        },
+        "smooth": {
+            "enabled": true,
+            "type": "dynamic"
+        }
+    },
+    "interaction": {
+        "dragNodes": true,
+        "hideEdgesOnDrag": false,
+        "hideNodesOnDrag": false
+    },
+    "physics": {
+        "barnesHut": {
+            "avoidOverlap": 0,
+            "centralGravity": 0.3,
+            "damping": 0.09,
+            "gravitationalConstant": -1200,
+            "springConstant": 0.001,
+            "springLength": 120
+        },
+        "enabled": true,
+        "minVelocity": 0.75,
+        "stabilization": {
+            "enabled": true,
+            "fit": true,
+            "iterations": 1000,
+            "onlyDynamicEdges": false,
+            "updateInterval": 50
+        }
+    }
+};
+
+                  
+
+
+                  
+
+                  network = new vis.Network(container, data, options);
+
+                  
+
+                  
+
+                  
+
+
+                  
+
+                  return network;
+
+              }
+              drawGraph();
+        </script>
+    
+    <div id="study-info" style="margin-top:20px; background:#fff; color:#222; padding:10px; border-radius:8px;"></div>
+    <script type="text/javascript">
+        var companyStudyMap = {"Stanford University Center for Innovation in Global Health": "Evaluating Chemical Transport and Machine Learning Models for Wildfire Smoke PM<sub>2.5</sub>: Implications for Assessment of Health Impacts (DOI: 10.1021/acs.est.4c05922)", "National Aeronautics and Space Administration": "Evaluating Chemical Transport and Machine Learning Models for Wildfire Smoke PM<sub>2.5</sub>: Implications for Assessment of Health Impacts (DOI: 10.1021/acs.est.4c05922)<br>Underestimated Dry Season Methane Emissions from Wetlands in the Pantanal (DOI: 10.1021/acs.est.3c09250)", "Division of Earth Sciences": "Goethite and Hematite Nucleation and Growth from Ferrihydrite: Effects of Oxyanion Surface Complexes (DOI: 10.1021/acs.est.3c09955)", "Division of Electrical, Communications and Cyber Systems": "Goethite and Hematite Nucleation and Growth from Ferrihydrite: Effects of Oxyanion Surface Complexes (DOI: 10.1021/acs.est.3c09955)<br>Sorption of Soil Carbon Dioxide by Biochar and Engineered Porous Carbons (DOI: 10.1021/acs.est.4c02015)", "Geological Society of America": "Goethite and Hematite Nucleation and Growth from Ferrihydrite: Effects of Oxyanion Surface Complexes (DOI: 10.1021/acs.est.3c09955)", "Not Found": "Advances in Wastewater-Based Epidemiology in the <i>ES&amp;T</i> Family of Journals (DOI: 10.1021/acs.est.4c04913)<br>Environmental Machine Learning, Baseline Reporting, and Comprehensive Evaluation: The EMBRACE Checklist (DOI: 10.1021/acs.est.4c09611)<br>Call for Papers for a Special Issue on \u201cOcean Health\u201d (DOI: 10.1021/acs.est.4c10143)<br>Maximizing the Impact of Research Featuring Nucleic-Acid Sequencing Methods in <i>Environmental Science &amp; Technology</i> and <i>Environmental Science &amp; Technology Letters</i> (DOI: 10.1021/acs.est.4c03765)", "Bundesamt f\u00fcr Energie": "Life Cycle Economic and Environmental Assessment of Producing Synthetic Jet Fuel Using CO<sub>2</sub>/Biomass Feedstocks (DOI: 10.1021/acs.est.4c01578)", "Board of the Swiss Federal Institutes of Technology": "Life Cycle Economic and Environmental Assessment of Producing Synthetic Jet Fuel Using CO<sub>2</sub>/Biomass Feedstocks (DOI: 10.1021/acs.est.4c01578)", "National Science Foundation Graduate Research Fellowship Program": "Microbial Proxies for Anoxic Microsites Vary with Management and Partially Explain Soil Carbon Concentration (DOI: 10.1021/acs.est.4c01882)", "Biological and Environmental Research": "Microbial Proxies for Anoxic Microsites Vary with Management and Partially Explain Soil Carbon Concentration (DOI: 10.1021/acs.est.4c01882)<br>Seasonal Controls on Microbial Depolymerization and Oxidation of Organic Matter in Floodplain Soils (DOI: 10.1021/acs.est.4c05109)", "Stanford Precourt Institute for Energy": "Microbial Proxies for Anoxic Microsites Vary with Management and Partially Explain Soil Carbon Concentration (DOI: 10.1021/acs.est.4c01882)", "Alberta Upstream Petroleum Research Fund": "Large-Scale Controlled Experiment Demonstrates Effectiveness of Methane Leak Detection and Repair Programs at Oil and Gas Facilities (DOI: 10.1021/acs.est.3c09147)", "Air Force Office of Scientific Research": "Oxidation of Ammonia in Water Microdroplets Produces Nitrate and Molecular Hydrogen (DOI: 10.1021/acs.est.4c04568)", "King Fahd University of Petroleum and Minerals": "Oxidation of Ammonia in Water Microdroplets Produces Nitrate and Molecular Hydrogen (DOI: 10.1021/acs.est.4c04568)", "Stanford University": "Evaluating Chemical Transport and Machine Learning Models for Wildfire Smoke PM<sub>2.5</sub>: Implications for Assessment of Health Impacts (DOI: 10.1021/acs.est.4c05922)<br>Water Supply Planning in the Face of Drought and Ecosystem Flows: Examining the Impact of the Bay-Delta Plan on Bay Area Water Supply (DOI: 10.1021/acs.est.3c07398)<br>Sorption of Soil Carbon Dioxide by Biochar and Engineered Porous Carbons (DOI: 10.1021/acs.est.4c02015)<br>Novel Feruloyl Esterase for the Degradation of Polyethylene Terephthalate (PET) Screened from the Gut Microbiome of Plastic-Degrading Mealworms (<i>Tenebrio Molitor</i> Larvae) (DOI: 10.1021/acs.est.4c01495)<br>Understanding the Ecological Robustness and Adaptability of the Gut Microbiome in Plastic-Degrading Superworms (<i>Zophobas atratus</i>) in Response to Microplastics and Antibiotics (DOI: 10.1021/acs.est.4c01692)", "National Science Foundation": "Microbial Proxies for Anoxic Microsites Vary with Management and Partially Explain Soil Carbon Concentration (DOI: 10.1021/acs.est.4c01882)<br>Water Supply Planning in the Face of Drought and Ecosystem Flows: Examining the Impact of the Bay-Delta Plan on Bay Area Water Supply (DOI: 10.1021/acs.est.3c07398)", "Stanford Doerr School of Sustainability": "Water Supply Planning in the Face of Drought and Ecosystem Flows: Examining the Impact of the Bay-Delta Plan on Bay Area Water Supply (DOI: 10.1021/acs.est.3c07398)", "State Key Laboratory of Urban Water Resource and Environment": "Molecular-Weight-Dependent Degradation of Plastics: Deciphering Host\u2013Microbiome Synergy Biodegradation of High-Purity Polypropylene Microplastics by Mealworms (DOI: 10.1021/acs.est.3c06954)<br>Understanding the Ecological Robustness and Adaptability of the Gut Microbiome in Plastic-Degrading Superworms (<i>Zophobas atratus</i>) in Response to Microplastics and Antibiotics (DOI: 10.1021/acs.est.4c01692)", "Stanford Woods Institute for the Environment": "Molecular-Weight-Dependent Degradation of Plastics: Deciphering Host\u2013Microbiome Synergy Biodegradation of High-Purity Polypropylene Microplastics by Mealworms (DOI: 10.1021/acs.est.3c06954)<br>Generation and Fate of Nanoplastics in the Intestine of Plastic-Degrading Insect (<i>Tenebrio molitor</i> Larvae) during Polystyrene Microplastic Biodegradation (DOI: 10.1021/acs.est.4c01130)", "China Postdoctoral Science Foundation": "Molecular-Weight-Dependent Degradation of Plastics: Deciphering Host\u2013Microbiome Synergy Biodegradation of High-Purity Polypropylene Microplastics by Mealworms (DOI: 10.1021/acs.est.3c06954)<br>Dynamic Traffic Data in Machine-Learning Air Quality Mapping Improves Environmental Justice Assessment (DOI: 10.1021/acs.est.3c07545)", "National Natural Science Foundation of China": "Molecular-Weight-Dependent Degradation of Plastics: Deciphering Host\u2013Microbiome Synergy Biodegradation of High-Purity Polypropylene Microplastics by Mealworms (DOI: 10.1021/acs.est.3c06954)<br>Generation and Fate of Nanoplastics in the Intestine of Plastic-Degrading Insect (<i>Tenebrio molitor</i> Larvae) during Polystyrene Microplastic Biodegradation (DOI: 10.1021/acs.est.4c01130)<br>Novel Feruloyl Esterase for the Degradation of Polyethylene Terephthalate (PET) Screened from the Gut Microbiome of Plastic-Degrading Mealworms (<i>Tenebrio Molitor</i> Larvae) (DOI: 10.1021/acs.est.4c01495)<br>First Insight into the Mobilization and Sequestration of Arsenic in a Karstic Soil during Redox Changes (DOI: 10.1021/acs.est.4c02989)<br>Dynamic Traffic Data in Machine-Learning Air Quality Mapping Improves Environmental Justice Assessment (DOI: 10.1021/acs.est.3c07545)<br>Understanding the Ecological Robustness and Adaptability of the Gut Microbiome in Plastic-Degrading Superworms (<i>Zophobas atratus</i>) in Response to Microplastics and Antibiotics (DOI: 10.1021/acs.est.4c01692)", "Fundamental Research Funds for the Central Universities": "Generation and Fate of Nanoplastics in the Intestine of Plastic-Degrading Insect (<i>Tenebrio molitor</i> Larvae) during Polystyrene Microplastic Biodegradation (DOI: 10.1021/acs.est.4c01130)", "China Baowu Low Carbon Metallurgy Innovation Foundation": "Generation and Fate of Nanoplastics in the Intestine of Plastic-Degrading Insect (<i>Tenebrio molitor</i> Larvae) during Polystyrene Microplastic Biodegradation (DOI: 10.1021/acs.est.4c01130)", "Shanghai Science and Technology Innovation Action Plan": "Generation and Fate of Nanoplastics in the Intestine of Plastic-Degrading Insect (<i>Tenebrio molitor</i> Larvae) during Polystyrene Microplastic Biodegradation (DOI: 10.1021/acs.est.4c01130)", "Water Research Foundation": "Regulated 1\u20132 Carbon Disinfection Byproducts do not Correlate with Cytotoxicity with Increasing Disinfectant Contact Time During Chlorination, Chlorination Followed by Chloramination or Granular Activated Carbon Followed by Chlorination (DOI: 10.1021/acs.est.4c06604)<br>Mammalian Cell Genotoxicity of Potable Reuse and Conventional Drinking Waters (DOI: 10.1021/acs.est.4c01596)", "Carollo Engineers, Inc": "Regulated 1\u20132 Carbon Disinfection Byproducts do not Correlate with Cytotoxicity with Increasing Disinfectant Contact Time During Chlorination, Chlorination Followed by Chloramination or Granular Activated Carbon Followed by Chlorination (DOI: 10.1021/acs.est.4c06604)", "Division of Graduate Education": "Sorption of Soil Carbon Dioxide by Biochar and Engineered Porous Carbons (DOI: 10.1021/acs.est.4c02015)", "National Social Science Fund of China": "International Trade Reshapes the Decoupling of Emissions from Economic Growth (DOI: 10.1021/acs.est.4c03995)", "Woods Institute for Environment, Stanford University": "Novel Feruloyl Esterase for the Degradation of Polyethylene Terephthalate (PET) Screened from the Gut Microbiome of Plastic-Degrading Mealworms (<i>Tenebrio Molitor</i> Larvae) (DOI: 10.1021/acs.est.4c01495)<br>Understanding the Ecological Robustness and Adaptability of the Gut Microbiome in Plastic-Degrading Superworms (<i>Zophobas atratus</i>) in Response to Microplastics and Antibiotics (DOI: 10.1021/acs.est.4c01692)", "State Key Laboratory of Environmental Geochemistry, Chinese Academy of Sciences": "First Insight into the Mobilization and Sequestration of Arsenic in a Karstic Soil during Redox Changes (DOI: 10.1021/acs.est.4c02989)", "Science and Technology Program of Guizhou Province": "First Insight into the Mobilization and Sequestration of Arsenic in a Karstic Soil during Redox Changes (DOI: 10.1021/acs.est.4c02989)", "Guizhou Provincial Science and Technology Department": "First Insight into the Mobilization and Sequestration of Arsenic in a Karstic Soil during Redox Changes (DOI: 10.1021/acs.est.4c02989)", "Alexander von Humboldt-Stiftung": "First Insight into the Mobilization and Sequestration of Arsenic in a Karstic Soil during Redox Changes (DOI: 10.1021/acs.est.4c02989)", "Guizhou thousand talents innovation and entrepreneurship plan": "First Insight into the Mobilization and Sequestration of Arsenic in a Karstic Soil during Redox Changes (DOI: 10.1021/acs.est.4c02989)", "Division of Chemical, Bioengineering, Environmental, and Transport Systems": "Mammalian Cell Genotoxicity of Potable Reuse and Conventional Drinking Waters (DOI: 10.1021/acs.est.4c01596)", "University of Michigan": "Temporal Variation and Persistence of Methane Emissions from Shallow Water Oil and Gas Production in the Gulf of Mexico (DOI: 10.1021/acs.est.3c08066)", "Environmental Defense Fund": "Temporal Variation and Persistence of Methane Emissions from Shallow Water Oil and Gas Production in the Gulf of Mexico (DOI: 10.1021/acs.est.3c08066)<br>Technological Maturity of Aircraft-Based Methane Sensing for Greenhouse Gas Mitigation (DOI: 10.1021/acs.est.4c02439)", "Alfred P. Sloan Foundation": "Temporal Variation and Persistence of Methane Emissions from Shallow Water Oil and Gas Production in the Gulf of Mexico (DOI: 10.1021/acs.est.3c08066)<br>In Situ Sampling of NOx Emissions from United States Natural Gas Flares Reveals Heavy-Tail Emission Characteristic (DOI: 10.1021/acs.est.3c08095)", "Scientific Aviation": "Temporal Variation and Persistence of Methane Emissions from Shallow Water Oil and Gas Production in the Gulf of Mexico (DOI: 10.1021/acs.est.3c08066)", "National Key Research and Development Program of China": "Dynamic Traffic Data in Machine-Learning Air Quality Mapping Improves Environmental Justice Assessment (DOI: 10.1021/acs.est.3c07545)", "Tsinghua University": "Dynamic Traffic Data in Machine-Learning Air Quality Mapping Improves Environmental Justice Assessment (DOI: 10.1021/acs.est.3c07545)", "Alibaba Innovative Research Program": "Dynamic Traffic Data in Machine-Learning Air Quality Mapping Improves Environmental Justice Assessment (DOI: 10.1021/acs.est.3c07545)", "Office of Science": "Seasonal Controls on Microbial Depolymerization and Oxidation of Organic Matter in Floodplain Soils (DOI: 10.1021/acs.est.4c05109)", "United Nations Environmental Program - International Methane Emissions Observatory": "Technological Maturity of Aircraft-Based Methane Sensing for Greenhouse Gas Mitigation (DOI: 10.1021/acs.est.4c02439)", "Global Methane Hub": "Technological Maturity of Aircraft-Based Methane Sensing for Greenhouse Gas Mitigation (DOI: 10.1021/acs.est.4c02439)", "Stanford Natural Gas Initiative": "Technological Maturity of Aircraft-Based Methane Sensing for Greenhouse Gas Mitigation (DOI: 10.1021/acs.est.4c02439)", "Heilongjiang Touyan Innovation Team Program": "Understanding the Ecological Robustness and Adaptability of the Gut Microbiome in Plastic-Degrading Superworms (<i>Zophobas atratus</i>) in Response to Microplastics and Antibiotics (DOI: 10.1021/acs.est.4c01692)"};
+        network.on("click", function(params) {
+            if (params.nodes.length > 0) {
+                var nodeId = params.nodes[0];
+                var node = nodes.get(nodeId);
+                var studies = companyStudyMap[node.label] || "No studies found for this connection.";
+                document.getElementById("study-info").innerHTML = "<h3>Studies for " + node.label + ":</h3>" + studies;
+            }
+        });
+    </script>
+    
+</body>
+</html>

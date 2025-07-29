@@ -1,0 +1,164 @@
+<html>
+    <head>
+        <meta charset="utf-8">
+        
+            <script src="lib/bindings/utils.js"></script>
+            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.2/dist/dist/vis-network.min.css" integrity="sha512-WgxfT5LWjfszlPHXRmBWHkV2eceiWTOBvrKCNbdgDYTHrT2AeLCGbF4sZlZw3UMN3WtL0tGUoIAKsu8mllg/XA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.2/dist/vis-network.min.js" integrity="sha512-LnvoEWDFrqGHlHmDD2101OrLcbsfkrzoSpvtSQtxK3RMnRV0eOkhhBN2dXHKRrUU8p2DGRTk35n4O8nWSVe1mQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+            
+        
+<center>
+<h1></h1>
+</center>
+
+<!-- <link rel="stylesheet" href="../node_modules/vis/dist/vis.min.css" type="text/css" />
+<script type="text/javascript" src="../node_modules/vis/dist/vis.js"> </script>-->
+        <link
+          href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/css/bootstrap.min.css"
+          rel="stylesheet"
+          integrity="sha384-eOJMYsd53ii+scO/bJGFsiCZc+5NDVN2yr8+0RDqr0Ql0h+rP48ckxlpbzKgwra6"
+          crossorigin="anonymous"
+        />
+        <script
+          src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.bundle.min.js"
+          integrity="sha384-JEW9xMcG8R+pH31jmWH6WWP0WintQrMb4s7ZOdauHnUtxwoG2vI5DkLtS3qm9Ekf"
+          crossorigin="anonymous"
+        ></script>
+
+
+        <center>
+          <h1></h1>
+        </center>
+        <style type="text/css">
+
+             #mynetwork {
+                 width: 100%;
+                 height: 600px;
+                 background-color: #ffffff;
+                 border: 1px solid lightgray;
+                 position: relative;
+                 float: left;
+             }
+
+             
+
+             
+
+             
+        </style>
+    </head>
+
+
+    <body>
+        <div class="card" style="width: 100%">
+            
+            
+            <div id="mynetwork" class="card-body"></div>
+        </div>
+
+        
+        
+
+        <script type="text/javascript">
+
+              // initialize global variables.
+              var edges;
+              var nodes;
+              var allNodes;
+              var allEdges;
+              var nodeColors;
+              var originalNodes;
+              var network;
+              var container;
+              var options, data;
+              var filter = {
+                  item : '',
+                  property : '',
+                  value : []
+              };
+
+              
+
+              
+
+              // This method is responsible for drawing the graph, returns the drawn network
+              function drawGraph() {
+                  var container = document.getElementById('mynetwork');
+
+                  
+
+                  // parsing and collecting nodes and edges from the python
+                  nodes = new vis.DataSet([{"color": "red", "font": {"color": "black"}, "id": "Xie, Hongyu", "label": "Xie, Hongyu", "shape": "ellipse", "size": 55, "title": "Affiliation: Department of Environmental Science, Science for Life Laboratory; Stockholm University"}, {"color": "lightblue", "font": {"color": "black"}, "id": "Svenska Forskningsr?det Formas", "label": "Svenska Forskningsr?det Formas", "shape": "ellipse", "size": 15, "title": "Svenska Forskningsr?det Formas"}, {"color": "lightblue", "font": {"color": "black"}, "id": "Vetenskapsr?det", "label": "Vetenskapsr?det", "shape": "ellipse", "size": 15, "title": "Vetenskapsr?det"}, {"color": "lightblue", "font": {"color": "black"}, "id": "National Institute of Environmental Health Sciences", "label": "National Institute of Environmental Health Sciences", "shape": "ellipse", "size": 15, "title": "National Institute of Environmental Health Sciences"}, {"color": "lightblue", "font": {"color": "black"}, "id": "National Center for Advancing Translational Sciences", "label": "National Center for Advancing Translational Sciences", "shape": "ellipse", "size": 15, "title": "National Center for Advancing Translational Sciences"}, {"color": "lightblue", "font": {"color": "black"}, "id": "Nuclear Energy University Program", "label": "Nuclear Energy University Program", "shape": "ellipse", "size": 15, "title": "Nuclear Energy University Program"}, {"color": "lightblue", "font": {"color": "black"}, "id": "NIH Office of the Director", "label": "NIH Office of the Director", "shape": "ellipse", "size": 15, "title": "NIH Office of the Director"}, {"color": "lightblue", "font": {"color": "black"}, "id": "National Institute on Aging", "label": "National Institute on Aging", "shape": "ellipse", "size": 15, "title": "National Institute on Aging"}, {"color": "lightblue", "font": {"color": "black"}, "id": "National Institute of General Medical Sciences", "label": "National Institute of General Medical Sciences", "shape": "ellipse", "size": 15, "title": "National Institute of General Medical Sciences"}, {"color": "lightblue", "font": {"color": "black"}, "id": "RECETOX Pr?rodovedeck? Fakulty Masarykovy Univerzity", "label": "RECETOX Pr?rodovedeck? Fakulty Masarykovy Univerzity", "shape": "ellipse", "size": 15, "title": "RECETOX Pr?rodovedeck? Fakulty Masarykovy Univerzity"}, {"color": "lightblue", "font": {"color": "black"}, "id": "European Research Council", "label": "European Research Council", "shape": "ellipse", "size": 15, "title": "European Research Council"}, {"color": "lightblue", "font": {"color": "black"}, "id": "European Commission", "label": "European Commission", "shape": "ellipse", "size": 15, "title": "European Commission"}, {"color": "lightblue", "font": {"color": "black"}, "id": "University of North Carolina at Chapel Hill", "label": "University of North Carolina at Chapel Hill", "shape": "ellipse", "size": 15, "title": "University of North Carolina at Chapel Hill"}, {"color": "lightblue", "font": {"color": "black"}, "id": "Horizon 2020 Framework Programme", "label": "Horizon 2020 Framework Programme", "shape": "ellipse", "size": 15, "title": "Horizon 2020 Framework Programme"}, {"color": "lightblue", "font": {"color": "black"}, "id": "Danish Offshore Technology Centre", "label": "Danish Offshore Technology Centre", "shape": "ellipse", "size": 15, "title": "Danish Offshore Technology Centre"}]);
+                  edges = new vis.DataSet([{"from": "Xie, Hongyu", "title": "Appearances: 3", "to": "Svenska Forskningsr?det Formas", "width": 3}, {"from": "Xie, Hongyu", "title": "Appearances: 3", "to": "Vetenskapsr?det", "width": 3}, {"from": "Xie, Hongyu", "title": "Appearances: 1", "to": "National Institute of Environmental Health Sciences", "width": 1}, {"from": "Xie, Hongyu", "title": "Appearances: 1", "to": "National Center for Advancing Translational Sciences", "width": 1}, {"from": "Xie, Hongyu", "title": "Appearances: 1", "to": "Nuclear Energy University Program", "width": 1}, {"from": "Xie, Hongyu", "title": "Appearances: 1", "to": "NIH Office of the Director", "width": 1}, {"from": "Xie, Hongyu", "title": "Appearances: 1", "to": "National Institute on Aging", "width": 1}, {"from": "Xie, Hongyu", "title": "Appearances: 1", "to": "National Institute of General Medical Sciences", "width": 1}, {"from": "Xie, Hongyu", "title": "Appearances: 1", "to": "RECETOX Pr?rodovedeck? Fakulty Masarykovy Univerzity", "width": 1}, {"from": "Xie, Hongyu", "title": "Appearances: 1", "to": "European Research Council", "width": 1}, {"from": "Xie, Hongyu", "title": "Appearances: 1", "to": "European Commission", "width": 1}, {"from": "Xie, Hongyu", "title": "Appearances: 1", "to": "University of North Carolina at Chapel Hill", "width": 1}, {"from": "Xie, Hongyu", "title": "Appearances: 1", "to": "Horizon 2020 Framework Programme", "width": 1}, {"from": "Xie, Hongyu", "title": "Appearances: 1", "to": "Danish Offshore Technology Centre", "width": 1}]);
+
+                  nodeColors = {};
+                  allNodes = nodes.get({ returnType: "Object" });
+                  for (nodeId in allNodes) {
+                    nodeColors[nodeId] = allNodes[nodeId].color;
+                  }
+                  allEdges = edges.get({ returnType: "Object" });
+                  // adding nodes and edges to the graph
+                  data = {nodes: nodes, edges: edges};
+
+                  var options = {
+    "configure": {
+        "enabled": false
+    },
+    "edges": {
+        "color": {
+            "inherit": true
+        },
+        "smooth": {
+            "enabled": true,
+            "type": "dynamic"
+        }
+    },
+    "interaction": {
+        "dragNodes": true,
+        "hideEdgesOnDrag": false,
+        "hideNodesOnDrag": false
+    },
+    "physics": {
+        "barnesHut": {
+            "avoidOverlap": 0,
+            "centralGravity": 0.3,
+            "damping": 0.09,
+            "gravitationalConstant": -500,
+            "springConstant": 0.002,
+            "springLength": 60
+        },
+        "enabled": true,
+        "minVelocity": 0.75,
+        "stabilization": {
+            "enabled": true,
+            "fit": true,
+            "iterations": 1000,
+            "onlyDynamicEdges": false,
+            "updateInterval": 50
+        }
+    }
+};
+
+                  
+
+
+                  
+
+                  network = new vis.Network(container, data, options);
+
+                  
+
+                  
+
+                  
+
+
+                  
+
+                  return network;
+
+              }
+              drawGraph();
+        </script>
+    </body>
+</html>

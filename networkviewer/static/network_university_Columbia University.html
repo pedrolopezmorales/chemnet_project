@@ -1,0 +1,164 @@
+<html>
+    <head>
+        <meta charset="utf-8">
+        
+            <script src="lib/bindings/utils.js"></script>
+            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.2/dist/dist/vis-network.min.css" integrity="sha512-WgxfT5LWjfszlPHXRmBWHkV2eceiWTOBvrKCNbdgDYTHrT2AeLCGbF4sZlZw3UMN3WtL0tGUoIAKsu8mllg/XA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.2/dist/vis-network.min.js" integrity="sha512-LnvoEWDFrqGHlHmDD2101OrLcbsfkrzoSpvtSQtxK3RMnRV0eOkhhBN2dXHKRrUU8p2DGRTk35n4O8nWSVe1mQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+            
+        
+<center>
+<h1></h1>
+</center>
+
+<!-- <link rel="stylesheet" href="../node_modules/vis/dist/vis.min.css" type="text/css" />
+<script type="text/javascript" src="../node_modules/vis/dist/vis.js"> </script>-->
+        <link
+          href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/css/bootstrap.min.css"
+          rel="stylesheet"
+          integrity="sha384-eOJMYsd53ii+scO/bJGFsiCZc+5NDVN2yr8+0RDqr0Ql0h+rP48ckxlpbzKgwra6"
+          crossorigin="anonymous"
+        />
+        <script
+          src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.bundle.min.js"
+          integrity="sha384-JEW9xMcG8R+pH31jmWH6WWP0WintQrMb4s7ZOdauHnUtxwoG2vI5DkLtS3qm9Ekf"
+          crossorigin="anonymous"
+        ></script>
+
+
+        <center>
+          <h1></h1>
+        </center>
+        <style type="text/css">
+
+             #mynetwork {
+                 width: 100%;
+                 height: 600px;
+                 background-color: #ffffff;
+                 border: 1px solid lightgray;
+                 position: relative;
+                 float: left;
+             }
+
+             
+
+             
+
+             
+        </style>
+    </head>
+
+
+    <body>
+        <div class="card" style="width: 100%">
+            
+            
+            <div id="mynetwork" class="card-body"></div>
+        </div>
+
+        
+        
+
+        <script type="text/javascript">
+
+              // initialize global variables.
+              var edges;
+              var nodes;
+              var allNodes;
+              var allEdges;
+              var nodeColors;
+              var originalNodes;
+              var network;
+              var container;
+              var options, data;
+              var filter = {
+                  item : '',
+                  property : '',
+                  value : []
+              };
+
+              
+
+              
+
+              // This method is responsible for drawing the graph, returns the drawn network
+              function drawGraph() {
+                  var container = document.getElementById('mynetwork');
+
+                  
+
+                  // parsing and collecting nodes and edges from the python
+                  nodes = new vis.DataSet([{"color": "red", "font": {"color": "black"}, "id": "Columbia University", "label": "Columbia University", "shape": "ellipse", "size": 55}, {"color": "lightblue", "font": {"color": "black"}, "id": "University of California, Riverside", "label": "University of California, Riverside", "shape": "ellipse", "size": 15, "title": "University of California, Riverside"}, {"color": "lightblue", "font": {"color": "black"}, "id": "University of Central Florida", "label": "University of Central Florida", "shape": "ellipse", "size": 15, "title": "University of Central Florida"}, {"color": "lightblue", "font": {"color": "black"}, "id": "National Science Foundation", "label": "National Science Foundation", "shape": "ellipse", "size": 15, "title": "National Science Foundation"}, {"color": "lightblue", "font": {"color": "black"}, "id": "Massachusetts Institute of Technology", "label": "Massachusetts Institute of Technology", "shape": "ellipse", "size": 15, "title": "Massachusetts Institute of Technology"}, {"color": "lightblue", "font": {"color": "black"}, "id": "Woods Hole Oceanographic Institution", "label": "Woods Hole Oceanographic Institution", "shape": "ellipse", "size": 15, "title": "Woods Hole Oceanographic Institution"}, {"color": "lightblue", "font": {"color": "black"}, "id": "National Aeronautics and Space Administration", "label": "National Aeronautics and Space Administration", "shape": "ellipse", "size": 15, "title": "National Aeronautics and Space Administration"}, {"color": "lightblue", "font": {"color": "black"}, "id": "MathWorks", "label": "MathWorks", "shape": "ellipse", "size": 15, "title": "MathWorks"}, {"color": "lightblue", "font": {"color": "black"}, "id": "National Institute of Environmental Health Sciences", "label": "National Institute of Environmental Health Sciences", "shape": "ellipse", "size": 15, "title": "National Institute of Environmental Health Sciences"}, {"color": "lightblue", "font": {"color": "black"}, "id": "National Center for Advancing Translational Sciences", "label": "National Center for Advancing Translational Sciences", "shape": "ellipse", "size": 15, "title": "National Center for Advancing Translational Sciences"}, {"color": "lightblue", "font": {"color": "black"}, "id": "Nuclear Energy University Program", "label": "Nuclear Energy University Program", "shape": "ellipse", "size": 15, "title": "Nuclear Energy University Program"}, {"color": "lightblue", "font": {"color": "black"}, "id": "NIH Office of the Director", "label": "NIH Office of the Director", "shape": "ellipse", "size": 15, "title": "NIH Office of the Director"}, {"color": "lightblue", "font": {"color": "black"}, "id": "National Institute on Aging", "label": "National Institute on Aging", "shape": "ellipse", "size": 15, "title": "National Institute on Aging"}, {"color": "lightblue", "font": {"color": "black"}, "id": "National Institute of General Medical Sciences", "label": "National Institute of General Medical Sciences", "shape": "ellipse", "size": 15, "title": "National Institute of General Medical Sciences"}, {"color": "lightblue", "font": {"color": "black"}, "id": "RECETOX Pr?rodovedeck? Fakulty Masarykovy Univerzity", "label": "RECETOX Pr?rodovedeck? Fakulty Masarykovy Univerzity", "shape": "ellipse", "size": 15, "title": "RECETOX Pr?rodovedeck? Fakulty Masarykovy Univerzity"}, {"color": "lightblue", "font": {"color": "black"}, "id": "Svenska Forskningsr?det Formas", "label": "Svenska Forskningsr?det Formas", "shape": "ellipse", "size": 15, "title": "Svenska Forskningsr?det Formas"}, {"color": "lightblue", "font": {"color": "black"}, "id": "Vetenskapsr?det", "label": "Vetenskapsr?det", "shape": "ellipse", "size": 15, "title": "Vetenskapsr?det"}, {"color": "lightblue", "font": {"color": "black"}, "id": "European Research Council", "label": "European Research Council", "shape": "ellipse", "size": 15, "title": "European Research Council"}, {"color": "lightblue", "font": {"color": "black"}, "id": "European Commission", "label": "European Commission", "shape": "ellipse", "size": 15, "title": "European Commission"}, {"color": "lightblue", "font": {"color": "black"}, "id": "University of North Carolina at Chapel Hill", "label": "University of North Carolina at Chapel Hill", "shape": "ellipse", "size": 15, "title": "University of North Carolina at Chapel Hill"}, {"color": "lightblue", "font": {"color": "black"}, "id": "Horizon 2020 Framework Programme", "label": "Horizon 2020 Framework Programme", "shape": "ellipse", "size": 15, "title": "Horizon 2020 Framework Programme"}, {"color": "lightblue", "font": {"color": "black"}, "id": "Not Found", "label": "Not Found", "shape": "ellipse", "size": 15, "title": "Not Found"}, {"color": "lightblue", "font": {"color": "black"}, "id": "Schweizerischer Nationalfonds zur F?rderung der Wissenschaftlichen Forschung", "label": "Schweizerischer Nationalfonds zur F?rderung der Wissenschaftlichen Forschung", "shape": "ellipse", "size": 15, "title": "Schweizerischer Nationalfonds zur F?rderung der Wissenschaftlichen Forschung"}, {"color": "lightblue", "font": {"color": "black"}, "id": "Carnegie Mellon University", "label": "Carnegie Mellon University", "shape": "ellipse", "size": 15, "title": "Carnegie Mellon University"}, {"color": "lightblue", "font": {"color": "black"}, "id": "Division of Chemistry", "label": "Division of Chemistry", "shape": "ellipse", "size": 15, "title": "Division of Chemistry"}, {"color": "lightblue", "font": {"color": "black"}, "id": "National Science Foundation Graduate Research Fellowship Program", "label": "National Science Foundation Graduate Research Fellowship Program", "shape": "ellipse", "size": 15, "title": "National Science Foundation Graduate Research Fellowship Program"}, {"color": "lightblue", "font": {"color": "black"}, "id": "Alfred P. Sloan Foundation", "label": "Alfred P. Sloan Foundation", "shape": "ellipse", "size": 15, "title": "Alfred P. Sloan Foundation"}, {"color": "lightblue", "font": {"color": "black"}, "id": "Division of Atmospheric and Geospace Sciences", "label": "Division of Atmospheric and Geospace Sciences", "shape": "ellipse", "size": 15, "title": "Division of Atmospheric and Geospace Sciences"}, {"color": "lightblue", "font": {"color": "black"}, "id": "Canadian Institutes of Health Research", "label": "Canadian Institutes of Health Research", "shape": "ellipse", "size": 15, "title": "Canadian Institutes of Health Research"}, {"color": "lightblue", "font": {"color": "black"}, "id": "University of Texas System", "label": "University of Texas System", "shape": "ellipse", "size": 15, "title": "University of Texas System"}, {"color": "lightblue", "font": {"color": "black"}, "id": "Canada Research Chairs", "label": "Canada Research Chairs", "shape": "ellipse", "size": 15, "title": "Canada Research Chairs"}, {"color": "lightblue", "font": {"color": "black"}, "id": "Environment and Health Fund", "label": "Environment and Health Fund", "shape": "ellipse", "size": 15, "title": "Environment and Health Fund"}, {"color": "lightblue", "font": {"color": "black"}, "id": "National Oceanic and Atmospheric Administration", "label": "National Oceanic and Atmospheric Administration", "shape": "ellipse", "size": 15, "title": "National Oceanic and Atmospheric Administration"}, {"color": "lightblue", "font": {"color": "black"}, "id": "New York State Energy Research and Development Authority", "label": "New York State Energy Research and Development Authority", "shape": "ellipse", "size": 15, "title": "New York State Energy Research and Development Authority"}, {"color": "lightblue", "font": {"color": "black"}, "id": "National Institute of Standards and Technology", "label": "National Institute of Standards and Technology", "shape": "ellipse", "size": 15, "title": "National Institute of Standards and Technology"}]);
+                  edges = new vis.DataSet([{"from": "Columbia University", "title": "Appearances: 1", "to": "University of California, Riverside", "width": 1}, {"from": "Columbia University", "title": "Appearances: 1", "to": "University of Central Florida", "width": 1}, {"from": "Columbia University", "title": "Appearances: 2", "to": "National Science Foundation", "width": 2}, {"from": "Columbia University", "title": "Appearances: 2", "to": "National Science Foundation Graduate Research Fellowship Program", "width": 2}, {"from": "Columbia University", "title": "Appearances: 1", "to": "Massachusetts Institute of Technology", "width": 1}, {"from": "Columbia University", "title": "Appearances: 1", "to": "Woods Hole Oceanographic Institution", "width": 1}, {"from": "Columbia University", "title": "Appearances: 2", "to": "National Aeronautics and Space Administration", "width": 2}, {"from": "Columbia University", "title": "Appearances: 1", "to": "MathWorks", "width": 1}, {"from": "Columbia University", "title": "Appearances: 17", "to": "National Institute of Environmental Health Sciences", "width": 17}, {"from": "Columbia University", "title": "Appearances: 6", "to": "National Center for Advancing Translational Sciences", "width": 6}, {"from": "Columbia University", "title": "Appearances: 6", "to": "Nuclear Energy University Program", "width": 6}, {"from": "Columbia University", "title": "Appearances: 6", "to": "NIH Office of the Director", "width": 6}, {"from": "Columbia University", "title": "Appearances: 6", "to": "National Institute on Aging", "width": 6}, {"from": "Columbia University", "title": "Appearances: 6", "to": "National Institute of General Medical Sciences", "width": 6}, {"from": "Columbia University", "title": "Appearances: 6", "to": "RECETOX Pr?rodovedeck? Fakulty Masarykovy Univerzity", "width": 6}, {"from": "Columbia University", "title": "Appearances: 6", "to": "Svenska Forskningsr?det Formas", "width": 6}, {"from": "Columbia University", "title": "Appearances: 6", "to": "Vetenskapsr?det", "width": 6}, {"from": "Columbia University", "title": "Appearances: 6", "to": "European Research Council", "width": 6}, {"from": "Columbia University", "title": "Appearances: 6", "to": "European Commission", "width": 6}, {"from": "Columbia University", "title": "Appearances: 6", "to": "University of North Carolina at Chapel Hill", "width": 6}, {"from": "Columbia University", "title": "Appearances: 6", "to": "Horizon 2020 Framework Programme", "width": 6}, {"from": "Columbia University", "title": "Appearances: 1", "to": "Not Found", "width": 1}, {"from": "Columbia University", "title": "Appearances: 1", "to": "Schweizerischer Nationalfonds zur F?rderung der Wissenschaftlichen Forschung", "width": 1}, {"from": "Columbia University", "title": "Appearances: 1", "to": "Carnegie Mellon University", "width": 1}, {"from": "Columbia University", "title": "Appearances: 1", "to": "Division of Chemistry", "width": 1}, {"from": "Columbia University", "title": "Appearances: 1", "to": "Alfred P. Sloan Foundation", "width": 1}, {"from": "Columbia University", "title": "Appearances: 1", "to": "Division of Atmospheric and Geospace Sciences", "width": 1}, {"from": "Columbia University", "title": "Appearances: 3", "to": "Canadian Institutes of Health Research", "width": 3}, {"from": "Columbia University", "title": "Appearances: 3", "to": "University of Texas System", "width": 3}, {"from": "Columbia University", "title": "Appearances: 3", "to": "Canada Research Chairs", "width": 3}, {"from": "Columbia University", "title": "Appearances: 7", "to": "Environment and Health Fund", "width": 7}, {"from": "Columbia University", "title": "Appearances: 3", "to": "National Oceanic and Atmospheric Administration", "width": 3}, {"from": "Columbia University", "title": "Appearances: 3", "to": "New York State Energy Research and Development Authority", "width": 3}, {"from": "Columbia University", "title": "Appearances: 1", "to": "National Institute of Standards and Technology", "width": 1}]);
+
+                  nodeColors = {};
+                  allNodes = nodes.get({ returnType: "Object" });
+                  for (nodeId in allNodes) {
+                    nodeColors[nodeId] = allNodes[nodeId].color;
+                  }
+                  allEdges = edges.get({ returnType: "Object" });
+                  // adding nodes and edges to the graph
+                  data = {nodes: nodes, edges: edges};
+
+                  var options = {
+    "configure": {
+        "enabled": false
+    },
+    "edges": {
+        "color": {
+            "inherit": true
+        },
+        "smooth": {
+            "enabled": true,
+            "type": "dynamic"
+        }
+    },
+    "interaction": {
+        "dragNodes": true,
+        "hideEdgesOnDrag": false,
+        "hideNodesOnDrag": false
+    },
+    "physics": {
+        "barnesHut": {
+            "avoidOverlap": 0,
+            "centralGravity": 0.3,
+            "damping": 0.09,
+            "gravitationalConstant": -500,
+            "springConstant": 0.002,
+            "springLength": 60
+        },
+        "enabled": true,
+        "minVelocity": 0.75,
+        "stabilization": {
+            "enabled": true,
+            "fit": true,
+            "iterations": 1000,
+            "onlyDynamicEdges": false,
+            "updateInterval": 50
+        }
+    }
+};
+
+                  
+
+
+                  
+
+                  network = new vis.Network(container, data, options);
+
+                  
+
+                  
+
+                  
+
+
+                  
+
+                  return network;
+
+              }
+              drawGraph();
+        </script>
+    </body>
+</html>

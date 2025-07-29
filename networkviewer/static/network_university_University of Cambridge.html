@@ -1,0 +1,164 @@
+<html>
+    <head>
+        <meta charset="utf-8">
+        
+            <script src="lib/bindings/utils.js"></script>
+            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.2/dist/dist/vis-network.min.css" integrity="sha512-WgxfT5LWjfszlPHXRmBWHkV2eceiWTOBvrKCNbdgDYTHrT2AeLCGbF4sZlZw3UMN3WtL0tGUoIAKsu8mllg/XA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.2/dist/vis-network.min.js" integrity="sha512-LnvoEWDFrqGHlHmDD2101OrLcbsfkrzoSpvtSQtxK3RMnRV0eOkhhBN2dXHKRrUU8p2DGRTk35n4O8nWSVe1mQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+            
+        
+<center>
+<h1></h1>
+</center>
+
+<!-- <link rel="stylesheet" href="../node_modules/vis/dist/vis.min.css" type="text/css" />
+<script type="text/javascript" src="../node_modules/vis/dist/vis.js"> </script>-->
+        <link
+          href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/css/bootstrap.min.css"
+          rel="stylesheet"
+          integrity="sha384-eOJMYsd53ii+scO/bJGFsiCZc+5NDVN2yr8+0RDqr0Ql0h+rP48ckxlpbzKgwra6"
+          crossorigin="anonymous"
+        />
+        <script
+          src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.bundle.min.js"
+          integrity="sha384-JEW9xMcG8R+pH31jmWH6WWP0WintQrMb4s7ZOdauHnUtxwoG2vI5DkLtS3qm9Ekf"
+          crossorigin="anonymous"
+        ></script>
+
+
+        <center>
+          <h1></h1>
+        </center>
+        <style type="text/css">
+
+             #mynetwork {
+                 width: 100%;
+                 height: 600px;
+                 background-color: #ffffff;
+                 border: 1px solid lightgray;
+                 position: relative;
+                 float: left;
+             }
+
+             
+
+             
+
+             
+        </style>
+    </head>
+
+
+    <body>
+        <div class="card" style="width: 100%">
+            
+            
+            <div id="mynetwork" class="card-body"></div>
+        </div>
+
+        
+        
+
+        <script type="text/javascript">
+
+              // initialize global variables.
+              var edges;
+              var nodes;
+              var allNodes;
+              var allEdges;
+              var nodeColors;
+              var originalNodes;
+              var network;
+              var container;
+              var options, data;
+              var filter = {
+                  item : '',
+                  property : '',
+                  value : []
+              };
+
+              
+
+              
+
+              // This method is responsible for drawing the graph, returns the drawn network
+              function drawGraph() {
+                  var container = document.getElementById('mynetwork');
+
+                  
+
+                  // parsing and collecting nodes and edges from the python
+                  nodes = new vis.DataSet([{"color": "red", "font": {"color": "black"}, "id": "University of Cambridge", "label": "University of Cambridge", "shape": "ellipse", "size": 55}, {"color": "lightblue", "font": {"color": "black"}, "id": "HORIZON EUROPE European Research Council", "label": "HORIZON EUROPE European Research Council", "shape": "ellipse", "size": 15, "title": "HORIZON EUROPE European Research Council"}, {"color": "lightblue", "font": {"color": "black"}, "id": "China Scholarship Council", "label": "China Scholarship Council", "shape": "ellipse", "size": 15, "title": "China Scholarship Council"}, {"color": "lightblue", "font": {"color": "black"}, "id": "Research Councils UK", "label": "Research Councils UK", "shape": "ellipse", "size": 15, "title": "Research Councils UK"}, {"color": "lightblue", "font": {"color": "black"}, "id": "Cambridge Philosophical Society", "label": "Cambridge Philosophical Society", "shape": "ellipse", "size": 15, "title": "Cambridge Philosophical Society"}, {"color": "lightblue", "font": {"color": "black"}, "id": "Engineering and Physical Sciences Research Council", "label": "Engineering and Physical Sciences Research Council", "shape": "ellipse", "size": 15, "title": "Engineering and Physical Sciences Research Council"}, {"color": "lightblue", "font": {"color": "black"}, "id": "Japan Society for the Promotion of Science", "label": "Japan Society for the Promotion of Science", "shape": "ellipse", "size": 15, "title": "Japan Society for the Promotion of Science"}, {"color": "lightblue", "font": {"color": "black"}, "id": "Environmental Restoration and Conservation Agency", "label": "Environmental Restoration and Conservation Agency", "shape": "ellipse", "size": 15, "title": "Environmental Restoration and Conservation Agency"}, {"color": "lightblue", "font": {"color": "black"}, "id": "Royal Society", "label": "Royal Society", "shape": "ellipse", "size": 15, "title": "Royal Society"}, {"color": "lightblue", "font": {"color": "black"}, "id": "Natural Environment Research Council", "label": "Natural Environment Research Council", "shape": "ellipse", "size": 15, "title": "Natural Environment Research Council"}, {"color": "lightblue", "font": {"color": "black"}, "id": "King\u0027s College Cambridge, University of Cambridge", "label": "King\u0027s College Cambridge, University of Cambridge", "shape": "ellipse", "size": 15, "title": "King\u0027s College Cambridge, University of Cambridge"}, {"color": "lightblue", "font": {"color": "black"}, "id": "Agence Nationale de la Recherche", "label": "Agence Nationale de la Recherche", "shape": "ellipse", "size": 15, "title": "Agence Nationale de la Recherche"}, {"color": "lightblue", "font": {"color": "black"}, "id": "Institut national des sciences de l\u0027Univers", "label": "Institut national des sciences de l\u0027Univers", "shape": "ellipse", "size": 15, "title": "Institut national des sciences de l\u0027Univers"}, {"color": "lightblue", "font": {"color": "black"}, "id": "Centre national d\u0027?tudes spatiales", "label": "Centre national d\u0027?tudes spatiales", "shape": "ellipse", "size": 15, "title": "Centre national d\u0027?tudes spatiales"}, {"color": "lightblue", "font": {"color": "black"}, "id": "National Research Foundation", "label": "National Research Foundation", "shape": "ellipse", "size": 15, "title": "National Research Foundation"}, {"color": "lightblue", "font": {"color": "black"}, "id": "Programme National de T?l?detection Spatiale", "label": "Programme National de T?l?detection Spatiale", "shape": "ellipse", "size": 15, "title": "Programme National de T?l?detection Spatiale"}, {"color": "lightblue", "font": {"color": "black"}, "id": "C-THRU: Carbon clarity in the global petrochemical supply chain", "label": "C-THRU: Carbon clarity in the global petrochemical supply chain", "shape": "ellipse", "size": 15, "title": "C-THRU: Carbon clarity in the global petrochemical supply chain"}, {"color": "lightblue", "font": {"color": "black"}, "id": "Guangdong Provincial Department of Science and Technology", "label": "Guangdong Provincial Department of Science and Technology", "shape": "ellipse", "size": 15, "title": "Guangdong Provincial Department of Science and Technology"}, {"color": "lightblue", "font": {"color": "black"}, "id": "Ministry of Science and Technology of the People\u0027s Republic of China", "label": "Ministry of Science and Technology of the People\u0027s Republic of China", "shape": "ellipse", "size": 15, "title": "Ministry of Science and Technology of the People\u0027s Republic of China"}, {"color": "lightblue", "font": {"color": "black"}, "id": "Science, Technology and Innovation Commission of Shenzhen Municipality", "label": "Science, Technology and Innovation Commission of Shenzhen Municipality", "shape": "ellipse", "size": 15, "title": "Science, Technology and Innovation Commission of Shenzhen Municipality"}, {"color": "lightblue", "font": {"color": "black"}, "id": "Department of Education of Guangdong Province", "label": "Department of Education of Guangdong Province", "shape": "ellipse", "size": 15, "title": "Department of Education of Guangdong Province"}, {"color": "lightblue", "font": {"color": "black"}, "id": "Southern University of Science and Technology", "label": "Southern University of Science and Technology", "shape": "ellipse", "size": 15, "title": "Southern University of Science and Technology"}, {"color": "lightblue", "font": {"color": "black"}, "id": "National Natural Science Foundation of China", "label": "National Natural Science Foundation of China", "shape": "ellipse", "size": 15, "title": "National Natural Science Foundation of China"}, {"color": "lightblue", "font": {"color": "black"}, "id": "Shenzhen Key Laboratory of Precision Measurement and Early Warning Technology for Urban Environmental Health Risks, Southern University of Science and Technology", "label": "Shenzhen Key Laboratory of Precision Measurement and Early Warning Technology for Urban Environmental Health Risks, Southern University of Science and Technology", "shape": "ellipse", "size": 15, "title": "Shenzhen Key Laboratory of Precision Measurement and Early Warning Technology for Urban Environmental Health Risks, Southern University of Science and Technology"}]);
+                  edges = new vis.DataSet([{"from": "University of Cambridge", "title": "Appearances: 1", "to": "HORIZON EUROPE European Research Council", "width": 1}, {"from": "University of Cambridge", "title": "Appearances: 1", "to": "China Scholarship Council", "width": 1}, {"from": "University of Cambridge", "title": "Appearances: 3", "to": "Research Councils UK", "width": 3}, {"from": "University of Cambridge", "title": "Appearances: 3", "to": "Cambridge Philosophical Society", "width": 3}, {"from": "University of Cambridge", "title": "Appearances: 3", "to": "King\u0027s College Cambridge, University of Cambridge", "width": 3}, {"from": "University of Cambridge", "title": "Appearances: 2", "to": "Engineering and Physical Sciences Research Council", "width": 2}, {"from": "University of Cambridge", "title": "Appearances: 2", "to": "Japan Society for the Promotion of Science", "width": 2}, {"from": "University of Cambridge", "title": "Appearances: 2", "to": "Environmental Restoration and Conservation Agency", "width": 2}, {"from": "University of Cambridge", "title": "Appearances: 1", "to": "Royal Society", "width": 1}, {"from": "University of Cambridge", "title": "Appearances: 1", "to": "Natural Environment Research Council", "width": 1}, {"from": "University of Cambridge", "title": "Appearances: 5", "to": "Agence Nationale de la Recherche", "width": 5}, {"from": "University of Cambridge", "title": "Appearances: 5", "to": "Institut national des sciences de l\u0027Univers", "width": 5}, {"from": "University of Cambridge", "title": "Appearances: 5", "to": "Centre national d\u0027?tudes spatiales", "width": 5}, {"from": "University of Cambridge", "title": "Appearances: 5", "to": "National Research Foundation", "width": 5}, {"from": "University of Cambridge", "title": "Appearances: 5", "to": "Programme National de T?l?detection Spatiale", "width": 5}, {"from": "University of Cambridge", "title": "Appearances: 1", "to": "C-THRU: Carbon clarity in the global petrochemical supply chain", "width": 1}, {"from": "University of Cambridge", "title": "Appearances: 1", "to": "Guangdong Provincial Department of Science and Technology", "width": 1}, {"from": "University of Cambridge", "title": "Appearances: 1", "to": "Ministry of Science and Technology of the People\u0027s Republic of China", "width": 1}, {"from": "University of Cambridge", "title": "Appearances: 1", "to": "Science, Technology and Innovation Commission of Shenzhen Municipality", "width": 1}, {"from": "University of Cambridge", "title": "Appearances: 1", "to": "Department of Education of Guangdong Province", "width": 1}, {"from": "University of Cambridge", "title": "Appearances: 1", "to": "Southern University of Science and Technology", "width": 1}, {"from": "University of Cambridge", "title": "Appearances: 1", "to": "Shenzhen Key Laboratory of Precision Measurement and Early Warning Technology for Urban Environmental Health Risks, Southern University of Science and Technology", "width": 1}, {"from": "University of Cambridge", "title": "Appearances: 1", "to": "National Natural Science Foundation of China", "width": 1}]);
+
+                  nodeColors = {};
+                  allNodes = nodes.get({ returnType: "Object" });
+                  for (nodeId in allNodes) {
+                    nodeColors[nodeId] = allNodes[nodeId].color;
+                  }
+                  allEdges = edges.get({ returnType: "Object" });
+                  // adding nodes and edges to the graph
+                  data = {nodes: nodes, edges: edges};
+
+                  var options = {
+    "configure": {
+        "enabled": false
+    },
+    "edges": {
+        "color": {
+            "inherit": true
+        },
+        "smooth": {
+            "enabled": true,
+            "type": "dynamic"
+        }
+    },
+    "interaction": {
+        "dragNodes": true,
+        "hideEdgesOnDrag": false,
+        "hideNodesOnDrag": false
+    },
+    "physics": {
+        "barnesHut": {
+            "avoidOverlap": 0,
+            "centralGravity": 0.3,
+            "damping": 0.09,
+            "gravitationalConstant": -500,
+            "springConstant": 0.002,
+            "springLength": 60
+        },
+        "enabled": true,
+        "minVelocity": 0.75,
+        "stabilization": {
+            "enabled": true,
+            "fit": true,
+            "iterations": 1000,
+            "onlyDynamicEdges": false,
+            "updateInterval": 50
+        }
+    }
+};
+
+                  
+
+
+                  
+
+                  network = new vis.Network(container, data, options);
+
+                  
+
+                  
+
+                  
+
+
+                  
+
+                  return network;
+
+              }
+              drawGraph();
+        </script>
+    </body>
+</html>

@@ -1,0 +1,178 @@
+<html>
+    <head>
+        <meta charset="utf-8">
+        
+            <script src="lib/bindings/utils.js"></script>
+            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.2/dist/dist/vis-network.min.css" integrity="sha512-WgxfT5LWjfszlPHXRmBWHkV2eceiWTOBvrKCNbdgDYTHrT2AeLCGbF4sZlZw3UMN3WtL0tGUoIAKsu8mllg/XA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.2/dist/vis-network.min.js" integrity="sha512-LnvoEWDFrqGHlHmDD2101OrLcbsfkrzoSpvtSQtxK3RMnRV0eOkhhBN2dXHKRrUU8p2DGRTk35n4O8nWSVe1mQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+            
+        
+<center>
+<h1></h1>
+</center>
+
+<!-- <link rel="stylesheet" href="../node_modules/vis/dist/vis.min.css" type="text/css" />
+<script type="text/javascript" src="../node_modules/vis/dist/vis.js"> </script>-->
+        <link
+          href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/css/bootstrap.min.css"
+          rel="stylesheet"
+          integrity="sha384-eOJMYsd53ii+scO/bJGFsiCZc+5NDVN2yr8+0RDqr0Ql0h+rP48ckxlpbzKgwra6"
+          crossorigin="anonymous"
+        />
+        <script
+          src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.bundle.min.js"
+          integrity="sha384-JEW9xMcG8R+pH31jmWH6WWP0WintQrMb4s7ZOdauHnUtxwoG2vI5DkLtS3qm9Ekf"
+          crossorigin="anonymous"
+        ></script>
+
+
+        <center>
+          <h1></h1>
+        </center>
+        <style type="text/css">
+
+             #mynetwork {
+                 width: 100%;
+                 height: 600px;
+                 background-color: #ffffff;
+                 border: 1px solid lightgray;
+                 position: relative;
+                 float: left;
+             }
+
+             
+
+             
+
+             
+        </style>
+    </head>
+
+
+    <body>
+        <div class="card" style="width: 100%">
+            
+            
+            <div id="mynetwork" class="card-body"></div>
+        </div>
+
+        
+        
+
+        <script type="text/javascript">
+
+              // initialize global variables.
+              var edges;
+              var nodes;
+              var allNodes;
+              var allEdges;
+              var nodeColors;
+              var originalNodes;
+              var network;
+              var container;
+              var options, data;
+              var filter = {
+                  item : '',
+                  property : '',
+                  value : []
+              };
+
+              
+
+              
+
+              // This method is responsible for drawing the graph, returns the drawn network
+              function drawGraph() {
+                  var container = document.getElementById('mynetwork');
+
+                  
+
+                  // parsing and collecting nodes and edges from the python
+                  nodes = new vis.DataSet([{"color": "red", "font": {"color": "black"}, "id": "U.S. Department of Energy", "label": "U.S. Department of Energy", "shape": "ellipse", "size": 55}, {"color": "lightgreen", "font": {"color": "black"}, "id": "Hg", "label": "Hg", "shape": "ellipse", "title": "InChIKey: QSHDDOUJBYECFT-UHFFFAOYSA-N"}, {"color": "lightgreen", "font": {"color": "black"}, "id": "methylmercury", "label": "methylmercury", "shape": "ellipse", "title": "InChIKey: JJWSNOOGIUMOEE-UHFFFAOYSA-N"}, {"color": "lightgreen", "font": {"color": "black"}, "id": "MeHg", "label": "MeHg", "shape": "ellipse", "title": "InChIKey: DBUXSCUEGJMZAE-UHFFFAOYSA-N"}, {"color": "lightgreen", "font": {"color": "black"}, "id": "4000 m", "label": "4000 m", "shape": "ellipse", "title": "InChIKey: LOYXLMNYVHOJJJ-UHFFFAOYSA-N"}, {"color": "lightgreen", "font": {"color": "black"}, "id": "aluminum oxide", "label": "aluminum oxide", "shape": "ellipse", "title": "InChIKey: PNEYBMLMFCGWSK-UHFFFAOYSA-N"}, {"color": "lightgreen", "font": {"color": "black"}, "id": "O", "label": "O", "shape": "ellipse", "title": "InChIKey: MYMOFIZGZYHOMD-UHFFFAOYSA-N"}, {"color": "lightgreen", "font": {"color": "black"}, "id": "Al", "label": "Al", "shape": "ellipse", "title": "InChIKey: XAGFODPZIPBFFR-UHFFFAOYSA-N"}, {"color": "lightgreen", "font": {"color": "black"}, "id": "NaOH", "label": "NaOH", "shape": "ellipse", "title": "InChIKey: HEMHJVSKTPXQMS-UHFFFAOYSA-M"}, {"color": "lightgreen", "font": {"color": "black"}, "id": "Al 2p and O 1s", "label": "Al 2p and O 1s", "shape": "ellipse", "title": "InChIKey: Not Found"}, {"color": "lightgreen", "font": {"color": "black"}, "id": "boehmite", "label": "boehmite", "shape": "ellipse", "title": "InChIKey: FAHBNUUHRFUEAI-UHFFFAOYSA-M"}, {"color": "lightgreen", "font": {"color": "black"}, "id": "60Co", "label": "60Co", "shape": "ellipse", "title": "InChIKey: GUTLYIVDDKVIGB-OUBTZVSYSA-N"}, {"color": "lightgreen", "font": {"color": "black"}, "id": "ACRIDICON", "label": "ACRIDICON", "shape": "ellipse", "title": "InChIKey: Not Found"}, {"color": "lightgreen", "font": {"color": "black"}, "id": "isoprene-epoxydiol", "label": "isoprene-epoxydiol", "shape": "ellipse", "title": "InChIKey: Not Found"}, {"color": "lightgreen", "font": {"color": "black"}, "id": "2-MT", "label": "2-MT", "shape": "ellipse", "title": "InChIKey: Not Found"}, {"color": "lightgreen", "font": {"color": "black"}, "id": "2-methyltetrols", "label": "2-methyltetrols", "shape": "ellipse", "title": "InChIKey: Not Found"}, {"color": "lightgreen", "font": {"color": "black"}, "id": "\u03b1HNO3", "label": "\u03b1HNO3", "shape": "ellipse", "title": "InChIKey: Not Found"}, {"color": "lightgreen", "font": {"color": "black"}, "id": "nitrate", "label": "nitrate", "shape": "ellipse", "title": "InChIKey: NHNBFGGVMKEFGY-UHFFFAOYSA-N"}, {"color": "lightgreen", "font": {"color": "black"}, "id": "HNO3", "label": "HNO3", "shape": "ellipse", "title": "InChIKey: GRYLNZFGIOXLOG-UHFFFAOYSA-N"}, {"color": "lightgreen", "font": {"color": "black"}, "id": "NH3", "label": "NH3", "shape": "ellipse", "title": "InChIKey: QGZKDVFQNNGYKY-UHFFFAOYSA-N"}, {"color": "lightgreen", "font": {"color": "black"}, "id": "Ca carbonates", "label": "Ca carbonates", "shape": "ellipse", "title": "InChIKey: Not Found"}, {"color": "lightgreen", "font": {"color": "black"}, "id": "Ca phosphates", "label": "Ca phosphates", "shape": "ellipse", "title": "InChIKey: Not Found"}, {"color": "lightgreen", "font": {"color": "black"}, "id": "potassium", "label": "potassium", "shape": "ellipse", "title": "InChIKey: ZLMJMSJWJFRBEC-UHFFFAOYSA-N"}, {"color": "lightgreen", "font": {"color": "black"}, "id": "sulfates", "label": "sulfates", "shape": "ellipse", "title": "InChIKey: Not Found"}, {"color": "lightgreen", "font": {"color": "black"}, "id": "P", "label": "P", "shape": "ellipse", "title": "InChIKey: OAICVXFJPJFONN-UHFFFAOYSA-N"}, {"color": "lightgreen", "font": {"color": "black"}, "id": "carbonates", "label": "carbonates", "shape": "ellipse", "title": "InChIKey: BVKZGUZCCUSVTD-UHFFFAOYSA-L"}, {"color": "lightgreen", "font": {"color": "black"}, "id": "calcium", "label": "calcium", "shape": "ellipse", "title": "InChIKey: OYPRJOBELJOOCE-UHFFFAOYSA-N"}, {"color": "lightgreen", "font": {"color": "black"}, "id": "calcite", "label": "calcite", "shape": "ellipse", "title": "InChIKey: VTYYLEPIZMXCLO-UHFFFAOYSA-L"}, {"color": "lightgreen", "font": {"color": "black"}, "id": "aldehydes", "label": "aldehydes", "shape": "ellipse", "title": "InChIKey: WSFSSNUMVMOOMR-UHFFFAOYSA-N"}, {"color": "lightgreen", "font": {"color": "black"}, "id": "carbon", "label": "carbon", "shape": "ellipse", "title": "InChIKey: OKTJSMMVPCPJKN-UHFFFAOYSA-N"}, {"color": "lightgreen", "font": {"color": "black"}, "id": "squalene", "label": "squalene", "shape": "ellipse", "title": "InChIKey: YYGNTYWPHWGJRM-AAJYLUCBSA-N"}, {"color": "lightgreen", "font": {"color": "black"}, "id": "hydroxyl", "label": "hydroxyl", "shape": "ellipse", "title": "InChIKey: TUJKJAMUKRIRHC-UHFFFAOYSA-N"}, {"color": "lightgreen", "font": {"color": "black"}, "id": "OH", "label": "OH", "shape": "ellipse", "title": "InChIKey: XLYOFNOQVPJJNP-UHFFFAOYSA-M"}, {"color": "lightgreen", "font": {"color": "black"}, "id": "secondary ozonides", "label": "secondary ozonides", "shape": "ellipse", "title": "InChIKey: Not Found"}, {"color": "lightgreen", "font": {"color": "black"}, "id": "\u03b2-hydroxy peroxy", "label": "\u03b2-hydroxy peroxy", "shape": "ellipse", "title": "InChIKey: Not Found"}, {"color": "lightgreen", "font": {"color": "black"}, "id": "para-hydroxybenzoate", "label": "para-hydroxybenzoate", "shape": "ellipse", "title": "InChIKey: FJKROLUGYXJWQN-UHFFFAOYSA-M"}, {"color": "lightgreen", "font": {"color": "black"}, "id": "Bromide", "label": "Bromide", "shape": "ellipse", "title": "InChIKey: CPELXLSAUQHCOX-UHFFFAOYSA-M"}, {"color": "lightgreen", "font": {"color": "black"}, "id": "halide", "label": "halide", "shape": "ellipse", "title": "InChIKey: Not Found"}, {"color": "lightgreen", "font": {"color": "black"}, "id": "halides", "label": "halides", "shape": "ellipse", "title": "InChIKey: Not Found"}, {"color": "lightgreen", "font": {"color": "black"}, "id": "halogen", "label": "halogen", "shape": "ellipse", "title": "InChIKey: Not Found"}, {"color": "lightgreen", "font": {"color": "black"}, "id": "chloride", "label": "chloride", "shape": "ellipse", "title": "InChIKey: VEXZGXHMUGYJMC-UHFFFAOYSA-M"}, {"color": "lightgreen", "font": {"color": "black"}, "id": "benzoate", "label": "benzoate", "shape": "ellipse", "title": "InChIKey: WPYMKLBDIGXBTP-UHFFFAOYSA-M"}, {"color": "lightgreen", "font": {"color": "black"}, "id": "hypohalous acids", "label": "hypohalous acids", "shape": "ellipse", "title": "InChIKey: Not Found"}, {"color": "lightgreen", "font": {"color": "black"}, "id": "CO2", "label": "CO2", "shape": "ellipse", "title": "InChIKey: CURLTUGMZLYLDI-UHFFFAOYSA-N"}, {"color": "lightgreen", "font": {"color": "black"}, "id": "ankerite-siderite-aragonite", "label": "ankerite-siderite-aragonite", "shape": "ellipse", "title": "InChIKey: Not Found"}, {"color": "lightgreen", "font": {"color": "black"}, "id": "Pb2+", "label": "Pb2+", "shape": "ellipse", "title": "InChIKey: RVPVRDXYQKGNMQ-UHFFFAOYSA-N"}, {"color": "lightgreen", "font": {"color": "black"}, "id": "Pb", "label": "Pb", "shape": "ellipse", "title": "InChIKey: WABPQHHGFIMREM-UHFFFAOYSA-N"}, {"color": "lightgreen", "font": {"color": "black"}, "id": "secondary heteroepitaxial Pb-carbonate", "label": "secondary heteroepitaxial Pb-carbonate", "shape": "ellipse", "title": "InChIKey: Not Found"}, {"color": "lightgreen", "font": {"color": "black"}, "id": "acetic acid", "label": "acetic acid", "shape": "ellipse", "title": "InChIKey: QTBSBXVTEAMEQO-UHFFFAOYSA-N"}, {"color": "lightgreen", "font": {"color": "black"}, "id": "Pu(VI)-citrate", "label": "Pu(VI)-citrate", "shape": "ellipse", "title": "InChIKey: Not Found"}, {"color": "lightgreen", "font": {"color": "black"}, "id": "PuO2(HcitH)(citH)3", "label": "PuO2(HcitH)(citH)3", "shape": "ellipse", "title": "InChIKey: Not Found"}, {"color": "lightgreen", "font": {"color": "black"}, "id": "Pu(VI)", "label": "Pu(VI)", "shape": "ellipse", "title": "InChIKey: Not Found"}, {"color": "lightgreen", "font": {"color": "black"}, "id": "NaCl", "label": "NaCl", "shape": "ellipse", "title": "InChIKey: FAPWRFPIFSIZLT-UHFFFAOYSA-M"}, {"color": "lightgreen", "font": {"color": "black"}, "id": "Pu(IV)", "label": "Pu(IV)", "shape": "ellipse", "title": "InChIKey: Not Found"}, {"color": "lightgreen", "font": {"color": "black"}, "id": "plutonium", "label": "plutonium", "shape": "ellipse", "title": "InChIKey: OYEHPCDNVJXUIW-UHFFFAOYSA-N"}, {"color": "lightgreen", "font": {"color": "black"}, "id": "citrate", "label": "citrate", "shape": "ellipse", "title": "InChIKey: KRKNYBCHXYNGOX-UHFFFAOYSA-K"}, {"color": "lightgreen", "font": {"color": "black"}, "id": "O2(g)", "label": "O2(g)", "shape": "ellipse", "title": "InChIKey: Not Found"}, {"color": "lightgreen", "font": {"color": "black"}, "id": "(PuO2)m(citH-k)n(OH)x2m(3+k)n-x", "label": "(PuO2)m(citH-k)n(OH)x2m(3+k)n-x", "shape": "ellipse", "title": "InChIKey: Not Found"}, {"color": "lightgreen", "font": {"color": "black"}, "id": "Pu(III)", "label": "Pu(III)", "shape": "ellipse", "title": "InChIKey: Not Found"}]);
+                  edges = new vis.DataSet([{"from": "U.S. Department of Energy", "to": "Al 2p and O 1s"}, {"from": "U.S. Department of Energy", "to": "ACRIDICON"}, {"from": "U.S. Department of Energy", "to": "isoprene-epoxydiol"}, {"from": "U.S. Department of Energy", "to": "2-MT"}, {"from": "U.S. Department of Energy", "to": "2-methyltetrols"}, {"from": "U.S. Department of Energy", "to": "\u03b1HNO3"}, {"from": "U.S. Department of Energy", "to": "Ca carbonates"}, {"from": "U.S. Department of Energy", "to": "Ca phosphates"}, {"from": "U.S. Department of Energy", "to": "sulfates"}, {"from": "U.S. Department of Energy", "to": "secondary ozonides"}, {"from": "U.S. Department of Energy", "to": "\u03b2-hydroxy peroxy"}, {"from": "U.S. Department of Energy", "to": "halide"}, {"from": "U.S. Department of Energy", "to": "halides"}, {"from": "U.S. Department of Energy", "to": "halogen"}, {"from": "U.S. Department of Energy", "to": "hypohalous acids"}, {"from": "U.S. Department of Energy", "to": "ankerite-siderite-aragonite"}, {"from": "U.S. Department of Energy", "to": "secondary heteroepitaxial Pb-carbonate"}, {"from": "U.S. Department of Energy", "to": "Pu(VI)-citrate"}, {"from": "U.S. Department of Energy", "to": "PuO2(HcitH)(citH)3"}, {"from": "U.S. Department of Energy", "to": "Pu(VI)"}, {"from": "U.S. Department of Energy", "to": "Pu(IV)"}, {"from": "U.S. Department of Energy", "to": "O2(g)"}, {"from": "U.S. Department of Energy", "to": "(PuO2)m(citH-k)n(OH)x2m(3+k)n-x"}, {"from": "U.S. Department of Energy", "to": "Pu(III)"}, {"from": "U.S. Department of Energy", "title": "Appearances: 2", "to": "Hg", "width": 2}, {"from": "U.S. Department of Energy", "title": "Appearances: 1", "to": "methylmercury", "width": 1}, {"from": "U.S. Department of Energy", "title": "Appearances: 1", "to": "MeHg", "width": 1}, {"from": "U.S. Department of Energy", "title": "Appearances: 1", "to": "4000 m", "width": 1}, {"from": "U.S. Department of Energy", "title": "Appearances: 1", "to": "aluminum oxide", "width": 1}, {"from": "U.S. Department of Energy", "title": "Appearances: 2", "to": "O", "width": 2}, {"from": "U.S. Department of Energy", "title": "Appearances: 1", "to": "Al", "width": 1}, {"from": "U.S. Department of Energy", "title": "Appearances: 1", "to": "NaOH", "width": 1}, {"from": "U.S. Department of Energy", "title": "Appearances: 1", "to": "boehmite", "width": 1}, {"from": "U.S. Department of Energy", "title": "Appearances: 1", "to": "60Co", "width": 1}, {"from": "U.S. Department of Energy", "title": "Appearances: 1", "to": "nitrate", "width": 1}, {"from": "U.S. Department of Energy", "title": "Appearances: 1", "to": "HNO3", "width": 1}, {"from": "U.S. Department of Energy", "title": "Appearances: 1", "to": "NH3", "width": 1}, {"from": "U.S. Department of Energy", "title": "Appearances: 1", "to": "potassium", "width": 1}, {"from": "U.S. Department of Energy", "title": "Appearances: 2", "to": "P", "width": 2}, {"from": "U.S. Department of Energy", "title": "Appearances: 2", "to": "carbonates", "width": 2}, {"from": "U.S. Department of Energy", "title": "Appearances: 2", "to": "calcium", "width": 2}, {"from": "U.S. Department of Energy", "title": "Appearances: 1", "to": "calcite", "width": 1}, {"from": "U.S. Department of Energy", "title": "Appearances: 1", "to": "aldehydes", "width": 1}, {"from": "U.S. Department of Energy", "title": "Appearances: 2", "to": "carbon", "width": 2}, {"from": "U.S. Department of Energy", "title": "Appearances: 1", "to": "squalene", "width": 1}, {"from": "U.S. Department of Energy", "title": "Appearances: 1", "to": "hydroxyl", "width": 1}, {"from": "U.S. Department of Energy", "title": "Appearances: 1", "to": "OH", "width": 1}, {"from": "U.S. Department of Energy", "title": "Appearances: 1", "to": "para-hydroxybenzoate", "width": 1}, {"from": "U.S. Department of Energy", "title": "Appearances: 1", "to": "Bromide", "width": 1}, {"from": "U.S. Department of Energy", "title": "Appearances: 1", "to": "chloride", "width": 1}, {"from": "U.S. Department of Energy", "title": "Appearances: 1", "to": "benzoate", "width": 1}, {"from": "U.S. Department of Energy", "title": "Appearances: 1", "to": "CO2", "width": 1}, {"from": "U.S. Department of Energy", "title": "Appearances: 1", "to": "Pb2+", "width": 1}, {"from": "U.S. Department of Energy", "title": "Appearances: 1", "to": "Pb", "width": 1}, {"from": "U.S. Department of Energy", "title": "Appearances: 1", "to": "acetic acid", "width": 1}, {"from": "U.S. Department of Energy", "title": "Appearances: 1", "to": "NaCl", "width": 1}, {"from": "U.S. Department of Energy", "title": "Appearances: 1", "to": "plutonium", "width": 1}, {"from": "U.S. Department of Energy", "title": "Appearances: 1", "to": "citrate", "width": 1}]);
+
+                  nodeColors = {};
+                  allNodes = nodes.get({ returnType: "Object" });
+                  for (nodeId in allNodes) {
+                    nodeColors[nodeId] = allNodes[nodeId].color;
+                  }
+                  allEdges = edges.get({ returnType: "Object" });
+                  // adding nodes and edges to the graph
+                  data = {nodes: nodes, edges: edges};
+
+                  var options = {
+    "configure": {
+        "enabled": false
+    },
+    "edges": {
+        "color": {
+            "inherit": true
+        },
+        "smooth": {
+            "enabled": true,
+            "type": "dynamic"
+        }
+    },
+    "interaction": {
+        "dragNodes": true,
+        "hideEdgesOnDrag": false,
+        "hideNodesOnDrag": false
+    },
+    "physics": {
+        "barnesHut": {
+            "avoidOverlap": 0,
+            "centralGravity": 0.3,
+            "damping": 0.09,
+            "gravitationalConstant": -1200,
+            "springConstant": 0.001,
+            "springLength": 120
+        },
+        "enabled": true,
+        "minVelocity": 0.75,
+        "stabilization": {
+            "enabled": true,
+            "fit": true,
+            "iterations": 1000,
+            "onlyDynamicEdges": false,
+            "updateInterval": 50
+        }
+    }
+};
+
+                  
+
+
+                  
+
+                  network = new vis.Network(container, data, options);
+
+                  
+
+                  
+
+                  
+
+
+                  
+
+                  return network;
+
+              }
+              drawGraph();
+        </script>
+    
+    <div id="study-info" style="margin-top:20px; background:#fff; color:#222; padding:10px; border-radius:8px;"></div>
+    <script type="text/javascript">
+        var companyStudyMap = {"Hg": "Microorganisms Involved in Methylmercury Demethylation and Mercury Reduction are Widely Distributed and Active in the Bathypelagic Deep Ocean Waters (DOI: 10.1021/acs.est.4c00663)", "methylmercury": "Microorganisms Involved in Methylmercury Demethylation and Mercury Reduction are Widely Distributed and Active in the Bathypelagic Deep Ocean Waters (DOI: 10.1021/acs.est.4c00663)", "MeHg": "Microorganisms Involved in Methylmercury Demethylation and Mercury Reduction are Widely Distributed and Active in the Bathypelagic Deep Ocean Waters (DOI: 10.1021/acs.est.4c00663)", "mercury": "Microorganisms Involved in Methylmercury Demethylation and Mercury Reduction are Widely Distributed and Active in the Bathypelagic Deep Ocean Waters (DOI: 10.1021/acs.est.4c00663)", "4000 m": "Microorganisms Involved in Methylmercury Demethylation and Mercury Reduction are Widely Distributed and Active in the Bathypelagic Deep Ocean Waters (DOI: 10.1021/acs.est.4c00663)", "aluminum oxide": "Effect of <sup>60</sup>Co Irradiation on Boehmite Dissolution in Caustic Solutions (DOI: 10.1021/acs.est.4c07544)", "O": "Effect of <sup>60</sup>Co Irradiation on Boehmite Dissolution in Caustic Solutions (DOI: 10.1021/acs.est.4c07544)<br>Evaluating Possible Formation Mechanisms of Criegee Intermediates during the Heterogeneous Autoxidation of Squalene (DOI: 10.1021/acs.est.4c02590)", "Al": "Effect of <sup>60</sup>Co Irradiation on Boehmite Dissolution in Caustic Solutions (DOI: 10.1021/acs.est.4c07544)", "NaOH": "Effect of <sup>60</sup>Co Irradiation on Boehmite Dissolution in Caustic Solutions (DOI: 10.1021/acs.est.4c07544)", "Al 2p and O 1s": "Effect of <sup>60</sup>Co Irradiation on Boehmite Dissolution in Caustic Solutions (DOI: 10.1021/acs.est.4c07544)", "boehmite": "Effect of <sup>60</sup>Co Irradiation on Boehmite Dissolution in Caustic Solutions (DOI: 10.1021/acs.est.4c07544)", "60Co": "Effect of <sup>60</sup>Co Irradiation on Boehmite Dissolution in Caustic Solutions (DOI: 10.1021/acs.est.4c07544)", "ACRIDICON": "Quantifying and Modeling the Impact of Phase State on the Ice Nucleation Abilities of 2-Methyltetrols as a Key Component of Secondary Organic Aerosol Derived from Isoprene Epoxydiols (DOI: 10.1021/acs.est.4c06285)", "isoprene-epoxydiol": "Quantifying and Modeling the Impact of Phase State on the Ice Nucleation Abilities of 2-Methyltetrols as a Key Component of Secondary Organic Aerosol Derived from Isoprene Epoxydiols (DOI: 10.1021/acs.est.4c06285)", "2-MT": "Quantifying and Modeling the Impact of Phase State on the Ice Nucleation Abilities of 2-Methyltetrols as a Key Component of Secondary Organic Aerosol Derived from Isoprene Epoxydiols (DOI: 10.1021/acs.est.4c06285)", "2-methyltetrols": "Quantifying and Modeling the Impact of Phase State on the Ice Nucleation Abilities of 2-Methyltetrols as a Key Component of Secondary Organic Aerosol Derived from Isoprene Epoxydiols (DOI: 10.1021/acs.est.4c06285)", "\u03b1HNO3": "The Significant Role of New Particle Composition and Morphology on the HNO<sub>3</sub>-Driven Growth of Particles down to Sub-10 nm (DOI: 10.1021/acs.est.3c09454)", "nitrate": "The Significant Role of New Particle Composition and Morphology on the HNO<sub>3</sub>-Driven Growth of Particles down to Sub-10 nm (DOI: 10.1021/acs.est.3c09454)", "HNO3": "The Significant Role of New Particle Composition and Morphology on the HNO<sub>3</sub>-Driven Growth of Particles down to Sub-10 nm (DOI: 10.1021/acs.est.3c09454)", "NH3": "The Significant Role of New Particle Composition and Morphology on the HNO<sub>3</sub>-Driven Growth of Particles down to Sub-10 nm (DOI: 10.1021/acs.est.3c09454)", "Ca carbonates": "Speciation and Aqueous Dissolution of Macronutrients in Fire Ash: Variation across Ecosystems and the Effects on Nutrient Cycling (DOI: 10.1021/acs.est.4c07101)", "Ca phosphates": "Speciation and Aqueous Dissolution of Macronutrients in Fire Ash: Variation across Ecosystems and the Effects on Nutrient Cycling (DOI: 10.1021/acs.est.4c07101)", "potassium": "Speciation and Aqueous Dissolution of Macronutrients in Fire Ash: Variation across Ecosystems and the Effects on Nutrient Cycling (DOI: 10.1021/acs.est.4c07101)", "sulfates": "Speciation and Aqueous Dissolution of Macronutrients in Fire Ash: Variation across Ecosystems and the Effects on Nutrient Cycling (DOI: 10.1021/acs.est.4c07101)", "P": "Speciation and Aqueous Dissolution of Macronutrients in Fire Ash: Variation across Ecosystems and the Effects on Nutrient Cycling (DOI: 10.1021/acs.est.4c07101)", "phosphorus": "Speciation and Aqueous Dissolution of Macronutrients in Fire Ash: Variation across Ecosystems and the Effects on Nutrient Cycling (DOI: 10.1021/acs.est.4c07101)", "carbonates": "Speciation and Aqueous Dissolution of Macronutrients in Fire Ash: Variation across Ecosystems and the Effects on Nutrient Cycling (DOI: 10.1021/acs.est.4c07101)<br>Effects of Halides on Organic Compound Degradation during Plasma Treatment of Brines (DOI: 10.1021/acs.est.3c07162)<br>3D Quantification of Pore Networks and Anthropogenic Carbon Mineralization in Stacked Basalt Reservoirs (DOI: 10.1021/acs.est.3c06163)", "calcium": "Speciation and Aqueous Dissolution of Macronutrients in Fire Ash: Variation across Ecosystems and the Effects on Nutrient Cycling (DOI: 10.1021/acs.est.4c07101)", "Ca": "Speciation and Aqueous Dissolution of Macronutrients in Fire Ash: Variation across Ecosystems and the Effects on Nutrient Cycling (DOI: 10.1021/acs.est.4c07101)", "calcite": "Speciation and Aqueous Dissolution of Macronutrients in Fire Ash: Variation across Ecosystems and the Effects on Nutrient Cycling (DOI: 10.1021/acs.est.4c07101)<br>Dynamic Surface Incorporation of Pb<sup>2+</sup> Ions at the Actively Dissolving Calcite (104) Surface (DOI: 10.1021/acs.est.4c03567)", "oxygen": "Effect of <sup>60</sup>Co Irradiation on Boehmite Dissolution in Caustic Solutions (DOI: 10.1021/acs.est.4c07544)<br>Evaluating Possible Formation Mechanisms of Criegee Intermediates during the Heterogeneous Autoxidation of Squalene (DOI: 10.1021/acs.est.4c02590)", "aldehydes": "Evaluating Possible Formation Mechanisms of Criegee Intermediates during the Heterogeneous Autoxidation of Squalene (DOI: 10.1021/acs.est.4c02590)", "carbon": "Evaluating Possible Formation Mechanisms of Criegee Intermediates during the Heterogeneous Autoxidation of Squalene (DOI: 10.1021/acs.est.4c02590)<br>Enhanced Rock Weathering for Carbon Removal\u2013Monitoring and Mitigating Potential Environmental Impacts on Agricultural Land (DOI: 10.1021/acs.est.4c02368)<br>3D Quantification of Pore Networks and Anthropogenic Carbon Mineralization in Stacked Basalt Reservoirs (DOI: 10.1021/acs.est.3c06163)", "squalene": "Evaluating Possible Formation Mechanisms of Criegee Intermediates during the Heterogeneous Autoxidation of Squalene (DOI: 10.1021/acs.est.4c02590)", "hydroxyl": "Evaluating Possible Formation Mechanisms of Criegee Intermediates during the Heterogeneous Autoxidation of Squalene (DOI: 10.1021/acs.est.4c02590)<br>Effects of Halides on Organic Compound Degradation during Plasma Treatment of Brines (DOI: 10.1021/acs.est.3c07162)", "OH": "Evaluating Possible Formation Mechanisms of Criegee Intermediates during the Heterogeneous Autoxidation of Squalene (DOI: 10.1021/acs.est.4c02590)", "secondary ozonides": "Evaluating Possible Formation Mechanisms of Criegee Intermediates during the Heterogeneous Autoxidation of Squalene (DOI: 10.1021/acs.est.4c02590)", "\u03b2-hydroxy peroxy": "Evaluating Possible Formation Mechanisms of Criegee Intermediates during the Heterogeneous Autoxidation of Squalene (DOI: 10.1021/acs.est.4c02590)", "para-hydroxybenzoate": "Effects of Halides on Organic Compound Degradation during Plasma Treatment of Brines (DOI: 10.1021/acs.est.3c07162)", "Bromide": "Effects of Halides on Organic Compound Degradation during Plasma Treatment of Brines (DOI: 10.1021/acs.est.3c07162)", "halide": "Effects of Halides on Organic Compound Degradation during Plasma Treatment of Brines (DOI: 10.1021/acs.est.3c07162)", "halides": "Effects of Halides on Organic Compound Degradation during Plasma Treatment of Brines (DOI: 10.1021/acs.est.3c07162)", "halogen": "Effects of Halides on Organic Compound Degradation during Plasma Treatment of Brines (DOI: 10.1021/acs.est.3c07162)", "chloride": "Effects of Halides on Organic Compound Degradation during Plasma Treatment of Brines (DOI: 10.1021/acs.est.3c07162)", "benzoate": "Effects of Halides on Organic Compound Degradation during Plasma Treatment of Brines (DOI: 10.1021/acs.est.3c07162)", "hypohalous acids": "Effects of Halides on Organic Compound Degradation during Plasma Treatment of Brines (DOI: 10.1021/acs.est.3c07162)", "Carbon": "Evaluating Possible Formation Mechanisms of Criegee Intermediates during the Heterogeneous Autoxidation of Squalene (DOI: 10.1021/acs.est.4c02590)<br>Enhanced Rock Weathering for Carbon Removal\u2013Monitoring and Mitigating Potential Environmental Impacts on Agricultural Land (DOI: 10.1021/acs.est.4c02368)<br>3D Quantification of Pore Networks and Anthropogenic Carbon Mineralization in Stacked Basalt Reservoirs (DOI: 10.1021/acs.est.3c06163)", "CO2": "3D Quantification of Pore Networks and Anthropogenic Carbon Mineralization in Stacked Basalt Reservoirs (DOI: 10.1021/acs.est.3c06163)<br>Dynamic Surface Incorporation of Pb<sup>2+</sup> Ions at the Actively Dissolving Calcite (104) Surface (DOI: 10.1021/acs.est.4c03567)", "carbonate": "Speciation and Aqueous Dissolution of Macronutrients in Fire Ash: Variation across Ecosystems and the Effects on Nutrient Cycling (DOI: 10.1021/acs.est.4c07101)<br>Effects of Halides on Organic Compound Degradation during Plasma Treatment of Brines (DOI: 10.1021/acs.est.3c07162)<br>3D Quantification of Pore Networks and Anthropogenic Carbon Mineralization in Stacked Basalt Reservoirs (DOI: 10.1021/acs.est.3c06163)", "ankerite-siderite-aragonite": "3D Quantification of Pore Networks and Anthropogenic Carbon Mineralization in Stacked Basalt Reservoirs (DOI: 10.1021/acs.est.3c06163)", "Pb2+": "Dynamic Surface Incorporation of Pb<sup>2+</sup> Ions at the Actively Dissolving Calcite (104) Surface (DOI: 10.1021/acs.est.4c03567)", "Pb": "Dynamic Surface Incorporation of Pb<sup>2+</sup> Ions at the Actively Dissolving Calcite (104) Surface (DOI: 10.1021/acs.est.4c03567)", "secondary heteroepitaxial Pb-carbonate": "Dynamic Surface Incorporation of Pb<sup>2+</sup> Ions at the Actively Dissolving Calcite (104) Surface (DOI: 10.1021/acs.est.4c03567)", "acetic acid": "Machine Learning for Polymer Design to Enhance Pervaporation-Based Organic Recovery (DOI: 10.1021/acs.est.4c00060)", "Pu(VI)-citrate": "No studies found for this connection", "PuO2(HcitH)(citH)3": "No studies found for this connection", "Pu(VI)": "No studies found for this connection", "NaCl": "Plutonium Speciation and Oxidation State Distributions in the Presence of Citrate (DOI: 10.1021/acs.est.4c02803)", "Pu(IV)": "No studies found for this connection", "plutonium": "Plutonium Speciation and Oxidation State Distributions in the Presence of Citrate (DOI: 10.1021/acs.est.4c02803)", "citrate": "Plutonium Speciation and Oxidation State Distributions in the Presence of Citrate (DOI: 10.1021/acs.est.4c02803)", "O2(g)": "No studies found for this connection", "(PuO2)m(citH-k)n(OH)x2m(3+k)n-x": "No studies found for this connection", "Pu(III)": "No studies found for this connection"};
+        network.on("click", function(params) {
+            if (params.nodes.length > 0) {
+                var nodeId = params.nodes[0];
+                var node = nodes.get(nodeId);
+                var studies = companyStudyMap[node.label] || "No studies found for this connection.";
+                document.getElementById("study-info").innerHTML = "<h3>Studies for " + node.label + ":</h3>" + studies;
+            }
+        });
+    </script>
+    
+</body>
+</html>

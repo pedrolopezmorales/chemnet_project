@@ -1,0 +1,78 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Chemical Network Viewer</title>
+</head>
+<body style ='background-color: white'>
+    {% include "networkviewer/tabs.html" %}
+    <div style="background-color: #0b4e86; padding: 40px 10px; color: white">
+        <h1>Chemical Network Viewer</h1>
+        <form method="post">
+        {% csrf_token %}
+        <label for="chemical">Enter Chemical Name:</label>
+        <input type="text" name="chemical" id="chemical" list="chemical-suggestions">
+        <datalist id="chemical-suggestions">
+            {% for name in all_chemical_names  %}
+                <option value="{{ name }}">{{ name }}</option>
+            {% endfor %}
+        </datalist>
+        <br>
+        <h2>Or</h2> 
+        <label for="inchikey">Enter InChIKey:</label>
+        <input type="text" name="inchikey" id="inchikey">
+        <br><br>
+        <div style="margin-top: 20px;">
+        <h3 style="color:white;">Try:
+            {% for name, inchikey in example_chemicals %}
+                {% if inchikey %}
+                    <a href="#" onclick="fillAndSubmit('{{ name }}', '{{ inchikey }}'); return false;" style="color: #ffd700;">{{ name }} ({{ inchikey }})</a>
+                {% else %}
+                    <a href="#" onclick="fillAndSubmit('{{ name }}'); return false;" style="color: #ffd700;">{{ name }}</a>
+                {% endif %}
+            {% endfor %}
+        </h3>
+        </div>
+        <script>
+        function fillAndSubmit(chemical, inchikey) {
+            document.getElementById('chemical').value = chemical;
+            if (inchikey !== undefined) {
+                document.getElementById('inchikey').value = inchikey;
+            }
+            document.querySelector('form').submit();
+        }
+        </script>
+        <button type="submit">Show Network</button>
+        </form>
+        {% if message %}
+            <p style="color: rgb(255, 0, 0); background-color: white; padding: 5px 5px; ">{{ message|safe }}</p>
+        {% endif %}
+
+        {% if iframe %}
+        <h2>Network for: {{ chemical }}</h2>
+        <iframe src="{{ iframe }}" width="100%" height="600px" frameborder="0"></iframe>
+        {% endif %}
+
+        {% if connections %}
+        <div style="margin-top: 40px; background: #0b4e86; padding: 20px; border-radius: 8px;">
+            <h3> Connections</h3>
+            <ul>
+                {% for key, items in connections.items %}
+                    <li><strong>{{ key }}:</strong>
+                        <ul>
+                            {% if key == "Inchikey" or key == "Affiliation(s)" %}
+                                <li>{{ items }}</li>
+                            {% else %}
+                                {% for item in items %}
+                                    <li>{{ item }}</li>
+                                {% endfor %}
+                            {% endif %}
+                        </ul>
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+    {% endif %}
+    </div>
+</body>
+</html>

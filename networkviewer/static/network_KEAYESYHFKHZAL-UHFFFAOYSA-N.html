@@ -1,0 +1,164 @@
+<html>
+    <head>
+        <meta charset="utf-8">
+        
+            <script src="lib/bindings/utils.js"></script>
+            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.2/dist/dist/vis-network.min.css" integrity="sha512-WgxfT5LWjfszlPHXRmBWHkV2eceiWTOBvrKCNbdgDYTHrT2AeLCGbF4sZlZw3UMN3WtL0tGUoIAKsu8mllg/XA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.2/dist/vis-network.min.js" integrity="sha512-LnvoEWDFrqGHlHmDD2101OrLcbsfkrzoSpvtSQtxK3RMnRV0eOkhhBN2dXHKRrUU8p2DGRTk35n4O8nWSVe1mQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+            
+        
+<center>
+<h1></h1>
+</center>
+
+<!-- <link rel="stylesheet" href="../node_modules/vis/dist/vis.min.css" type="text/css" />
+<script type="text/javascript" src="../node_modules/vis/dist/vis.js"> </script>-->
+        <link
+          href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/css/bootstrap.min.css"
+          rel="stylesheet"
+          integrity="sha384-eOJMYsd53ii+scO/bJGFsiCZc+5NDVN2yr8+0RDqr0Ql0h+rP48ckxlpbzKgwra6"
+          crossorigin="anonymous"
+        />
+        <script
+          src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.bundle.min.js"
+          integrity="sha384-JEW9xMcG8R+pH31jmWH6WWP0WintQrMb4s7ZOdauHnUtxwoG2vI5DkLtS3qm9Ekf"
+          crossorigin="anonymous"
+        ></script>
+
+
+        <center>
+          <h1></h1>
+        </center>
+        <style type="text/css">
+
+             #mynetwork {
+                 width: 100%;
+                 height: 600px;
+                 background-color: #ffffff;
+                 border: 1px solid lightgray;
+                 position: relative;
+                 float: left;
+             }
+
+             
+
+             
+
+             
+        </style>
+    </head>
+
+
+    <body>
+        <div class="card" style="width: 100%">
+            
+            
+            <div id="mynetwork" class="card-body"></div>
+        </div>
+
+        
+        
+
+        <script type="text/javascript">
+
+              // initialize global variables.
+              var edges;
+              var nodes;
+              var allNodes;
+              var allEdges;
+              var nodeColors;
+              var originalNodes;
+              var network;
+              var container;
+              var options, data;
+              var filter = {
+                  item : '',
+                  property : '',
+                  value : []
+              };
+
+              
+
+              
+
+              // This method is responsible for drawing the graph, returns the drawn network
+              function drawGraph() {
+                  var container = document.getElementById('mynetwork');
+
+                  
+
+                  // parsing and collecting nodes and edges from the python
+                  nodes = new vis.DataSet([{"color": "lightgreen", "font": {"color": "black"}, "id": "Na", "label": "Na", "shape": "ellipse", "size": 55, "title": "Inchikey: KEAYESYHFKHZAL-UHFFFAOYSA-N"}, {"color": "lightblue", "font": {"color": "black"}, "id": "National Environment Agency - Singapore", "label": "National Environment Agency - Singapore", "shape": "ellipse", "size": 15, "title": "National Environment Agency - Singapore"}, {"color": "lightblue", "font": {"color": "black"}, "id": "National Research Foundation Singapore", "label": "National Research Foundation Singapore", "shape": "ellipse", "size": 15, "title": "National Research Foundation Singapore"}, {"color": "lightblue", "font": {"color": "black"}, "id": "Research Grants Council, University Grants Committee", "label": "Research Grants Council, University Grants Committee", "shape": "ellipse", "size": 15, "title": "Research Grants Council, University Grants Committee"}, {"color": "lightblue", "font": {"color": "black"}, "id": "National Natural Science Foundation of China", "label": "National Natural Science Foundation of China", "shape": "ellipse", "size": 15, "title": "National Natural Science Foundation of China"}, {"color": "lightblue", "font": {"color": "black"}, "id": "Jiangnan University", "label": "Jiangnan University", "shape": "ellipse", "size": 15, "title": "Jiangnan University"}, {"color": "lightblue", "font": {"color": "black"}, "id": "National Science Foundation Graduate Research Fellowship Program", "label": "National Science Foundation Graduate Research Fellowship Program", "shape": "ellipse", "size": 15, "title": "National Science Foundation Graduate Research Fellowship Program"}, {"color": "lightblue", "font": {"color": "black"}, "id": "Wisconsin Sea Grant Institute, University of Wisconsin", "label": "Wisconsin Sea Grant Institute, University of Wisconsin", "shape": "ellipse", "size": 15, "title": "Wisconsin Sea Grant Institute, University of Wisconsin"}, {"color": "lightblue", "font": {"color": "black"}, "id": "China Postdoctoral Science Foundation", "label": "China Postdoctoral Science Foundation", "shape": "ellipse", "size": 15, "title": "China Postdoctoral Science Foundation"}, {"color": "lightblue", "font": {"color": "black"}, "id": "Jiangsu Funding Program for Excellent Postdoctoral Talent", "label": "Jiangsu Funding Program for Excellent Postdoctoral Talent", "shape": "ellipse", "size": 15, "title": "Jiangsu Funding Program for Excellent Postdoctoral Talent"}, {"color": "lightblue", "font": {"color": "black"}, "id": "Suzhou Frontier Technology Research Advanced Materials Project grant", "label": "Suzhou Frontier Technology Research Advanced Materials Project grant", "shape": "ellipse", "size": 15, "title": "Suzhou Frontier Technology Research Advanced Materials Project grant"}, {"color": "lightblue", "font": {"color": "black"}, "id": "Major Science and Technology Projects in Yunnan Province", "label": "Major Science and Technology Projects in Yunnan Province", "shape": "ellipse", "size": 15, "title": "Major Science and Technology Projects in Yunnan Province"}, {"color": "lightblue", "font": {"color": "black"}, "id": "National Institute of Environmental Health Sciences", "label": "National Institute of Environmental Health Sciences", "shape": "ellipse", "size": 15, "title": "National Institute of Environmental Health Sciences"}, {"color": "lightblue", "font": {"color": "black"}, "id": "Canadian Institutes of Health Research", "label": "Canadian Institutes of Health Research", "shape": "ellipse", "size": 15, "title": "Canadian Institutes of Health Research"}, {"color": "lightblue", "font": {"color": "black"}, "id": "University of Texas System", "label": "University of Texas System", "shape": "ellipse", "size": 15, "title": "University of Texas System"}, {"color": "lightblue", "font": {"color": "black"}, "id": "Canada Research Chairs", "label": "Canada Research Chairs", "shape": "ellipse", "size": 15, "title": "Canada Research Chairs"}, {"color": "lightblue", "font": {"color": "black"}, "id": "Chinese Academy of Sciences", "label": "Chinese Academy of Sciences", "shape": "ellipse", "size": 15, "title": "Chinese Academy of Sciences"}, {"color": "lightblue", "font": {"color": "black"}, "id": "Shandong Youth Innovation Team Project", "label": "Shandong Youth Innovation Team Project", "shape": "ellipse", "size": 15, "title": "Shandong Youth Innovation Team Project"}, {"color": "lightblue", "font": {"color": "black"}, "id": "Key Research and Development Program of Jiangxi Province", "label": "Key Research and Development Program of Jiangxi Province", "shape": "ellipse", "size": 15, "title": "Key Research and Development Program of Jiangxi Province"}, {"color": "lightblue", "font": {"color": "black"}, "id": "Natural Science Foundation of Jiangxi Province", "label": "Natural Science Foundation of Jiangxi Province", "shape": "ellipse", "size": 15, "title": "Natural Science Foundation of Jiangxi Province"}, {"color": "lightblue", "font": {"color": "black"}, "id": "China Scholarship Council", "label": "China Scholarship Council", "shape": "ellipse", "size": 15, "title": "China Scholarship Council"}, {"color": "lightblue", "font": {"color": "black"}, "id": "Dow Centre for Sustainable Engineering Innovation, University of Queensland", "label": "Dow Centre for Sustainable Engineering Innovation, University of Queensland", "shape": "ellipse", "size": 15, "title": "Dow Centre for Sustainable Engineering Innovation, University of Queensland"}]);
+                  edges = new vis.DataSet([{"color": "red", "from": "Na", "title": "Appearances: 1", "to": "National Environment Agency - Singapore", "width": 1}, {"color": "red", "from": "Na", "title": "Appearances: 1", "to": "National Research Foundation Singapore", "width": 1}, {"color": "red", "from": "Na", "title": "Appearances: 1", "to": "Research Grants Council, University Grants Committee", "width": 1}, {"color": "red", "from": "Na", "title": "Appearances: 5", "to": "National Natural Science Foundation of China", "width": 5}, {"color": "red", "from": "Na", "title": "Appearances: 1", "to": "Jiangnan University", "width": 1}, {"color": "red", "from": "Na", "title": "Appearances: 2", "to": "National Science Foundation Graduate Research Fellowship Program", "width": 2}, {"color": "red", "from": "Na", "title": "Appearances: 2", "to": "Wisconsin Sea Grant Institute, University of Wisconsin", "width": 2}, {"color": "red", "from": "Na", "title": "Appearances: 2", "to": "China Postdoctoral Science Foundation", "width": 2}, {"color": "red", "from": "Na", "title": "Appearances: 1", "to": "Jiangsu Funding Program for Excellent Postdoctoral Talent", "width": 1}, {"color": "red", "from": "Na", "title": "Appearances: 1", "to": "Suzhou Frontier Technology Research Advanced Materials Project grant", "width": 1}, {"color": "red", "from": "Na", "title": "Appearances: 1", "to": "Major Science and Technology Projects in Yunnan Province", "width": 1}, {"color": "red", "from": "Na", "title": "Appearances: 1", "to": "National Institute of Environmental Health Sciences", "width": 1}, {"color": "red", "from": "Na", "title": "Appearances: 1", "to": "Canadian Institutes of Health Research", "width": 1}, {"color": "red", "from": "Na", "title": "Appearances: 1", "to": "University of Texas System", "width": 1}, {"color": "red", "from": "Na", "title": "Appearances: 1", "to": "Canada Research Chairs", "width": 1}, {"color": "red", "from": "Na", "title": "Appearances: 1", "to": "Chinese Academy of Sciences", "width": 1}, {"color": "red", "from": "Na", "title": "Appearances: 1", "to": "Shandong Youth Innovation Team Project", "width": 1}, {"color": "red", "from": "Na", "title": "Appearances: 1", "to": "Key Research and Development Program of Jiangxi Province", "width": 1}, {"color": "red", "from": "Na", "title": "Appearances: 1", "to": "Natural Science Foundation of Jiangxi Province", "width": 1}, {"color": "red", "from": "Na", "title": "Appearances: 2", "to": "China Scholarship Council", "width": 2}, {"color": "red", "from": "Na", "title": "Appearances: 2", "to": "Dow Centre for Sustainable Engineering Innovation, University of Queensland", "width": 2}]);
+
+                  nodeColors = {};
+                  allNodes = nodes.get({ returnType: "Object" });
+                  for (nodeId in allNodes) {
+                    nodeColors[nodeId] = allNodes[nodeId].color;
+                  }
+                  allEdges = edges.get({ returnType: "Object" });
+                  // adding nodes and edges to the graph
+                  data = {nodes: nodes, edges: edges};
+
+                  var options = {
+    "configure": {
+        "enabled": false
+    },
+    "edges": {
+        "color": {
+            "inherit": true
+        },
+        "smooth": {
+            "enabled": true,
+            "type": "dynamic"
+        }
+    },
+    "interaction": {
+        "dragNodes": true,
+        "hideEdgesOnDrag": false,
+        "hideNodesOnDrag": false
+    },
+    "physics": {
+        "barnesHut": {
+            "avoidOverlap": 0,
+            "centralGravity": 0.3,
+            "damping": 0.09,
+            "gravitationalConstant": -500,
+            "springConstant": 0.002,
+            "springLength": 60
+        },
+        "enabled": true,
+        "minVelocity": 0.75,
+        "stabilization": {
+            "enabled": true,
+            "fit": true,
+            "iterations": 1000,
+            "onlyDynamicEdges": false,
+            "updateInterval": 50
+        }
+    }
+};
+
+                  
+
+
+                  
+
+                  network = new vis.Network(container, data, options);
+
+                  
+
+                  
+
+                  
+
+
+                  
+
+                  return network;
+
+              }
+              drawGraph();
+        </script>
+    </body>
+</html>

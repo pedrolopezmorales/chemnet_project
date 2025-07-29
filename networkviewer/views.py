@@ -1,0 +1,289 @@
+from django.shortcuts import render
+import random
+import difflib 
+from .network_functions import (
+    show_chemical_network,
+    show_company_network_pyvis,
+    show_uni_network_pyvis,
+    show_researcher_network_pyvis_from_row,
+    comparing_researchers,
+    show_chem_connections,
+    show_company_connections,
+    show_uni_connections,
+    show_res_connections,
+    chem_per_row,
+    no_dup_comp,
+    comparing_unis
+)
+
+
+import os
+from django.conf import settings
+
+def get_close_matches_custom(query, valid_names, n = 3, cutoff=0.6):
+    return difflib.get_close_matches(query, valid_names, n=n, cutoff=cutoff)
+
+def home_view(request):
+    return render(request, 'networkviewer/home.html', {'show_main_nav': False})
+
+def chemical_view(request):
+    chemical = None
+    inchikey = None
+    iframe = None
+    message = None
+    connections = None 
+
+    all_chemical_names = sorted((name for names in chem_per_row['chemical'] for name in names))
+    example_chemicals = [
+        ("Aspirin", "BSYNRYMUTXBXSQ-UHFFFAOYSA-N"),
+        ("Caffeine", "RYYVLZVUVIJVGH-UHFFFAOYSA-N"),
+        ("Glucose", "WQZGKKKJIJFFOK-GASJEMHNSA-N"),
+        ("Iron", ""),
+        ("Goethite", ""),
+        ("PAHs", ""),
+        ("Au",""),
+        ("Copper","")
+    ]
+
+    random_examples = random.sample(example_chemicals, 3)
+
+    if request.method == 'POST':
+        chemical = request.POST.get('chemical', '').strip()
+        inchikey = request.POST.get('inchikey', '').strip()
+        output_path = os.path.join(settings.STATICFILES_DIRS[0], f"network_{chemical or inchikey}.html")
+
+        if inchikey:  # If InChIKey is provided, use the new function
+            found = show_chemical_network(chemical, inch=inchikey, output_file=output_path)
+            connections = show_chem_connections(inchikey=inchikey)
+        elif chemical:  # If only chemical name is provided, use the old function
+            found = show_chemical_network(chemical, inch='Error', output_file=output_path)
+            connections = show_chem_connections(chemical)
+        else:
+            found = False
+
+        if found:
+            iframe = f"/static/network_{chemical or inchikey}.html"
+        else:
+            if chemical:
+                suggestions = get_close_matches_custom(chemical, all_chemical_names)
+                if suggestions:
+                    message = "Did you mean: " + ", ".join([f"<span style='color:red'>{s}</span>" for s in suggestions])
+                else:
+                    message =  F"Chemical '{chemical}' not found"
+            else:
+                message = f"Chemical '{chemical}' or InChIKey '{inchikey}' not found"
+
+    context = {'chemical': chemical, 
+               'inchikey': inchikey, 
+               'iframe': iframe, 
+               'message': message,
+               'connections': connections,
+               'show_main_nav': True,
+               'example_chemicals': random_examples,
+               'all_chemical_names': all_chemical_names
+            }
+    return render(request, 'networkviewer/chemical_view.html', context)
+
+def company_view(request):
+    company = None
+    iframe = None
+    message = None
+    connections = None
+
+    category_options = ['Affiliations', 'Chemicals', 'Researchers', 'Universities']
+    chemical_group_options = ['none', 'Organic']
+    sep_country_options = [False, True]
+
+    sep_country = False
+    category = 'Affiliations'
+    chemical_group = 'none'
+
+    all_company_names= sorted(set(no_dup_comp))
+    example_companies = [
+        "Dow Chemical Company",
+        "US Department of Energy",
+        "U.S. Department of Agriculture",
+        "BASF Corporation",
+        "Agilent Foundation",
+        "Natural Science Foundation of China",
+        "U.S. Department of Defense"
+    ]
+
+    random_examples = random.sample(example_companies, 3)
+
+    if request.method == 'POST':
+        company = request.POST.get('company')
+        category = request.POST.get('category', 'Affiliations')
+        chemical_group = request.POST.get('chemical_group', 'none')
+        sep_country = request.POST.get('sep_country', 'False')
+        sep_country = True if sep_country == 'True' or sep_country is True else False  # <-- fix here
+        output_path = os.path.join(settings.STATICFILES_DIRS[0], f"network_company_{company}.html")
+        found = show_company_network_pyvis(company, category=category, chemical_group=chemical_group, sep_country = sep_country, output_file=output_path)
+        if found:
+            iframe = f"/static/network_company_{company}.html"
+            connections = show_company_connections(company)
+        else:
+            suggestions = get_close_matches_custom(company, all_company_names)
+            if suggestions:
+                message = "Did you mean: " + ", ".join([f"<span style='color:red'>{s}</span>" for s in suggestions])
+            else:
+                message = f"Company '{company}' not found"
+    context = {
+        'company': company,
+        'iframe': iframe, 
+        'message': message, 
+        'category': category, 
+        'sep_country': sep_country,
+        'chemical_group': chemical_group,
+        'category_options': category_options,
+        'chemical_group_options': chemical_group_options,
+        'sep_country_options': sep_country_options,
+        'connections': connections,
+        'show_main_nav': True,
+        'example_companies': random_examples,
+        'all_company_names': all_company_names
+    }
+    return render(request, 'networkviewer/company_view.html', context)
+def university_view(request):
+    university = None
+    iframe = None
+    message = None
+    connections = None 
+
+    category_options = ['Chemicals','Companies']
+    chemical_group_options = ['none', 'Organic']
+    all_university_names = sorted(comparing_unis['University'].dropna().unique())
+    category = 'Companies'
+    chemical_group = 'none'
+
+    example_universities = [
+        "Harvard University",
+        "Stanford University",
+        "Massachusetts Institute of Technology",
+        "University of Cambridge",
+        "University of Oxford",
+        "California Institute of Technology",
+        "Princeton University",
+        "Yale University",
+        "University of Chicago",
+        "Columbia University",
+        "New York University"
+    ]
+    # Pick 3 random examples
+    random_examples = random.sample(example_universities, 3)
+
+    if request.method == 'POST':
+        university = request.POST.get('university')
+        category = request.POST.get('category', 'Companies')
+        chemical_group = request.POST.get('chemical_group', 'none')
+        output_path = os.path.join(settings.STATICFILES_DIRS[0], f"network_university_{university}.html")
+        found = show_uni_network_pyvis(university, category=category, chemical_group=chemical_group, output_file=output_path)
+        if found:
+            iframe = f"/static/network_university_{university}.html"
+            connections = show_uni_connections(university)
+        else:
+            suggestions = get_close_matches_custom(university, all_university_names)
+            if suggestions:
+                message = "Did you mean: " + ", ".join([f"<span style='color:red'>{s}</span>" for s in suggestions])
+            else:
+                message = f"University '{university}' not found"
+    context = {'university': university,
+               'iframe': iframe,
+                'message': message, 
+                'category': category, 
+                'chemical_group': chemical_group,
+                'category_options': category_options,
+                'chemical_group_options': chemical_group_options,
+                'connections': connections,
+                'show_main_nav': True,
+                'example_universities': random_examples,
+                'all_university_names': all_university_names
+                }
+    return render(request, 'networkviewer/university_view.html', context)
+
+def researcher_view(request):
+    researcher = None
+    iframe = None
+    message = None
+    matches = []
+    selected_index = None
+    combine = False
+    connections = None 
+
+    all_researcher_names = sorted(comparing_researchers['Researcher'].dropna().unique())
+    example_researchers = [
+        'Abrahamsson, Dimitri',
+        'Jiang, Guibin',
+        'Yang, Xin',
+        'Xie, Hongyu',
+        'Nikiforov, Vladimir A.',
+        'Lynch, Iseult',
+        'Pan, Wenxiao',
+        'Restituito, Sophie',
+        'Kyrtopoulos, Soterios A.',
+        'Wei, Jing'
+
+    ]
+    random_examples = random.sample(example_researchers, 3)
+    
+    if request.method == 'POST':
+        researcher = request.POST.get('researcher')
+        selected_index = request.POST.get('selected_index')
+        combine = request.POST.get('combine', '') == 'on'
+        # Find all matches
+        all_matches = comparing_researchers[comparing_researchers['Researcher'].str.lower() == researcher.lower()]
+        matches = all_matches.to_dict('records')
+
+        if not matches:
+            suggestions = get_close_matches_custom(researcher, all_researcher_names)
+            if suggestions:
+                message = "Did you mean: " + ", ".join([f"<span style='color:red'>{s}</span>" for s in suggestions])
+            else:
+                message = f"Researcher '{researcher}' not found"
+        elif len(matches) == 1:
+            # Only one match, generate graph immediately
+            row = matches[0]
+            output_path = os.path.join(settings.STATICFILES_DIRS[0], f"network_researcher_{researcher}.html")
+            found = show_researcher_network_pyvis_from_row(row, output_file=output_path)
+            if found:
+                iframe = f"/static/network_researcher_{researcher}.html"
+            connections = show_res_connections(researcher=researcher)
+        elif selected_index is not None or combine:
+            output_path = os.path.join(settings.STATICFILES_DIRS[0], f"network_researcher_{researcher}.html")
+            if combine:
+                # Combine all companies and affiliations
+                all_companies = sum(all_matches['Companies'], [])
+                unique_affiliations = all_matches['Affiliation'].dropna().unique()
+                combined_aff = '; '.join(unique_affiliations)
+                row = {
+                    'Researcher': researcher,
+                    'Affiliation': combined_aff,
+                    'Companies': all_companies
+                }
+            else:
+                row = matches[int(selected_index)]
+            found = show_researcher_network_pyvis_from_row(row, output_file=output_path)
+            if found:
+                iframe = f"/static/network_researcher_{researcher}.html"
+        # If multiple matches and no selection yet, just show the options
+            connections = show_res_connections(researcher)
+    context = {
+        'researcher': researcher,
+        'iframe': iframe,
+        'message': message,
+        'matches': matches,
+        'selected_index': selected_index,
+        'combine': combine,
+        'connections': connections,
+        'show_main_nav': True,
+        'example_researchers': random_examples,
+        'all_researcher_names': all_researcher_names
+    }
+    return render(request, 'networkviewer/researcher_view.html', context)
+
+def about_view(request):
+    return render(request, 'networkviewer/about.html')
+def data_view(request):
+    return render(request, 'networkviewer/data.html')
+def contact_view(request):
+    return render(request, 'networkviewer/contact.html')
