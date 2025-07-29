@@ -88,8 +88,8 @@
                   
 
                   // parsing and collecting nodes and edges from the python
-                  nodes = new vis.DataSet([{"color": "red", "font": {"color": "black"}, "id": "Natural Science Foundation of China", "label": "Natural Science Foundation of China", "shape": "ellipse", "size": 55}, {"color": "lightgreen", "font": {"color": "black"}, "id": "oxygen", "label": "oxygen", "shape": "ellipse", "title": "InChIKey: MYMOFIZGZYHOMD-UHFFFAOYSA-N"}, {"color": "lightgreen", "font": {"color": "black"}, "id": "H2O2", "label": "H2O2", "shape": "ellipse", "title": "InChIKey: MHAJPDPJQMAIIY-UHFFFAOYSA-N"}, {"color": "lightgreen", "font": {"color": "black"}, "id": "\u2022OH", "label": "\u2022OH", "shape": "ellipse", "title": "InChIKey: Not Found"}, {"color": "lightgreen", "font": {"color": "black"}, "id": "Fe(II)", "label": "Fe(II)", "shape": "ellipse", "title": "InChIKey: CWYNVVGOOAEACU-UHFFFAOYSA-N"}]);
-                  edges = new vis.DataSet([{"from": "Natural Science Foundation of China", "to": "\u2022OH"}, {"from": "Natural Science Foundation of China", "title": "Appearances: 2", "to": "oxygen", "width": 2}, {"from": "Natural Science Foundation of China", "title": "Appearances: 1", "to": "H2O2", "width": 1}, {"from": "Natural Science Foundation of China", "title": "Appearances: 1", "to": "Fe(II)", "width": 1}]);
+                  nodes = new vis.DataSet([{"color": "red", "font": {"color": "black"}, "id": "Natural Science Foundation of China", "label": "Natural Science Foundation of China", "shape": "ellipse", "size": 55}, {"color": "lightblue", "font": {"color": "black"}, "id": "State Key Laboratory of Biogeology and Environmental Geology, China University of Geosciences, No. 68 Jincheng Street, East Lake High-Tech Development Zone, Wuhan 430078, P. R. China", "label": "China University of Geosciences", "shape": "ellipse", "size": 15, "title": "State Key Laboratory of Biogeology and Environmental Geology, China University of Geosciences, No. 68 Jincheng Street, East Lake High-Tech Development Zone, Wuhan 430078, P. R. China"}, {"color": "lightblue", "font": {"color": "black"}, "id": "Hebei Key Laboratory of Wetland Ecology and Conservation, Hengshui University, 1088 Heping West Road, Hengshui 053000, P. R. China", "label": "Hengshui University", "shape": "ellipse", "size": 15, "title": "Hebei Key Laboratory of Wetland Ecology and Conservation, Hengshui University, 1088 Heping West Road, Hengshui 053000, P. R. China"}, {"color": "lightblue", "font": {"color": "black"}, "id": "Hubei Key Laboratory of Yangze Catchment Environmental Aquatic Science, School of Environmental Studies, China University of Geosciences, No. 68 Jincheng Street, East Lake High-Tech Development Zone, Wuhan 430078, P. R. China", "label": "China University of Geosciences", "shape": "ellipse", "size": 15, "title": "Hubei Key Laboratory of Yangze Catchment Environmental Aquatic Science, School of Environmental Studies, China University of Geosciences, No. 68 Jincheng Street, East Lake High-Tech Development Zone, Wuhan 430078, P. R. China"}]);
+                  edges = new vis.DataSet([{"from": "Natural Science Foundation of China", "title": "Appearances: 1", "to": "State Key Laboratory of Biogeology and Environmental Geology, China University of Geosciences, No. 68 Jincheng Street, East Lake High-Tech Development Zone, Wuhan 430078, P. R. China", "width": 1}, {"from": "Natural Science Foundation of China", "title": "Appearances: 1", "to": "Hebei Key Laboratory of Wetland Ecology and Conservation, Hengshui University, 1088 Heping West Road, Hengshui 053000, P. R. China", "width": 1}, {"from": "Natural Science Foundation of China", "title": "Appearances: 1", "to": "Hubei Key Laboratory of Yangze Catchment Environmental Aquatic Science, School of Environmental Studies, China University of Geosciences, No. 68 Jincheng Street, East Lake High-Tech Development Zone, Wuhan 430078, P. R. China", "width": 1}]);
 
                   nodeColors = {};
                   allNodes = nodes.get({ returnType: "Object" });
@@ -160,5 +160,19 @@
               }
               drawGraph();
         </script>
-    </body>
+    
+    <div id="study-info" style="margin-top:20px; background:#fff; color:#222; padding:10px; border-radius:8px;"></div>
+    <script type="text/javascript">
+        var companyStudyMap = {"State Key Laboratory of Biogeology and Environmental Geology, China University of Geosciences, No. 68 Jincheng Street, East Lake High-Tech Development Zone, Wuhan 430078, P. R. China": "Dependence of Biotic and Abiotic H<sub>2</sub>O<sub>2</sub> and \u2022OH Production on the Redox Conditions and Compositions of Sediment during Oxygenation (DOI: 10.1021/acs.est.3c10424)", "Hebei Key Laboratory of Wetland Ecology and Conservation, Hengshui University, 1088 Heping West Road, Hengshui 053000, P. R. China": "Dependence of Biotic and Abiotic H<sub>2</sub>O<sub>2</sub> and \u2022OH Production on the Redox Conditions and Compositions of Sediment during Oxygenation (DOI: 10.1021/acs.est.3c10424)", "Hubei Key Laboratory of Yangze Catchment Environmental Aquatic Science, School of Environmental Studies, China University of Geosciences, No. 68 Jincheng Street, East Lake High-Tech Development Zone, Wuhan 430078, P. R. China": "Dependence of Biotic and Abiotic H<sub>2</sub>O<sub>2</sub> and \u2022OH Production on the Redox Conditions and Compositions of Sediment during Oxygenation (DOI: 10.1021/acs.est.3c10424)"};
+        network.on("click", function(params) {
+            if (params.nodes.length > 0) {
+                var nodeId = params.nodes[0];
+                var node = nodes.get(nodeId);
+                var studies = companyStudyMap[node.title] || "No studies found for this connection.";
+                document.getElementById("study-info").innerHTML = "<h3>Studies for " + node.title + ":</h3>" + studies;
+            }
+        });
+    </script>
+    
+</body>
 </html>

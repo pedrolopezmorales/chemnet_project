@@ -3,12 +3,18 @@ from pyvis.network import Network
 import re
 from country_list import countries_for_language
 import pubchempy as pcp
-from collections import defaultdict
 import os
 import json
-import numpy as np
+from django.conf import settings
 
-main = pd.read_csv(r'C:\Users\pelom\Downloads\esandt_papers_2024_with_inchikeys.csv')
+CSV_PATH = os.path.join(settings.BASE_DIR, 'data', 'esandt_papers_2024_with_inchikeys.csv')
+
+try:
+    main = pd.read_csv(CSV_PATH)
+except FileNotFoundError:
+    print(f"Warning: CSV file not found at {CSV_PATH}")
+    main = pd.DataFrame() 
+
 
 countries = dict(countries_for_language('en'))
 country_names = list(countries.values())

@@ -88,8 +88,8 @@
                   
 
                   // parsing and collecting nodes and edges from the python
-                  nodes = new vis.DataSet([{"color": "red", "font": {"color": "black"}, "id": "U.S. Department of Defense", "label": "U.S. Department of Defense", "shape": "ellipse", "size": 55}, {"color": "lightgreen", "font": {"color": "black"}, "id": "hydrogen peroxide", "label": "hydrogen peroxide", "shape": "ellipse", "title": "InChIKey: MHAJPDPJQMAIIY-UHFFFAOYSA-N"}]);
-                  edges = new vis.DataSet([{"from": "U.S. Department of Defense", "title": "Appearances: 1", "to": "hydrogen peroxide", "width": 1}]);
+                  nodes = new vis.DataSet([{"color": "red", "font": {"color": "black"}, "id": "U.S. Department of Defense", "label": "U.S. Department of Defense", "shape": "ellipse", "size": 55}, {"color": "lightblue", "font": {"color": "black"}, "id": "Center for Biofilm Engineering, Montana State University, Bozeman, Montana 59717, United States", "label": "Montana State University", "shape": "ellipse", "size": 15, "title": "Center for Biofilm Engineering, Montana State University, Bozeman, Montana 59717, United States"}, {"color": "lightblue", "font": {"color": "black"}, "id": "Department of Chemical \u0026 Biological Engineering, Montana State University, Bozeman, Montana 59717, United States", "label": "Montana State University", "shape": "ellipse", "size": 15, "title": "Department of Chemical \u0026 Biological Engineering, Montana State University, Bozeman, Montana 59717, United States"}]);
+                  edges = new vis.DataSet([{"from": "U.S. Department of Defense", "title": "Appearances: 1", "to": "Center for Biofilm Engineering, Montana State University, Bozeman, Montana 59717, United States", "width": 1}, {"from": "U.S. Department of Defense", "title": "Appearances: 1", "to": "Department of Chemical \u0026 Biological Engineering, Montana State University, Bozeman, Montana 59717, United States", "width": 1}]);
 
                   nodeColors = {};
                   allNodes = nodes.get({ returnType: "Object" });
@@ -163,13 +163,13 @@
     
     <div id="study-info" style="margin-top:20px; background:#fff; color:#222; padding:10px; border-radius:8px;"></div>
     <script type="text/javascript">
-        var companyStudyMap = {"hydrogen peroxide": "Clothing Textiles as Carriers of Biological Ice Nucleation Active Particles (DOI: 10.1021/acs.est.3c09600)"};
+        var companyStudyMap = {"Center for Biofilm Engineering, Montana State University, Bozeman, Montana 59717, United States": "Clothing Textiles as Carriers of Biological Ice Nucleation Active Particles (DOI: 10.1021/acs.est.3c09600)", "Department of Chemical & Biological Engineering, Montana State University, Bozeman, Montana 59717, United States": "Clothing Textiles as Carriers of Biological Ice Nucleation Active Particles (DOI: 10.1021/acs.est.3c09600)"};
         network.on("click", function(params) {
             if (params.nodes.length > 0) {
                 var nodeId = params.nodes[0];
                 var node = nodes.get(nodeId);
-                var studies = companyStudyMap[node.label] || "No studies found for this connection.";
-                document.getElementById("study-info").innerHTML = "<h3>Studies for " + node.label + ":</h3>" + studies;
+                var studies = companyStudyMap[node.title] || "No studies found for this connection.";
+                document.getElementById("study-info").innerHTML = "<h3>Studies for " + node.title + ":</h3>" + studies;
             }
         });
     </script>

@@ -160,5 +160,19 @@
               }
               drawGraph();
         </script>
-    </body>
+    
+    <div id="study-info" style="margin-top:20px; background:#fff; color:#222; padding:10px; border-radius:8px;"></div>
+    <script type="text/javascript">
+        var companyStudyMap = {"Weston Family Foundation": "Winter Tracking Data Suggest that Migratory Seabirds Transport Per- and Polyfluoroalkyl Substances to Their Arctic Nesting Site (DOI: 10.1021/acs.est.4c02661)", "Agence Nationale de la Recherche": "Winter Tracking Data Suggest that Migratory Seabirds Transport Per- and Polyfluoroalkyl Substances to Their Arctic Nesting Site (DOI: 10.1021/acs.est.4c02661)<br>PFAS Exposure is Associated with a Lower Spermatic Quality in an Arctic Seabird (DOI: 10.1021/acs.est.4c04495)", "Norges Forskningsr?d": "Winter Tracking Data Suggest that Migratory Seabirds Transport Per- and Polyfluoroalkyl Substances to Their Arctic Nesting Site (DOI: 10.1021/acs.est.4c02661)<br>PFAS Exposure is Associated with a Lower Spermatic Quality in an Arctic Seabird (DOI: 10.1021/acs.est.4c04495)", "Fonds de recherche du Qu?bec ? Nature et technologies": "Winter Tracking Data Suggest that Migratory Seabirds Transport Per- and Polyfluoroalkyl Substances to Their Arctic Nesting Site (DOI: 10.1021/acs.est.4c02661)", "Framsenteret": "Winter Tracking Data Suggest that Migratory Seabirds Transport Per- and Polyfluoroalkyl Substances to Their Arctic Nesting Site (DOI: 10.1021/acs.est.4c02661)", "Institut Polaire Fran?ais Paul Emile Victor": "Winter Tracking Data Suggest that Migratory Seabirds Transport Per- and Polyfluoroalkyl Substances to Their Arctic Nesting Site (DOI: 10.1021/acs.est.4c02661)<br>PFAS Exposure is Associated with a Lower Spermatic Quality in an Arctic Seabird (DOI: 10.1021/acs.est.4c04495)", "Polar Knowledge Canada": "Winter Tracking Data Suggest that Migratory Seabirds Transport Per- and Polyfluoroalkyl Substances to Their Arctic Nesting Site (DOI: 10.1021/acs.est.4c02661)", "Natural Sciences and Engineering Research Council of Canada": "Winter Tracking Data Suggest that Migratory Seabirds Transport Per- and Polyfluoroalkyl Substances to Their Arctic Nesting Site (DOI: 10.1021/acs.est.4c02661)", "Mitacs": "Winter Tracking Data Suggest that Migratory Seabirds Transport Per- and Polyfluoroalkyl Substances to Their Arctic Nesting Site (DOI: 10.1021/acs.est.4c02661)", "HORIZON EUROPE European Innovation Council": "PFAS Exposure is Associated with a Lower Spermatic Quality in an Arctic Seabird (DOI: 10.1021/acs.est.4c04495)", "Schweizerischer Nationalfonds zur F?rderung der Wissenschaftlichen Forschung": "PFAS Exposure is Associated with a Lower Spermatic Quality in an Arctic Seabird (DOI: 10.1021/acs.est.4c04495)", "Centre National de la Recherche Scientifique": "PFAS Exposure is Associated with a Lower Spermatic Quality in an Arctic Seabird (DOI: 10.1021/acs.est.4c04495)", "La Rochelle Universit?": "PFAS Exposure is Associated with a Lower Spermatic Quality in an Arctic Seabird (DOI: 10.1021/acs.est.4c04495)"};
+        network.on("click", function(params) {
+            if (params.nodes.length > 0) {
+                var nodeId = params.nodes[0];
+                var node = nodes.get(nodeId);
+                var studies = companyStudyMap[node.label] || "No studies found for this connection.";
+                document.getElementById("study-info").innerHTML = "<h3>Studies for " + node.label + ":</h3>" + studies;
+            }
+        });
+    </script>
+    
+</body>
 </html>
