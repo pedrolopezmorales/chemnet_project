@@ -160,5 +160,19 @@
               }
               drawGraph();
         </script>
-    </body>
+    
+    <div id="study-info" style="margin-top:20px; background:#fff; color:#222; padding:10px; border-radius:8px;"></div>
+    <script type="text/javascript">
+        var companyStudyMap = {"Chinese Academy of Medical Sciences": "Identification and Prioritization of Organic Pollutants in Human Milk from the Yangtze River Delta, China (DOI: 10.1021/acs.est.4c02909)", "National Natural Science Foundation of China": "Identification and Prioritization of Organic Pollutants in Human Milk from the Yangtze River Delta, China (DOI: 10.1021/acs.est.4c02909)", "Chinese Academy of Sciences": "Identification and Prioritization of Organic Pollutants in Human Milk from the Yangtze River Delta, China (DOI: 10.1021/acs.est.4c02909)", "Biological and Environmental Research": "Geospatial Variability of Fluorescent Dissolved Organic Matter in Urban Watersheds: Relationships with Land Cover and Wastewater Infrastructure (DOI: 10.1021/acs.est.3c07925)", "Division of Earth Sciences": "Geospatial Variability of Fluorescent Dissolved Organic Matter in Urban Watersheds: Relationships with Land Cover and Wastewater Infrastructure (DOI: 10.1021/acs.est.3c07925)", "Sistema Nacional de Investigaci?n, Secretar?a Nacional de Ciencia, Tecnolog?a e Innovaci?n": "Geospatial Variability of Fluorescent Dissolved Organic Matter in Urban Watersheds: Relationships with Land Cover and Wastewater Infrastructure (DOI: 10.1021/acs.est.3c07925)", "Fulbright Program": "Geospatial Variability of Fluorescent Dissolved Organic Matter in Urban Watersheds: Relationships with Land Cover and Wastewater Infrastructure (DOI: 10.1021/acs.est.3c07925)", "Division of Chemical, Bioengineering, Environmental, and Transport Systems": "Geospatial Variability of Fluorescent Dissolved Organic Matter in Urban Watersheds: Relationships with Land Cover and Wastewater Infrastructure (DOI: 10.1021/acs.est.3c07925)"};
+        network.on("click", function(params) {
+            if (params.nodes.length > 0) {
+                var nodeId = params.nodes[0];
+                var node = nodes.get(nodeId);
+                var studies = companyStudyMap[node.label] || "No studies found for this connection.";
+                document.getElementById("study-info").innerHTML = "<h3>Studies for " + node.label + ":</h3>" + studies;
+            }
+        });
+    </script>
+    
+</body>
 </html>
