@@ -50,19 +50,24 @@ def chemical_view(request):
     if request.method == 'POST':
         chemical = request.POST.get('chemical', '').strip()
         inchikey = request.POST.get('inchikey', '').strip()
-        output_path = os.path.join(settings.STATICFILES_DIRS[0], f"network_{chemical or inchikey}.html")
 
         if inchikey:  # If InChIKey is provided, use the new function
-            found = show_chemical_network(chemical, inch=inchikey, output_file=output_path)
+            found = show_chemical_network(chemical, inch=inchikey)
             connections = show_chem_connections(inchikey=inchikey)
         elif chemical:  # If only chemical name is provided, use the old function
-            found = show_chemical_network(chemical, inch='Error', output_file=output_path)
+            found = show_chemical_network(chemical, inch='Error')
             connections = show_chem_connections(chemical)
         else:
             found = False
 
         if found:
-            iframe = f"/static/network_{chemical or inchikey}.html"
+            if chemical and inchikey and inchikey != 'Error':
+                safe_chemical = chemical.replace(' ', '_').replace('/', '_').replace('\\', '_').replace('.', '_')
+                safe_inch = inchikey.replace('/', '_').replace('\\', '_').replace('-', '_')
+                iframe = f"/static/network_{safe_chemical}_{safe_inch}.html"
+            else:
+                safe_chemical = chemical.replace(' ', '_').replace('/', '_').replace('\\', '_').replace('.', '_')
+                iframe = f"/static/network_{safe_chemical}_no_inchikey.html"
         else:
             if chemical:
                 suggestions = get_close_matches_custom(chemical, all_chemical_names)
@@ -117,10 +122,23 @@ def company_view(request):
         chemical_group = request.POST.get('chemical_group', 'none')
         sep_country = request.POST.get('sep_country', 'False')
         sep_country = True if sep_country == 'True' or sep_country is True else False  # <-- fix here
-        output_path = os.path.join(settings.STATICFILES_DIRS[0], f"network_company_{company}.html")
-        found = show_company_network_pyvis(company, category=category, chemical_group=chemical_group, sep_country = sep_country, output_file=output_path)
+        found = show_company_network_pyvis(company, category=category, chemical_group=chemical_group, sep_country = sep_country)
         if found:
-            iframe = f"/static/network_company_{company}.html"
+            safe_company = company.replace(' ', '_').replace('/', '_').replace('\\', '_').replace('.', '_')
+            safe_category = category.replace(' ', '_')
+            
+            if category == 'Chemicals':
+                if chemical_group == 'none':
+                    iframe = f"/static/network_{safe_company}_{safe_category}_all.html"
+                elif chemical_group == 'Organic':
+                    iframe = f"/static/network_{safe_company}_{safe_category}_organic.html"
+            elif category == 'Affiliations':
+                if sep_country:
+                    iframe = f"/static/network_{safe_company}_{safe_category}_by_country.html"
+                else:
+                    iframe = f"/static/network_{safe_company}_{safe_category}_combined.html"
+            else:
+                iframe = f"/static/network_{safe_company}_{safe_category}.html"
             connections = show_company_connections(company)
         else:
             suggestions = get_close_matches_custom(company, all_company_names)
@@ -176,10 +194,18 @@ def university_view(request):
         university = request.POST.get('university')
         category = request.POST.get('category', 'Companies')
         chemical_group = request.POST.get('chemical_group', 'none')
-        output_path = os.path.join(settings.STATICFILES_DIRS[0], f"network_university_{university}.html")
-        found = show_uni_network_pyvis(university, category=category, chemical_group=chemical_group, output_file=output_path)
+        found = show_uni_network_pyvis(university, category=category, chemical_group=chemical_group)
         if found:
-            iframe = f"/static/network_university_{university}.html"
+            safe_uni = university.replace(' ', '_').replace('/', '_').replace('\\', '_').replace('.', '_')
+            safe_category = category.replace(' ', '_')
+            
+            if category == 'Chemicals':
+                if chemical_group == 'none':
+                    iframe = f"/static/network_{safe_uni}_{safe_category}_all.html"
+                elif chemical_group == 'Organic':
+                    iframe = f"/static/network_{safe_uni}_{safe_category}_organic.html"
+            else:
+                iframe = f"/static/network_{safe_uni}_{safe_category}.html"
             connections = show_uni_connections(university)
         else:
             suggestions = get_close_matches_custom(university, all_university_names)
@@ -243,13 +269,13 @@ def researcher_view(request):
         elif len(matches) == 1:
             # Only one match, generate graph immediately
             row = matches[0]
-            output_path = os.path.join(settings.STATICFILES_DIRS[0], f"network_researcher_{researcher}.html")
-            found = show_researcher_network_pyvis_from_row(row, output_file=output_path)
+            found = show_researcher_network_pyvis_from_row(row)
             if found:
-                iframe = f"/static/network_researcher_{researcher}.html"
+                safe_researcher = researcher.replace(' ', '_').replace(',', '').replace('/', '_').replace('\\', '_').replace('.', '_')
+                safe_aff = str(row['Affiliation'])[:20].replace(' ', '_').replace('/', '_').replace('\\', '_').replace('.', '_')
+                iframe = f"/static/network_{safe_researcher}_{safe_aff}.html"
             connections = show_res_connections(researcher=researcher)
         elif selected_index is not None or combine:
-            output_path = os.path.join(settings.STATICFILES_DIRS[0], f"network_researcher_{researcher}.html")
             if combine:
                 # Combine all companies and affiliations
                 all_companies = sum(all_matches['Companies'], [])
@@ -262,9 +288,11 @@ def researcher_view(request):
                 }
             else:
                 row = matches[int(selected_index)]
-            found = show_researcher_network_pyvis_from_row(row, output_file=output_path)
+            found = show_researcher_network_pyvis_from_row(row)
             if found:
-                iframe = f"/static/network_researcher_{researcher}.html"
+                safe_researcher = researcher.replace(' ', '_').replace(',', '').replace('/', '_').replace('\\', '_').replace('.', '_')
+                safe_aff = str(row['Affiliation'])[:20].replace(' ', '_').replace('/', '_').replace('\\', '_').replace('.', '_')
+                iframe = f"/static/network_{safe_researcher}_{safe_aff}.html"
         # If multiple matches and no selection yet, just show the options
             connections = show_res_connections(researcher)
     context = {
