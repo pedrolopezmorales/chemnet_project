@@ -34,12 +34,12 @@
 <body style="background-color: #ffffff">
     {% include "networkviewer/tabs.html" %}
     <div style="background-color: #0b4e86; padding: 40px 10px; color: white;">
-        <h1 style="text-align: center;">Prototype for Searching Connections between studies</h1>
+        <h1 style="text-align: center;">Prototype for Searching Connections across Studies</h1>
         <h2 style="text-align: center">Select a category below to search for possible connections</h2>
 
         <div class="center-container">
             <a href="{% url 'chemical_view' %}" class="rect-link">Chemical</a>
-            <a href="{% url 'company_view' %}" class="rect-link">Company</a>
+            <a href="{% url 'company_view' %}" class="rect-link">Funding Source</a>
             <a href="{% url 'university_view' %}" class="rect-link">University</a>
             <a href="{% url 'researcher_view' %}" class="rect-link">Researcher</a>
         </div>

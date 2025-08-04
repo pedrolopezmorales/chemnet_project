@@ -17,8 +17,6 @@ from .network_functions import (
 )
 
 
-import os
-from django.conf import settings
 
 def get_close_matches_custom(query, valid_names, n = 3, cutoff=0.6):
     return difflib.get_close_matches(query, valid_names, n=n, cutoff=cutoff)
@@ -96,17 +94,17 @@ def company_view(request):
     connections = None
 
     category_options = ['Affiliations', 'Chemicals', 'Researchers', 'Universities']
-    chemical_group_options = ['none', 'Organic']
+    chemical_group_options = ['All', 'Organic']
     sep_country_options = [False, True]
 
     sep_country = False
     category = 'Affiliations'
-    chemical_group = 'none'
+    chemical_group = 'All'
 
     all_company_names= sorted(set(no_dup_comp))
     example_companies = [
         "Dow Chemical Company",
-        "US Department of Energy",
+        "U.S. Department of Energy",
         "U.S. Department of Agriculture",
         "BASF Corporation",
         "Agilent Foundation",
@@ -119,7 +117,7 @@ def company_view(request):
     if request.method == 'POST':
         company = request.POST.get('company')
         category = request.POST.get('category', 'Affiliations')
-        chemical_group = request.POST.get('chemical_group', 'none')
+        chemical_group = request.POST.get('chemical_group', 'All')
         sep_country = request.POST.get('sep_country', 'False')
         sep_country = True if sep_country == 'True' or sep_country is True else False  # <-- fix here
         found = show_company_network_pyvis(company, category=category, chemical_group=chemical_group, sep_country = sep_country)
@@ -128,7 +126,7 @@ def company_view(request):
             safe_category = category.replace(' ', '_')
             
             if category == 'Chemicals':
-                if chemical_group == 'none':
+                if chemical_group == 'All':
                     iframe = f"/static/network_{safe_company}_{safe_category}_all.html"
                 elif chemical_group == 'Organic':
                     iframe = f"/static/network_{safe_company}_{safe_category}_organic.html"
@@ -168,11 +166,11 @@ def university_view(request):
     message = None
     connections = None 
 
-    category_options = ['Chemicals','Companies']
-    chemical_group_options = ['none', 'Organic']
+    category_options = ['Chemicals','Funding Sources']
+    chemical_group_options = ['All', 'Organic']
     all_university_names = sorted(comparing_unis['University'].dropna().unique())
-    category = 'Companies'
-    chemical_group = 'none'
+    category = 'Funding Sources'
+    chemical_group = 'All'
 
     example_universities = [
         "Harvard University",
@@ -192,15 +190,15 @@ def university_view(request):
 
     if request.method == 'POST':
         university = request.POST.get('university')
-        category = request.POST.get('category', 'Companies')
-        chemical_group = request.POST.get('chemical_group', 'none')
+        category = request.POST.get('category', 'Funding Sources')
+        chemical_group = request.POST.get('chemical_group', 'All')
         found = show_uni_network_pyvis(university, category=category, chemical_group=chemical_group)
         if found:
             safe_uni = university.replace(' ', '_').replace('/', '_').replace('\\', '_').replace('.', '_')
             safe_category = category.replace(' ', '_')
             
             if category == 'Chemicals':
-                if chemical_group == 'none':
+                if chemical_group == 'All':
                     iframe = f"/static/network_{safe_uni}_{safe_category}_all.html"
                 elif chemical_group == 'Organic':
                     iframe = f"/static/network_{safe_uni}_{safe_category}_organic.html"

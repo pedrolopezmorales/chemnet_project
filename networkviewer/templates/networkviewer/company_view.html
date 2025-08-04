@@ -2,15 +2,15 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Company Network Viewer</title>
+    <title>Funding Source Network Viewer</title>
 </head>
 <body style ='background-color: white'>
     {% include "networkviewer/tabs.html" %}
     <div style="background-color: #0b4e86; padding: 40px 10px; color: white;">
-        <h1>Company Network Viewer</h1>
+        <h1>Funding Source Network Viewer</h1>
         <form method="post">
             {% csrf_token %}
-            <label for="company">Enter Company Name:</label>
+            <label for="company">Enter Funding Source Name:</label>
             <input type="text" name="company" id="company" list="company-suggestions" value="{{ company|default_if_none:'' }}">
             <datalist id ="company-suggestions">
                 {% for name in all_company_names %}
@@ -37,7 +37,7 @@
                 {% endfor %}
             </select>
             <br><br>
-            <label for="chemical_group">Chemical Group (Only for Chemical Category):</label>
+            <label for="chemical_group">Chemical Group to filter through (Only for Chemical Category):</label>
             <select name="chemical_group" id="chemical_group">
                 {% for option in chemical_group_options %}
                     <option value="{{ option }}" {% if option == chemical_group %}selected{% endif %}>{{ option }}</option>

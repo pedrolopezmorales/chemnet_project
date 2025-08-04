@@ -344,14 +344,14 @@ def is_organic(name):
     except:
         return None  # Not found
 
-def show_company_network_pyvis(company_name, category='Affiliations', chemical_group='none', sep_country=False, output_file=None):
+def show_company_network_pyvis(company_name, category='Affiliations', chemical_group='All', sep_country=False, output_file=None):
     if output_file is None:
         # Generate unique filename based on ALL parameters
         safe_company = company_name.replace(' ', '_').replace('/', '_').replace('\\', '_').replace('.', '_')
         safe_category = category.replace(' ', '_')
         
         if category == 'Chemicals':
-            if chemical_group == 'none':
+            if chemical_group == 'All':
                 output_file = f"networkviewer/static/network_{safe_company}_{safe_category}_all.html"
             elif chemical_group == 'Organic':
                 output_file = f"networkviewer/static/network_{safe_company}_{safe_category}_organic.html"
@@ -385,7 +385,8 @@ def show_company_network_pyvis(company_name, category='Affiliations', chemical_g
 
     # Add affiliation nodes and edges
     if category == 'Chemicals':
-        if chemical_group == 'none':
+        if chemical_group == 'All':
+            # Add nodes first (keep existing logic)
             total_inchikeys = []
             for name, inchikey in parsed_chems:
                 if inchikey:
@@ -397,7 +398,7 @@ def show_company_network_pyvis(company_name, category='Affiliations', chemical_g
                                 title=f"InChIKey: {inchikey}",
                                 color='lightgreen',
                                 shape='ellipse'
-                                )
+                            )
                             total_inchikeys.append(inchikey)
                         else:
                             total_inchikeys.append(inchikey)
@@ -410,13 +411,37 @@ def show_company_network_pyvis(company_name, category='Affiliations', chemical_g
                             shape='ellipse'
                         )
                         net.add_edge(company_name, name)
-            inchikey_counts = {}
-            for inch in total_inchikeys:
-                inchikey_counts[inch] = inchikey_counts.get(inch, 0) + 1
-            for inchikey in total_inchikeys:
-                for node in net.nodes:
-                    if inchikey in node.get('title', ''):
-                        net.add_edge(company_name, node['id'], width = inchikey_counts[inchikey], title=f"Appearances: {inchikey_counts[inchikey]}")
+            
+            # REPLACE InChIKey counting with study counting
+            study_counts = {}
+            for node in net.nodes:
+                if node['id'] != company_name:  # Skip the company node itself
+                    node_title = node.get('title', '')
+                    if 'InChIKey:' in node_title:
+                        inchikey = node_title.replace('InChIKey:', '').strip()
+                        if inchikey and inchikey != 'Not Found':
+                            # Count studies mentioning this InChIKey
+                            studies = main[
+                                (main['Funding Sources'].str.contains(company_name, na=False)) &
+                                (main['Chemicals with InChIKey'].str.contains(inchikey, na=False))
+                            ]
+                            study_count = len(studies.drop_duplicates(subset=['DOI']))
+                        else:
+                            # Fallback to chemical name for chemicals without InChIKey
+                            chemical_name = node.get('label', '')
+                            studies = main[
+                                (main['Funding Sources'].str.contains(company_name, na=False)) &
+                                (main['Chemicals with InChIKey'].str.contains(chemical_name, na=False))
+                            ]
+                            study_count = len(studies.drop_duplicates(subset=['DOI']))
+                        
+                        study_counts[node['id']] = study_count
+                        net.add_edge(
+                            company_name, 
+                            node['id'], 
+                            width=max(1, study_count),  # Minimum width of 1 for visibility
+                            title=f"Studies: {study_count}"
+                        )
         elif chemical_group =='Organic':
             added_inchikeys = []
             for name, inchikey in parsed_chems:
@@ -441,14 +466,37 @@ def show_company_network_pyvis(company_name, category='Affiliations', chemical_g
                             shape='ellipse'
                         )
                         net.add_edge(company_name, name)
-            inchikey_counts = {}
-            for inch in added_inchikeys:
-                inchikey_counts[inch] = inchikey_counts.get(inch, 0) + 1
-            for inchikey in added_inchikeys:
-                for node in net.nodes:
+            
+            # REPLACE InChIKey counting with study counting for organic chemicals
+            study_counts = {}
+            for node in net.nodes:
+                if node['id'] != company_name:  # Skip the company node itself
                     node_title = node.get('title', '')
-                    if node_title and isinstance(node_title, str) and inchikey in node_title:
-                        net.add_edge(company_name, node['id'], width = inchikey_counts[inchikey], title=f"Appearances: {inchikey_counts[inchikey]}")
+                    if 'InChIKey:' in node_title:
+                        inchikey = node_title.replace('InChIKey:', '').strip()
+                        if inchikey and inchikey != 'Not Found':
+                            # Count studies mentioning this InChIKey
+                            studies = main[
+                                (main['Funding Sources'].str.contains(company_name, na=False)) &
+                                (main['Chemicals with InChIKey'].str.contains(inchikey, na=False))
+                            ]
+                            study_count = len(studies.drop_duplicates(subset=['DOI']))
+                        else:
+                            # Fallback to chemical name
+                            chemical_name = node.get('label', '')
+                            studies = main[
+                                (main['Funding Sources'].str.contains(company_name, na=False)) &
+                                (main['Chemicals with InChIKey'].str.contains(chemical_name, na=False))
+                            ]
+                            study_count = len(studies.drop_duplicates(subset=['DOI']))
+                        
+                        study_counts[node['id']] = study_count
+                        net.add_edge(
+                            company_name, 
+                            node['id'], 
+                            width=max(1, study_count),
+                            title=f"Studies: {study_count}"
+                        )
     elif category == 'Affiliations':
         if sep_country == False:
             total_affil = []
@@ -469,14 +517,25 @@ def show_company_network_pyvis(company_name, category='Affiliations', chemical_g
                     total_affil.append(affil)
                 else:
                     total_affil.append(affil)
-            aff_counts = {}
-            for affil in total_affil:
-                aff_counts[affil] = aff_counts.get(affil,0) + 1
-            for affil in total_affil:
-                for node in net.nodes:
-                    node_title = node.get('title','')
-                    if node_title and isinstance(node_title, str) and affil in node_title:
-                        net.add_edge(company_name,node['id'], width = aff_counts[affil], title=f"Appearances: {aff_counts[affil]}")
+            study_counts = {}
+            for node in net.nodes:
+                if node['id'] != company_name:  # Skip the company node itself
+                    affiliation = node.get('title', '')  # Full affiliation is in title
+                    if affiliation:
+                        # Count studies mentioning this affiliation
+                        studies = main[
+                            (main['Funding Sources'].str.contains(company_name, na=False)) &
+                            (main['Affiliations'].str.contains(affiliation, na=False, regex=False))
+                        ]
+                        study_count = len(studies.drop_duplicates(subset=['DOI']))
+                        
+                        study_counts[node['id']] = study_count
+                        net.add_edge(
+                            company_name,
+                            node['id'], 
+                            width=max(1, study_count), 
+                            title=f"Studies: {study_count}"
+                        )
         elif sep_country == True:
             total_affil=[]
             aff_counts={}
@@ -495,13 +554,21 @@ def show_company_network_pyvis(company_name, category='Affiliations', chemical_g
                     shape='box',
                     size=20
                 )
+                
+                # REPLACE country counting with study counting
+                studies = main[
+                    (main['Funding Sources'].str.contains(company_name, na=False)) &
+                    (main['Affiliations'].str.contains(country, na=False, regex=False))
+                ]
+                study_count = len(studies.drop_duplicates(subset=['DOI']))
+                
                 net.add_edge(
                     company_name, 
                     country, 
-                    width=country_affil_counts[country], 
-                    title=f"Affiliations: {country_affil_counts[country]}"
+                    width=max(1, study_count), 
+                    title=f"Studies: {study_count}"
                 )
-                 
+                
             for affil,country in zip(data['Affiliations'], data['Countries']):
                 found = False
                 short_label = affil
@@ -517,9 +584,19 @@ def show_company_network_pyvis(company_name, category='Affiliations', chemical_g
                 if not any(node['id'] ==  affil for node in net.nodes):
                     net.add_node(affil, label=short_label, title=affil, color='lightblue',shape='ellipse',size=15)
                 
-                net.add_edge(country, affil,width=aff_counts[affil], title=f"Appearances: {aff_counts[affil]}")
-        else:
-            print('Invalid')
+                # REPLACE affiliation counting with study counting
+                studies = main[
+                    (main['Funding Sources'].str.contains(company_name, na=False)) &
+                    (main['Affiliations'].str.contains(affil, na=False, regex=False))
+                ]
+                study_count = len(studies.drop_duplicates(subset=['DOI']))
+                
+                net.add_edge(
+                    country, 
+                    affil,
+                    width=max(1, study_count), 
+                    title=f"Studies: {study_count}"
+                )
     elif category == 'Universities':
         total_uni = []
         for uni in data:
@@ -528,14 +605,25 @@ def show_company_network_pyvis(company_name, category='Affiliations', chemical_g
                 total_uni.append(uni)
             else:
                 total_uni.append(uni)
-        uni_counts = {}
-        for uni in total_uni:
-            uni_counts[uni] = uni_counts.get(uni, 0) + 1
-        for uni in total_uni:
-            for node in net.nodes:
-                node_title = node.get('title','')
-                if node_title and isinstance(node_title, str) and uni in node_title:
-                    net.add_edge(company_name,node['id'], width = uni_counts[uni], title=f"Appearances: {uni_counts[uni]}")
+        study_counts = {}
+        for node in net.nodes:
+            if node['id'] != company_name:  # Skip the company node itself
+                university = node.get('title', '')  # University name is in title
+                if university:
+                    # Count studies mentioning this university
+                    studies = main[
+                        (main['Funding Sources'].str.contains(company_name, na=False)) &
+                        (main['Affiliations'].str.contains(university, na=False))
+                    ]
+                    study_count = len(studies.drop_duplicates(subset=['DOI']))
+                    
+                    study_counts[node['id']] = study_count
+                    net.add_edge(
+                        company_name,
+                        node['id'], 
+                        width=max(1, study_count), 
+                        title=f"Studies: {study_count}"
+                    )
     elif category == 'Researchers':
         total_res = []
         for res, aff in zip(res_list, aff_list):
@@ -544,14 +632,25 @@ def show_company_network_pyvis(company_name, category='Affiliations', chemical_g
                 total_res.append(res+'|'+aff[:20])
             else:
                 total_res.append(res+'|'+aff[:20])
-        res_counts = {}
-        for res in total_res:
-            res_counts[res] = res_counts.get(res,0) + 1
-        for res in total_res:
-            for node in net.nodes:
-                node_title = node.get('label','')+'|'+node.get('title','')
-                if node_title and isinstance(node_title,str) and res in node_title:
-                    net.add_edge(company_name,node['id'], width = res_counts[res],title=f"Appearances: {res_counts[res]}")
+        study_counts = {}
+        for node in net.nodes:
+            if node['id'] != company_name:  # Skip the company node itself
+                researcher = node.get('label', '')  # Researcher name is the label
+                if researcher:
+                    # Count studies mentioning this researcher
+                    studies = main[
+                        (main['Funding Sources'].str.contains(company_name, na=False)) &
+                        (main['Authors'].str.contains(researcher, na=False))
+                    ]
+                    study_count = len(studies.drop_duplicates(subset=['DOI']))
+                    
+                    study_counts[node['id']] = study_count
+                    net.add_edge(
+                        company_name,
+                        node['id'], 
+                        width=max(1, study_count), 
+                        title=f"Studies: {study_count}"
+                    )
     num_nodes = len(net.nodes)
 
     
@@ -726,14 +825,14 @@ comparing_unis = comparing_affiliations.groupby('University').agg({
 })
 comparing_unis.reset_index(inplace = True)
 
-def show_uni_network_pyvis(uni_name, category='Companies', chemical_group='none', output_file=None):
+def show_uni_network_pyvis(uni_name, category='Funding Sources', chemical_group='All', output_file=None):
     if output_file is None:
         # Generate unique filename based on ALL parameters
         safe_uni = uni_name.replace(' ', '_').replace('/', '_').replace('\\', '_').replace('.', '_')
         safe_category = category.replace(' ', '_')
         
         if category == 'Chemicals':
-            if chemical_group == 'none':
+            if chemical_group == 'All':
                 output_file = f"networkviewer/static/network_{safe_uni}_{safe_category}_all.html"
             elif chemical_group == 'Organic':
                 output_file = f"networkviewer/static/network_{safe_uni}_{safe_category}_organic.html"
@@ -744,7 +843,10 @@ def show_uni_network_pyvis(uni_name, category='Companies', chemical_group='none'
     if row.empty:
         print(f"University '{uni_name}' not found.")
         return False
-    data = row.iloc[0][category]
+    if category == 'Funding Sources':
+        data = row.iloc[0]['Companies']
+    else:
+        data = row.iloc[0][category]
     if category == 'Chemicals':
         parsed_chems = (parse_chemical_entry(c) for c in data)
     # Initialize PyVis network
@@ -756,7 +858,7 @@ def show_uni_network_pyvis(uni_name, category='Companies', chemical_group='none'
 
     # Add affiliation nodes and edges
     if category == 'Chemicals':
-        if chemical_group == 'none':
+        if chemical_group == 'All':
             total_inchikeys = []
             for name, inchikey in parsed_chems:
                 if inchikey:
@@ -781,13 +883,35 @@ def show_uni_network_pyvis(uni_name, category='Companies', chemical_group='none'
                             shape='ellipse'
                         )
                         net.add_edge(uni_name, name)
-            inchikey_counts = {}
-            for inch in total_inchikeys:
-                inchikey_counts[inch] = inchikey_counts.get(inch, 0) + 1
-            for inchikey in total_inchikeys:
-                for node in net.nodes:
-                    if inchikey in node.get('title', ''):
-                        net.add_edge(uni_name, node['id'], width = inchikey_counts[inchikey], title=f"Appearances: {inchikey_counts[inchikey]}")
+            study_counts = {}
+            for node in net.nodes:
+                if node['id'] != uni_name:  # Skip the university node itself
+                    node_title = node.get('title', '')
+                    if 'InChIKey:' in node_title:
+                        inchikey = node_title.replace('InChIKey:', '').strip()
+                        if inchikey and inchikey != 'Not Found':
+                            # Count studies mentioning this InChIKey at this university
+                            studies = main[
+                                (main['Affiliations'].str.contains(uni_name, na=False)) &
+                                (main['Chemicals with InChIKey'].str.contains(inchikey, na=False))
+                            ]
+                            study_count = len(studies.drop_duplicates(subset=['DOI']))
+                        else:
+                            # Fallback to chemical name
+                            chemical_name = node.get('label', '')
+                            studies = main[
+                                (main['Affiliations'].str.contains(uni_name, na=False)) &
+                                (main['Chemicals with InChIKey'].str.contains(chemical_name, na=False))
+                            ]
+                            study_count = len(studies.drop_duplicates(subset=['DOI']))
+                        
+                        study_counts[node['id']] = study_count
+                        net.add_edge(
+                            uni_name, 
+                            node['id'], 
+                            width=max(1, study_count),
+                            title=f"Studies: {study_count}"
+                        )
         elif chemical_group =='Organic':
             added_inchikeys = []
             for name, inchikey in parsed_chems:
@@ -812,15 +936,36 @@ def show_uni_network_pyvis(uni_name, category='Companies', chemical_group='none'
                             shape='ellipse'
                         )
                         net.add_edge(uni_name, name)
-            inchikey_counts = {}
-            for inch in added_inchikeys:
-                inchikey_counts[inch] = inchikey_counts.get(inch, 0) + 1
-            for inchikey in added_inchikeys:
-                for node in net.nodes:
+            study_counts = {}
+            for node in net.nodes:
+                if node['id'] != uni_name:  # Skip the university node itself
                     node_title = node.get('title', '')
-                    if node_title and isinstance(node_title, str) and inchikey in node_title:
-                        net.add_edge(uni_name, node['id'], width = inchikey_counts[inchikey], title=f"Appearances: {inchikey_counts[inchikey]}")
-    if category == 'Companies':
+                    if 'InChIKey:' in node_title:
+                        inchikey = node_title.replace('InChIKey:', '').strip()
+                        if inchikey and inchikey != 'Not Found':
+                            # Count studies mentioning this InChIKey
+                            studies = main[
+                                (main['Affiliations'].str.contains(uni_name, na=False)) &
+                                (main['Chemicals with InChIKey'].str.contains(inchikey, na=False))
+                            ]
+                            study_count = len(studies.drop_duplicates(subset=['DOI']))
+                        else:
+                            # Fallback to chemical name
+                            chemical_name = node.get('label', '')
+                            studies = main[
+                                (main['Affiliations'].str.contains(uni_name, na=False)) &
+                                (main['Chemicals with InChIKey'].str.contains(chemical_name, na=False))
+                            ]
+                            study_count = len(studies.drop_duplicates(subset=['DOI']))
+                        
+                        study_counts[node['id']] = study_count
+                        net.add_edge(
+                            uni_name, 
+                            node['id'], 
+                            width=max(1, study_count),
+                            title=f"Studies: {study_count}"
+                        )
+    if category == 'Funding Sources':
         total_comp = []
         for affil in data:
             if affil not in total_comp:
@@ -828,14 +973,25 @@ def show_uni_network_pyvis(uni_name, category='Companies', chemical_group='none'
                 total_comp.append(affil)
             else:
                 total_comp.append(affil)
-        comp_counts = {}
-        for comp in total_comp:
-            comp_counts[comp] = comp_counts.get(comp, 0) + 1
-        for comp in total_comp:
-            for node in net.nodes:
-                node_title = node.get('title','')
-                if node_title and isinstance(node_title, str) and comp in node_title:
-                    net.add_edge(uni_name,node['id'], width = comp_counts[comp], title=f"Appearances: {comp_counts[comp]}")
+        study_counts = {}
+        for node in net.nodes:
+            if node['id'] != uni_name:  # Skip the university node itself
+                company = node.get('title', '')  # Company name is in title
+                if company:
+                    # Count studies mentioning this company at this university
+                    studies = main[
+                        (main['Affiliations'].str.contains(uni_name, na=False)) &
+                        (main['Funding Sources'].str.contains(company, na=False))
+                    ]
+                    study_count = len(studies.drop_duplicates(subset=['DOI']))
+                    
+                    study_counts[node['id']] = study_count
+                    net.add_edge(
+                        uni_name,
+                        node['id'], 
+                        width=max(1, study_count), 
+                        title=f"Studies: {study_count}"
+                    )
     num_nodes = len(net.nodes)
 
     
@@ -854,7 +1010,7 @@ def show_uni_network_pyvis(uni_name, category='Companies', chemical_group='none'
 
     net.options.physics.minVelocity = 0.75
     company_study_map = {}
-    if category =='Companies':
+    if category =='Funding Sources':
         for comp in data:
             studies = main[
                 (main['Funding Sources'].str.contains(comp, na=False, regex=False)) &
@@ -988,7 +1144,6 @@ def show_researcher_network_pyvis(researcher, output_file = "networkviewer/stati
     aff = row['Affiliation']
     if aff == '':
         aff = 'Not Found'
-    studies_by_company = row['StudiesByCompany']
     # Initialize PyVis network
     net = Network(height="600px", width="100%", bgcolor="#ffffff", font_color="black",notebook=True)
     net.barnes_hut()  # for better layout dynamics
@@ -1004,14 +1159,25 @@ def show_researcher_network_pyvis(researcher, output_file = "networkviewer/stati
             total_comp.append(affil)
         else:
             total_comp.append(affil)
-    comp_counts = {}
-    for comp in total_comp:
-        comp_counts[comp] = comp_counts.get(comp, 0) + 1
-    for comp in total_comp:
-        for node in net.nodes:
-            node_title = node.get('label','')
-            if node_title and isinstance(node_title, str) and comp in node_title:
-                net.add_edge(researcher,node['id'], width = comp_counts[comp], title=f"Appearances: {comp_counts[comp]}")
+    study_counts = {}
+    for node in net.nodes:
+        if node['id'] != researcher:  # Skip the researcher node itself
+            company = node.get('label', '')  # Company name is the label
+            if company:
+                # Count studies mentioning this researcher with this company
+                studies = main[
+                    (main['Funding Sources'].str.contains(company, na=False)) &
+                    (main['Authors'].str.contains(researcher, na=False))
+                ]
+                study_count = len(studies.drop_duplicates(subset=['DOI']))
+                
+                study_counts[node['id']] = study_count
+                net.add_edge(
+                    researcher,
+                    node['id'], 
+                    width=max(1, study_count), 
+                    title=f"Studies: {study_count}"
+                )
     num_nodes = len(net.nodes)
 
     
@@ -1124,14 +1290,34 @@ def show_chemical_network(chemical, inch='Error', output_file=None):
             total_comp.append(comp)
         else:
             total_comp.append(comp)
-    comp_counts = {}
-    for comp in total_comp:
-        comp_counts[comp] = comp_counts.get(comp, 0) + 1
-    for comp in total_comp:
-        for node in net.nodes:
-            node_title = node.get('label','')
-            if node_title and isinstance(node_title, str) and comp in node_title:
-                net.add_edge(chemical,node['id'], width = comp_counts[comp], title=f"Appearances: {comp_counts[comp]}",color='red')
+    study_counts = {}
+    for node in net.nodes:
+        if node['id'] != chemical:  # Skip the chemical node itself
+            company = node.get('label', '')  # Company name is the label
+            if company:
+                # Count studies mentioning this chemical with this company
+                if inch and inch != 'Error' and inch != 'Not Found':
+                    # Use InChIKey for search
+                    studies = main[
+                        (main['Funding Sources'].str.contains(company, na=False)) &
+                        (main['Chemicals with InChIKey'].str.contains(inch, na=False))
+                    ]
+                else:
+                    # Fallback to chemical name
+                    studies = main[
+                        (main['Funding Sources'].str.contains(company, na=False)) &
+                        (main['Chemicals with InChIKey'].str.contains(chemical, na=False))
+                    ]
+                study_count = len(studies.drop_duplicates(subset=['DOI']))
+                
+                study_counts[node['id']] = study_count
+                net.add_edge(
+                    chemical,
+                    node['id'], 
+                    width=max(1, study_count), 
+                    title=f"Studies: {study_count}",
+                    color='red'
+                )
     num_nodes = len(net.nodes)
 
     
@@ -1219,14 +1405,25 @@ def show_researcher_network_pyvis_from_row(row, output_file=None):
             total_comp.append(comp)
         else:
             total_comp.append(comp)
-    comp_counts = {}
-    for comp in total_comp:
-        comp_counts[comp] = comp_counts.get(comp, 0) + 1
-    for comp in total_comp:
-        for node in net.nodes:
-            node_title = node.get('label', '')
-            if node_title and isinstance(node_title, str) and comp in node_title:
-                net.add_edge(researcher, node['id'], width=comp_counts[comp], title=f"Appearances: {comp_counts[comp]}")
+    study_counts = {}
+    for node in net.nodes:
+        if node['id'] != researcher:  # Skip the researcher node itself
+            company = node.get('label', '')  # Company name is the label
+            if company:
+                # Count studies mentioning this researcher with this company
+                studies = main[
+                    (main['Funding Sources'].str.contains(company, na=False)) &
+                    (main['Authors'].str.contains(researcher, na=False))
+                ]
+                study_count = len(studies.drop_duplicates(subset=['DOI']))
+                
+                study_counts[node['id']] = study_count
+                net.add_edge(
+                    researcher,
+                    node['id'], 
+                    width=max(1, study_count), 
+                    title=f"Studies: {study_count}"
+                )
     num_nodes = len(net.nodes)
 
     
@@ -1295,52 +1492,95 @@ def show_company_connections(company_name):
     aff_list = row.iloc[0]['Affs']
     universities = row.iloc[0]['Universities']
 
-    # === Chemicals ===
-    chem_counts = {}
+    # === Chemicals (Modern counting like network functions) ===
+    labeled_chemicals = []
+    processed_inchikeys = set()
+    
     for name, inchikey in parsed_chems:
         if inchikey and inchikey != 'Not Found':
-            key = f"{inchikey}||{name}"
+            if inchikey not in processed_inchikeys:
+                # Count studies mentioning this InChIKey
+                studies = main[
+                    (main['Funding Sources'].str.contains(company_name, na=False)) &
+                    (main['Chemicals with InChIKey'].str.contains(inchikey, na=False))
+                ]
+                study_count = len(studies.drop_duplicates(subset=['DOI']))
+                labeled_chemicals.append(f"{name} ({study_count})")
+                processed_inchikeys.add(inchikey)
         else:
-            key = name
-        chem_counts[key] = chem_counts.get(key, 0) + 1
+            # Chemicals without InChIKey - count by name
+            studies = main[
+                (main['Funding Sources'].str.contains(company_name, na=False)) &
+                (main['Chemicals with InChIKey'].str.contains(name, na=False))
+            ]
+            study_count = len(studies.drop_duplicates(subset=['DOI']))
+            labeled_chemicals.append(f"{name} ({study_count})")
 
-    labeled_chemicals = []
-    for key, count in chem_counts.items():
-        if '||' in key:
-            _, name = key.split('||', 1)
-        else:
-            name = key
-        labeled_chemicals.append(f"{name} ({count})")
-
-    # === Countries ===
-    country_counts = {}
+    # === Countries (Modern counting) ===
+    unique_countries = []
+    labeled_countries = []
+    
     for country in countries:
-        country_counts[country] = country_counts.get(country, 0) + 1
-    total_countries = [f"{country} ({count})" for country, count in country_counts.items()]
+        if country not in unique_countries:
+            # Count studies mentioning this country
+            studies = main[
+                (main['Funding Sources'].str.contains(company_name, na=False)) &
+                (main['Affiliations'].str.contains(country, na=False, regex=False))
+            ]
+            study_count = len(studies.drop_duplicates(subset=['DOI']))
+            labeled_countries.append(f"{country} ({study_count})")
+            unique_countries.append(country)
 
-    # === Affiliations ===
-    aff_counts = {}
-    for aff in affiliations:
-        aff_counts[aff] = aff_counts.get(aff, 0) + 1
-    total_aff = [f"{aff} ({count})" for aff, count in aff_counts.items()]
+    # === Affiliations (Modern counting like network functions) ===
+    unique_affiliations = []
+    labeled_affiliations = []
+    
+    for affil in affiliations:
+        if affil not in unique_affiliations:
+            # Count studies mentioning this affiliation
+            studies = main[
+                (main['Funding Sources'].str.contains(company_name, na=False)) &
+                (main['Affiliations'].str.contains(affil, na=False, regex=False))
+            ]
+            study_count = len(studies.drop_duplicates(subset=['DOI']))
+            labeled_affiliations.append(f"{affil} ({study_count})")
+            unique_affiliations.append(affil)
 
-    # === Researchers ===
-    res_counts = {}
+    # === Researchers (Modern counting) ===
+    unique_researchers = []
+    labeled_researchers = []
+    
     for res in res_list:
-        res_counts[res] = res_counts.get(res, 0) + 1
-    total_res = [f"{res} ({count})" for res, count in res_counts.items()]
+        if res not in unique_researchers:
+            # Count studies mentioning this researcher
+            studies = main[
+                (main['Funding Sources'].str.contains(company_name, na=False)) &
+                (main['Authors'].str.contains(res, na=False))
+            ]
+            study_count = len(studies.drop_duplicates(subset=['DOI']))
+            labeled_researchers.append(f"{res} ({study_count})")
+            unique_researchers.append(res)
 
-    # === Universities ===
-    uni_counts = {}
+    # === Universities (Modern counting) ===
+    unique_universities = []
+    labeled_universities = []
+    
     for uni in universities:
-        uni_counts[uni] = uni_counts.get(uni, 0) + 1
-    total_uni = [f"{uni} ({count})" for uni, count in uni_counts.items()]
+        if uni not in unique_universities:
+            # Count studies mentioning this university
+            studies = main[
+                (main['Funding Sources'].str.contains(company_name, na=False)) &
+                (main['Affiliations'].str.contains(uni, na=False))
+            ]
+            study_count = len(studies.drop_duplicates(subset=['DOI']))
+            labeled_universities.append(f"{uni} ({study_count})")
+            unique_universities.append(uni)
 
     return {
-        "Affiliations": total_aff,
-        "Countries": total_countries,
-        "Researchers": total_res,
-        "Universities": total_uni,
+        "Affiliations": labeled_affiliations,
+        "Countries": labeled_countries,
+        "Researchers": labeled_researchers,
+        "Universities": labeled_universities,
         "Chemicals": labeled_chemicals
     }
 
@@ -1353,31 +1593,47 @@ def show_uni_connections(university):
     parsed_chems = list(parse_chemical_entry(c) for c in row.iloc[0]['Chemicals'])
     companies = row.iloc[0]['Companies']
 
-    # === Chemicals ===
-    chem_counts = {}
+    # === Chemicals (Modern counting like network functions) ===
+    labeled_chemicals = []
+    processed_inchikeys = set()
+    
     for name, inchikey in parsed_chems:
         if inchikey and inchikey != 'Not Found':
-            key = f"{inchikey}||{name}"
+            if inchikey not in processed_inchikeys:
+                # Count studies mentioning this InChIKey at this university
+                studies = main[
+                    (main['Affiliations'].str.contains(university, na=False)) &
+                    (main['Chemicals with InChIKey'].str.contains(inchikey, na=False))
+                ]
+                study_count = len(studies.drop_duplicates(subset=['DOI']))
+                labeled_chemicals.append(f"{name} ({study_count})")
+                processed_inchikeys.add(inchikey)
         else:
-            key = name
-        chem_counts[key] = chem_counts.get(key, 0) + 1
+            # Chemicals without InChIKey - count by name
+            studies = main[
+                (main['Affiliations'].str.contains(university, na=False)) &
+                (main['Chemicals with InChIKey'].str.contains(name, na=False))
+            ]
+            study_count = len(studies.drop_duplicates(subset=['DOI']))
+            labeled_chemicals.append(f"{name} ({study_count})")
 
-    labeled_chemicals = []
-    for key, count in chem_counts.items():
-        if '||' in key:
-            _, name = key.split('||', 1)
-        else:
-            name = key
-        labeled_chemicals.append(f"{name} ({count})")
-
-    # === Companies ===
-    company_counts = {}
+    # === Companies (Modern counting like network functions) ===
+    unique_companies = []
+    labeled_companies = []
+    
     for comp in companies:
-        company_counts[comp] = company_counts.get(comp, 0) + 1
-    total_companies = [f"{comp} ({count})" for comp, count in company_counts.items()]
+        if comp not in unique_companies:
+            # Count studies mentioning this company at this university
+            studies = main[
+                (main['Affiliations'].str.contains(university, na=False)) &
+                (main['Funding Sources'].str.contains(comp, na=False))
+            ]
+            study_count = len(studies.drop_duplicates(subset=['DOI']))
+            labeled_companies.append(f"{comp} ({study_count})")
+            unique_companies.append(comp)
 
     return {
-        "Companies": total_companies,
+        "Funding Sources": labeled_companies,
         "Chemicals": labeled_chemicals
     }
 
@@ -1385,7 +1641,8 @@ def show_res_connections(researcher):
     matches = comparing_researchers[comparing_researchers['Researcher'].str.lower() == researcher.lower()]
     if matches.empty:
         print(f"Researcher: '{researcher}' not found.")
-        return
+        return False
+    
     if len(matches) > 1:
         # Combine all companies and pick the longest affiliation
         all_companies = sum(matches['Companies'], [])
@@ -1396,8 +1653,7 @@ def show_res_connections(researcher):
             'Affiliation': combined_aff,
             'Companies': all_companies
         }
-
-    if len(matches) == 1:
+    else:
         row = matches.iloc[0]
 
     data = row['Companies']
@@ -1405,15 +1661,24 @@ def show_res_connections(researcher):
     if aff == '':
         aff = 'Not Found'
 
-    # === Companies ===
-    company_counts = {}
+    # === Companies (Modern counting like network functions) ===
+    unique_companies = []
+    labeled_companies = []
+    
     for comp in data:
-        company_counts[comp] = company_counts.get(comp, 0) + 1
-    total_companies = [f"{comp} ({count})" for comp, count in company_counts.items()]
+        if comp not in unique_companies:
+            # Count studies mentioning this researcher with this company
+            studies = main[
+                (main['Authors'].str.contains(researcher, na=False)) &
+                (main['Funding Sources'].str.contains(comp, na=False))
+            ]
+            study_count = len(studies.drop_duplicates(subset=['DOI']))
+            labeled_companies.append(f"{comp} ({study_count})")
+            unique_companies.append(comp)
 
     return {
         "Affiliation(s)": aff,
-        "Companies": total_companies
+        "Funding Sources": labeled_companies
     }
 
 def show_chem_connections(chemical=None, inchikey=None):
@@ -1423,21 +1688,40 @@ def show_chem_connections(chemical=None, inchikey=None):
         row = chem_per_row[chem_per_row['chemical'].apply(lambda x: any(chemical.lower() == name.lower() for name in x))]
     else:
         return False
+    
     if row.empty:
         print(f"Chemical '{chemical}' not found.")
         return False
+    
     data = row.iloc[0]['company']
     inchikey_val = row.iloc[0]['inchikey']
     if inchikey_val == 'Error':
         inchikey_val = 'Not Found'
 
-    # === Companies ===
-    company_counts = {}
+    # === Companies (Modern counting like network functions) ===
+    unique_companies = []
+    labeled_companies = []
+    
     for comp in data:
-        company_counts[comp] = company_counts.get(comp, 0) + 1
-    total_companies = [f"{comp} ({count})" for comp, count in company_counts.items()]
+        if comp not in unique_companies:
+            # Count studies mentioning this chemical with this company
+            if inchikey_val and inchikey_val != 'Not Found':
+                # Use InChIKey for search
+                studies = main[
+                    (main['Funding Sources'].str.contains(comp, na=False)) &
+                    (main['Chemicals with InChIKey'].str.contains(inchikey_val, na=False))
+                ]
+            else:
+                # Fallback to chemical name
+                studies = main[
+                    (main['Funding Sources'].str.contains(comp, na=False)) &
+                    (main['Chemicals with InChIKey'].str.contains(chemical, na=False))
+                ]
+            study_count = len(studies.drop_duplicates(subset=['DOI']))
+            labeled_companies.append(f"{comp} ({study_count})")
+            unique_companies.append(comp)
 
     return {
         "Inchikey": inchikey_val,
-        "Companies": total_companies
+        "Funding Sources": labeled_companies
     }

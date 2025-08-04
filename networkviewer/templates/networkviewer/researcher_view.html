@@ -8,6 +8,7 @@
     {% include "networkviewer/tabs.html" %}
     <div style="background-color: #0b4e86; padding: 40px 10px; color: white;">
         <h1>Researcher Network Viewer</h1>
+        <h2>This search only shows connections between the Researcher and Funding Sources</h2>
         <form method="post">
             {% csrf_token %}
             <label for="researcher">Enter Researcher Name:</label>
