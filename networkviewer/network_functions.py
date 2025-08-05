@@ -352,17 +352,17 @@ def show_company_network_pyvis(company_name, category='Affiliations', chemical_g
         
         if category == 'Chemicals':
             if chemical_group == 'All':
-                output_file = f"staticfiles/network_{safe_company}_{safe_category}_all.html"
+                output_file = f"networkviewer/static/network_{safe_company}_{safe_category}_all.html"
             elif chemical_group == 'Organic':
-                output_file = f"staticfiles/network_{safe_company}_{safe_category}_organic.html"
+                output_file = f"networkviewer/static/network_{safe_company}_{safe_category}_organic.html"
         elif category == 'Affiliations':
             if sep_country:
-                output_file = f"staticfiles/network_{safe_company}_{safe_category}_by_country.html"
+                output_file = f"networkviewer/static/network_{safe_company}_{safe_category}_by_country.html"
             else:
-                output_file = f"staticfiles/network_{safe_company}_{safe_category}_combined.html"
+                output_file = f"networkviewer/static/network_{safe_company}_{safe_category}_combined.html"
         else:
             # For Universities, Researchers, etc.
-            output_file = f"staticfiles/network_{safe_company}_{safe_category}.html"
+            output_file = f"networkviewer/static/network_{safe_company}_{safe_category}.html"
     # Filter for the selected company
     row = company_assoc[company_assoc['Company'] == company_name]
     if row.empty:
@@ -547,26 +547,19 @@ def show_company_network_pyvis(company_name, category='Affiliations', chemical_g
                 country_affil_counts[country] = country_affil_counts.get(country, 0) + 1
 
             for country in country_affil_counts:
-                net.add_node(
-                    country, 
-                    label=country,
-                    color='lightgreen', 
-                    shape='box',
-                    size=20
-                )
+                net.add_node(country, label=country, color='lightgreen', shape='box', size=20)
+        
+                # FIX: Use affiliation count instead of total study count
+                affiliation_count = country_affil_counts[country]
                 
-                # REPLACE country counting with study counting
-                studies = main[
-                    (main['Funding Sources'].str.contains(company_name, na=False)) &
-                    (main['Affiliations'].str.contains(country, na=False, regex=False))
-                ]
-                study_count = len(studies.drop_duplicates(subset=['DOI']))
+                # Scale the edge width proportionally (max 10 for visual balance)
+                scaled_width = min(affiliation_count, 10)
                 
                 net.add_edge(
                     company_name, 
                     country, 
-                    width=max(1, study_count), 
-                    title=f"Studies: {study_count}"
+                    width=max(1, scaled_width), 
+                    title=f"Affiliations: {affiliation_count}"  # Show affiliation count instead
                 )
                 
             for affil,country in zip(data['Affiliations'], data['Countries']):
@@ -653,7 +646,20 @@ def show_company_network_pyvis(company_name, category='Affiliations', chemical_g
                     )
     num_nodes = len(net.nodes)
 
-    
+    net.options.interaction = {
+    "zoomView": True,          
+    "dragView": True,        
+    "zoomSpeed": 0.00000000000000000000000000000000000000000000000000000000001,            
+    "minZoom": 0.1,           
+    "maxZoom": 4.0,           
+    "wheelSensitivity": 0,    
+    "hideEdgesOnDrag": False,
+    "hideEdgesOnZoom": False,
+    "keyboard": {
+        "enabled": False,
+        "bindToWindow": False
+        }
+    }
     if num_nodes > 100:
         net.options.physics.barnesHut.gravitationalConstant = -2000
         net.options.physics.barnesHut.springLength = 200
@@ -668,7 +674,6 @@ def show_company_network_pyvis(company_name, category='Affiliations', chemical_g
         net.options.physics.barnesHut.springConstant = 0.002
 
     net.options.physics.minVelocity = 0.75
-    # Show graph in browser
     os.makedirs(os.path.dirname(output_file), exist_ok=True)
     company_study_map = {}
     if category == 'Chemicals':
@@ -763,8 +768,76 @@ def show_company_network_pyvis(company_name, category='Affiliations', chemical_g
         js_lookup = "node.label"
 
     injection = f"""
+    <style>
+        .zoom-controls {{
+            margin: 10px 0;
+            text-align: right;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }}
+        .zoom-btn {{
+            padding: 10px 16px;
+            margin: 4px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 14px;
+            transition: all 0.2s ease;
+        }}
+        .zoom-btn:hover {{
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }}
+        .zoom-in {{ background: #007bff; color: white; }}
+        .zoom-out {{ background: #6c757d; color: white; }}
+        .zoom-reset {{ background: #28a745; color: white; }}
+    </style>
+    <div class="zoom-controls">
+        <button class="zoom-btn zoom-in" onclick="zoomIn()">🔍+ Zoom In</button>
+        <button class="zoom-btn zoom-out" onclick="zoomOut()">🔍- Zoom Out</button>
+        <button class="zoom-btn zoom-reset" onclick="resetZoom()">🎯 Reset View</button>
+    </div>
     <div id="study-info" style="margin-top:20px; background:#fff; color:#222; padding:10px; border-radius:8px;"></div>
     <script type="text/javascript">
+        // Configure zoom options to disable scroll zoom
+        network.setOptions({{
+            interaction: {{
+                zoomView: true,
+                dragView: true,
+                wheelSensitivity: 0,  // DISABLE scroll zoom
+                minZoom: 0.05,
+                maxZoom: 5.0
+            }}
+        }});
+        
+        // Zoom button functions
+        function zoomIn() {{
+            var scale = network.getScale();
+            network.moveTo({{
+                scale: Math.min(scale * 1.4, 5.0),
+                animation: {{duration: 400, easingFunction: 'easeOutCubic'}}
+            }});
+        }}
+        
+        function zoomOut() {{
+            var scale = network.getScale();
+            network.moveTo({{
+                scale: Math.max(scale * 0.7, 0.05),
+                animation: {{duration: 400, easingFunction: 'easeOutCubic'}}
+            }});
+        }}
+        
+        function resetZoom() {{
+            network.moveTo({{
+                scale: 1.0,
+                animation: {{duration: 600, easingFunction: 'easeInOutCubic'}}
+            }});
+        }}
+        
+        
+        // Study click functionality
         var companyStudyMap = {json.dumps(company_study_map)};
         network.on("click", function(params) {{
             if (params.nodes.length > 0) {{
@@ -833,12 +906,12 @@ def show_uni_network_pyvis(uni_name, category='Funding Sources', chemical_group=
         
         if category == 'Chemicals':
             if chemical_group == 'All':
-                output_file = f"staticfiles/network_{safe_uni}_{safe_category}_all.html"
+                output_file = f"networkviewer/static/network_{safe_uni}_{safe_category}_all.html"
             elif chemical_group == 'Organic':
-                output_file = f"staticfiles/network_{safe_uni}_{safe_category}_organic.html"
+                output_file = f"networkviewer/static/network_{safe_uni}_{safe_category}_organic.html"
         else:
             # For Companies, etc.
-            output_file = f"staticfiles/network_{safe_uni}_{safe_category}.html"    # Filter for the selected company
+            output_file = f"networkviewer/static/network_{safe_uni}_{safe_category}.html"    # Filter for the selected company
     row = comparing_unis[comparing_unis['University'] == uni_name]
     if row.empty:
         print(f"University '{uni_name}' not found.")
@@ -994,7 +1067,21 @@ def show_uni_network_pyvis(uni_name, category='Funding Sources', chemical_group=
                     )
     num_nodes = len(net.nodes)
 
-    
+    net.options.interaction = {
+    "zoomView": True,          
+    "dragView": True,        
+    "zoomSpeed": 0.00000000000000000000000000000000000000000000000000000000001,            
+    "minZoom": 0.1,           
+    "maxZoom": 4.0,           
+    "wheelSensitivity": 0,    
+    "hideEdgesOnDrag": False,
+    "hideEdgesOnZoom": False,
+    "keyboard": {
+        "enabled": False,
+        "bindToWindow": False
+        }
+    }
+
     if num_nodes > 100:
         net.options.physics.barnesHut.gravitationalConstant = -2000
         net.options.physics.barnesHut.springLength = 200
@@ -1040,15 +1127,93 @@ def show_uni_network_pyvis(uni_name, category='Funding Sources', chemical_group=
                 f"{row['Title']} (DOI: {row['DOI']})" for _, row in studies.drop_duplicates(subset=['DOI']).iterrows()
             ) or "No studies found for this connection."
             company_study_map[key] = study_info
-    # Show graph in browser
     os.makedirs(os.path.dirname(output_file), exist_ok=True)
     net.show(output_file)
     with open(output_file, "r", encoding="utf-8") as f:
         html = f.read()
 
     injection = f"""
+    <style>
+        .zoom-controls {{
+            margin: 10px 0;
+            text-align: right;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }}
+        .zoom-btn {{
+            padding: 10px 16px;
+            margin: 4px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 14px;
+            transition: all 0.2s ease;
+        }}
+        .zoom-btn:hover {{
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }}
+        .zoom-in {{ background: #007bff; color: white; }}
+        .zoom-out {{ background: #6c757d; color: white; }}
+        .zoom-reset {{ background: #28a745; color: white; }}
+    </style>
+    <div class="zoom-controls">
+        <button class="zoom-btn zoom-in" onclick="zoomIn()">🔍+ Zoom In</button>
+        <button class="zoom-btn zoom-out" onclick="zoomOut()">🔍- Zoom Out</button>
+        <button class="zoom-btn zoom-reset" onclick="resetZoom()">🎯 Reset View</button>
+    </div>
     <div id="study-info" style="margin-top:20px; background:#fff; color:#222; padding:10px; border-radius:8px;"></div>
     <script type="text/javascript">
+        // Configure zoom options to disable scroll zoom
+        network.setOptions({{
+            interaction: {{
+                zoomView: true,
+                dragView: true,
+                wheelSensitivity: 0,  // DISABLE scroll zoom
+                minZoom: 0.05,
+                maxZoom: 5.0
+            }}
+        }});
+        
+        // AGGRESSIVE SCROLL DISABLE
+        setTimeout(function() {{
+            var visContainers = document.querySelectorAll('.vis-network');
+            visContainers.forEach(function(container) {{
+                container.addEventListener('wheel', function(e) {{
+                    e.preventDefault();
+                    e.stopPropagation();
+                    return false;
+                }}, {{ passive: false }});
+            }});
+        }}, 1000);
+        
+        // Zoom button functions
+        function zoomIn() {{
+            var scale = network.getScale();
+            network.moveTo({{
+                scale: Math.min(scale * 1.4, 5.0),
+                animation: {{duration: 400, easingFunction: 'easeOutCubic'}}
+            }});
+        }}
+        
+        function zoomOut() {{
+            var scale = network.getScale();
+            network.moveTo({{
+                scale: Math.max(scale * 0.7, 0.05),
+                animation: {{duration: 400, easingFunction: 'easeOutCubic'}}
+            }});
+        }}
+        
+        function resetZoom() {{
+            network.moveTo({{
+                scale: 1.0,
+                animation: {{duration: 600, easingFunction: 'easeInOutCubic'}}
+            }});
+        }}
+        
+        // Study click functionality
         var companyStudyMap = {json.dumps(company_study_map)};
         network.on("click", function(params) {{
             if (params.nodes.length > 0) {{
@@ -1105,7 +1270,7 @@ comparing_researchers = final_reduced.groupby('GroupKey').agg({
     'Companies': lambda lists: sum(lists, [])        # flatten company lists
 }).reset_index(drop=True)
 
-def show_researcher_network_pyvis(researcher, output_file = "staticfiles/company_network.html"):    # Filter for the selected company
+def show_researcher_network_pyvis(researcher, output_file = "networkviewer/static/company_network.html"):    # Filter for the selected company
     # Filter for the selected company
     matches = comparing_researchers[comparing_researchers['Researcher'].str.lower() == researcher.lower()]
     
@@ -1252,9 +1417,9 @@ def show_chemical_network(chemical, inch='Error', output_file=None):
         safe_chemical = chemical.replace(' ', '_').replace('/', '_').replace('\\', '_').replace('.', '_')
         if inch != 'Error':
             safe_inch = inch.replace('/', '_').replace('\\', '_').replace('-', '_')
-            output_file = f"staticfiles/network_{safe_chemical}_{safe_inch}.html"
+            output_file = f"networkviewer/static/network_{safe_chemical}_{safe_inch}.html"
         else:
-            output_file = f"staticfiles/network_{safe_chemical}_no_inchikey.html"
+            output_file = f"networkviewer/static/network_{safe_chemical}_no_inchikey.html"
     # Filter for the selected company
     if inch == 'Error':
         row = chem_per_row[chem_per_row['chemical'].apply(lambda x: any(chemical.lower() == name.lower() for name in x))]
@@ -1320,7 +1485,21 @@ def show_chemical_network(chemical, inch='Error', output_file=None):
                 )
     num_nodes = len(net.nodes)
 
-    
+    net.options.interaction = {
+    "zoomView": True,          
+    "dragView": True,        
+    "zoomSpeed": 0.00000000000000000000000000000000000000000000000000000000001,            
+    "minZoom": 0.1,           
+    "maxZoom": 4.0,           
+    "wheelSensitivity": 0,    
+    "hideEdgesOnDrag": False,
+    "hideEdgesOnZoom": False,
+    "keyboard": {
+        "enabled": False,
+        "bindToWindow": False
+        }
+    }
+
     if num_nodes > 100:
         net.options.physics.barnesHut.gravitationalConstant = -2000
         net.options.physics.barnesHut.springLength = 200
@@ -1335,7 +1514,6 @@ def show_chemical_network(chemical, inch='Error', output_file=None):
         net.options.physics.barnesHut.springConstant = 0.002
 
     net.options.physics.minVelocity = 0.75
-    # Show graph in browser
     os.makedirs(os.path.dirname(output_file), exist_ok=True)
     company_study_map = {}
     for comp in data:
@@ -1359,8 +1537,87 @@ def show_chemical_network(chemical, inch='Error', output_file=None):
         html = f.read()
 
     injection = f"""
+    <style>
+        .zoom-controls {{
+            margin: 10px 0;
+            text-align: center;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }}
+        .zoom-btn {{
+            padding: 10px 16px;
+            margin: 4px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 14px;
+            transition: all 0.2s ease;
+        }}
+        .zoom-btn:hover {{
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }}
+        .zoom-in {{ background: #007bff; color: white; }}
+        .zoom-out {{ background: #6c757d; color: white; }}
+        .zoom-reset {{ background: #28a745; color: white; }}
+    </style>
+    <div class="zoom-controls">
+        <button class="zoom-btn zoom-in" onclick="zoomIn()">🔍+ Zoom In</button>
+        <button class="zoom-btn zoom-out" onclick="zoomOut()">🔍- Zoom Out</button>
+        <button class="zoom-btn zoom-reset" onclick="resetZoom()">🎯 Reset View</button>
+    </div>
     <div id="study-info" style="margin-top:20px; background:#fff; color:#222; padding:10px; border-radius:8px;"></div>
     <script type="text/javascript">
+        // Configure zoom options to disable scroll zoom
+        network.setOptions({{
+            interaction: {{
+                zoomView: true,
+                dragView: true,
+                wheelSensitivity: 0,  // DISABLE scroll zoom
+                minZoom: 0.05,
+                maxZoom: 5.0
+            }}
+        }});
+        
+        // AGGRESSIVE SCROLL DISABLE
+        setTimeout(function() {{
+            var visContainers = document.querySelectorAll('.vis-network');
+            visContainers.forEach(function(container) {{
+                container.addEventListener('wheel', function(e) {{
+                    e.preventDefault();
+                    e.stopPropagation();
+                    return false;
+                }}, {{ passive: false }});
+            }});
+        }}, 1000);
+        
+        // Zoom button functions
+        function zoomIn() {{
+            var scale = network.getScale();
+            network.moveTo({{
+                scale: Math.min(scale * 1.4, 5.0),
+                animation: {{duration: 400, easingFunction: 'easeOutCubic'}}
+            }});
+        }}
+        
+        function zoomOut() {{
+            var scale = network.getScale();
+            network.moveTo({{
+                scale: Math.max(scale * 0.7, 0.05),
+                animation: {{duration: 400, easingFunction: 'easeOutCubic'}}
+            }});
+        }}
+        
+        function resetZoom() {{
+            network.moveTo({{
+                scale: 1.0,
+                animation: {{duration: 600, easingFunction: 'easeInOutCubic'}}
+            }});
+        }}
+        
+        // Study click functionality
         var companyStudyMap = {json.dumps(company_study_map)};
         network.on("click", function(params) {{
             if (params.nodes.length > 0) {{
@@ -1384,7 +1641,7 @@ def show_researcher_network_pyvis_from_row(row, output_file=None):
         safe_researcher = researcher.replace(' ', '_').replace(',', '').replace('/', '_').replace('\\', '_').replace('.', '_')
         # Use first 20 chars of affiliation to make filename more unique
         safe_aff = str(row['Affiliation'])[:20].replace(' ', '_').replace('/', '_').replace('\\', '_').replace('.', '_')
-        output_file = f"staticfiles/network_{safe_researcher}_{safe_aff}.html"
+        output_file = f"networkviewer/static/network_{safe_researcher}_{safe_aff}.html"
     data = row['Companies']
     aff = row['Affiliation']
     researcher = row['Researcher']
@@ -1426,6 +1683,20 @@ def show_researcher_network_pyvis_from_row(row, output_file=None):
                 )
     num_nodes = len(net.nodes)
 
+    net.options.interaction = {
+    "zoomView": True,          
+    "dragView": True,        
+    "zoomSpeed": 0.00000000000000000000000000000000000000000000000000000000001,            
+    "minZoom": 0.1,           
+    "maxZoom": 4.0,           
+    "wheelSensitivity": 0,    
+    "hideEdgesOnDrag": False,
+    "hideEdgesOnZoom": False,
+    "keyboard": {
+        "enabled": False,
+        "bindToWindow": False
+    }
+}
     
     if num_nodes > 100:
         net.options.physics.barnesHut.gravitationalConstant = -2000
@@ -1457,8 +1728,87 @@ def show_researcher_network_pyvis_from_row(row, output_file=None):
         html = f.read()
 
     injection = f"""
+    <style>
+        .zoom-controls {{
+            margin: 10px 0;
+            text-align: center;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }}
+        .zoom-btn {{
+            padding: 10px 16px;
+            margin: 4px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 14px;
+            transition: all 0.2s ease;
+        }}
+        .zoom-btn:hover {{
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }}
+        .zoom-in {{ background: #007bff; color: white; }}
+        .zoom-out {{ background: #6c757d; color: white; }}
+        .zoom-reset {{ background: #28a745; color: white; }}
+    </style>
+    <div class="zoom-controls">
+        <button class="zoom-btn zoom-in" onclick="zoomIn()">🔍+ Zoom In</button>
+        <button class="zoom-btn zoom-out" onclick="zoomOut()">🔍- Zoom Out</button>
+        <button class="zoom-btn zoom-reset" onclick="resetZoom()">🎯 Reset View</button>
+    </div>
     <div id="study-info" style="margin-top:20px; background:#fff; color:#222; padding:10px; border-radius:8px;"></div>
     <script type="text/javascript">
+        // Configure zoom options to disable scroll zoom
+        network.setOptions({{
+            interaction: {{
+                zoomView: true,
+                dragView: true,
+                wheelSensitivity: 0,  // DISABLE scroll zoom
+                minZoom: 0.05,
+                maxZoom: 5.0
+            }}
+        }});
+        
+        // AGGRESSIVE SCROLL DISABLE
+        setTimeout(function() {{
+            var visContainers = document.querySelectorAll('.vis-network');
+            visContainers.forEach(function(container) {{
+                container.addEventListener('wheel', function(e) {{
+                    e.preventDefault();
+                    e.stopPropagation();
+                    return false;
+                }}, {{ passive: false }});
+            }});
+        }}, 1000);
+        
+        // Zoom button functions
+        function zoomIn() {{
+            var scale = network.getScale();
+            network.moveTo({{
+                scale: Math.min(scale * 1.4, 5.0),
+                animation: {{duration: 400, easingFunction: 'easeOutCubic'}}
+            }});
+        }}
+        
+        function zoomOut() {{
+            var scale = network.getScale();
+            network.moveTo({{
+                scale: Math.max(scale * 0.7, 0.05),
+                animation: {{duration: 400, easingFunction: 'easeOutCubic'}}
+            }});
+        }}
+        
+        function resetZoom() {{
+            network.moveTo({{
+                scale: 1.0,
+                animation: {{duration: 600, easingFunction: 'easeInOutCubic'}}
+            }});
+        }}
+        
+        // Study click functionality
         var companyStudyMap = {json.dumps(company_study_map)};
         network.on("click", function(params) {{
             if (params.nodes.length > 0) {{
@@ -1492,14 +1842,14 @@ def show_company_connections(company_name):
     aff_list = row.iloc[0]['Affs']
     universities = row.iloc[0]['Universities']
 
-    # === Chemicals (Modern counting like network functions) ===
+    # Chemicals
     labeled_chemicals = []
     processed_inchikeys = set()
     
     for name, inchikey in parsed_chems:
         if inchikey and inchikey != 'Not Found':
             if inchikey not in processed_inchikeys:
-                # Count studies mentioning this InChIKey
+                # Chemicals with InChIKey
                 studies = main[
                     (main['Funding Sources'].str.contains(company_name, na=False)) &
                     (main['Chemicals with InChIKey'].str.contains(inchikey, na=False))
@@ -1508,7 +1858,7 @@ def show_company_connections(company_name):
                 labeled_chemicals.append(f"{name} ({study_count})")
                 processed_inchikeys.add(inchikey)
         else:
-            # Chemicals without InChIKey - count by name
+            # Chemicals without InChIKey
             studies = main[
                 (main['Funding Sources'].str.contains(company_name, na=False)) &
                 (main['Chemicals with InChIKey'].str.contains(name, na=False))
@@ -1516,28 +1866,26 @@ def show_company_connections(company_name):
             study_count = len(studies.drop_duplicates(subset=['DOI']))
             labeled_chemicals.append(f"{name} ({study_count})")
 
-    # === Countries (Modern counting) ===
+    # Countries
     unique_countries = []
     labeled_countries = []
+    country_affil_counts = {}
     
     for country in countries:
-        if country not in unique_countries:
-            # Count studies mentioning this country
-            studies = main[
-                (main['Funding Sources'].str.contains(company_name, na=False)) &
-                (main['Affiliations'].str.contains(country, na=False, regex=False))
-            ]
-            study_count = len(studies.drop_duplicates(subset=['DOI']))
-            labeled_countries.append(f"{country} ({study_count})")
+        country_affil_counts[country] = country_affil_counts.get(country, 0) + 1
+
+    for country in country_affil_counts:
+        if country not in unique_countries:    
+            affiliation_count = country_affil_counts[country]
+            labeled_countries.append(f"{country} ({affiliation_count} affiliations)")
             unique_countries.append(country)
 
-    # === Affiliations (Modern counting like network functions) ===
+    # Affiliations 
     unique_affiliations = []
     labeled_affiliations = []
     
     for affil in affiliations:
         if affil not in unique_affiliations:
-            # Count studies mentioning this affiliation
             studies = main[
                 (main['Funding Sources'].str.contains(company_name, na=False)) &
                 (main['Affiliations'].str.contains(affil, na=False, regex=False))
@@ -1546,13 +1894,12 @@ def show_company_connections(company_name):
             labeled_affiliations.append(f"{affil} ({study_count})")
             unique_affiliations.append(affil)
 
-    # === Researchers (Modern counting) ===
+    # Researchers
     unique_researchers = []
     labeled_researchers = []
     
     for res in res_list:
         if res not in unique_researchers:
-            # Count studies mentioning this researcher
             studies = main[
                 (main['Funding Sources'].str.contains(company_name, na=False)) &
                 (main['Authors'].str.contains(res, na=False))
@@ -1561,7 +1908,7 @@ def show_company_connections(company_name):
             labeled_researchers.append(f"{res} ({study_count})")
             unique_researchers.append(res)
 
-    # === Universities (Modern counting) ===
+    # Universities
     unique_universities = []
     labeled_universities = []
     
@@ -1593,14 +1940,14 @@ def show_uni_connections(university):
     parsed_chems = list(parse_chemical_entry(c) for c in row.iloc[0]['Chemicals'])
     companies = row.iloc[0]['Companies']
 
-    # === Chemicals (Modern counting like network functions) ===
+    # Chemicals
     labeled_chemicals = []
     processed_inchikeys = set()
     
     for name, inchikey in parsed_chems:
         if inchikey and inchikey != 'Not Found':
             if inchikey not in processed_inchikeys:
-                # Count studies mentioning this InChIKey at this university
+                # Chemicals with InChIKey
                 studies = main[
                     (main['Affiliations'].str.contains(university, na=False)) &
                     (main['Chemicals with InChIKey'].str.contains(inchikey, na=False))
@@ -1609,7 +1956,7 @@ def show_uni_connections(university):
                 labeled_chemicals.append(f"{name} ({study_count})")
                 processed_inchikeys.add(inchikey)
         else:
-            # Chemicals without InChIKey - count by name
+            # Chemicals without InChIKey
             studies = main[
                 (main['Affiliations'].str.contains(university, na=False)) &
                 (main['Chemicals with InChIKey'].str.contains(name, na=False))
@@ -1617,13 +1964,12 @@ def show_uni_connections(university):
             study_count = len(studies.drop_duplicates(subset=['DOI']))
             labeled_chemicals.append(f"{name} ({study_count})")
 
-    # === Companies (Modern counting like network functions) ===
+    # Companies
     unique_companies = []
     labeled_companies = []
     
     for comp in companies:
         if comp not in unique_companies:
-            # Count studies mentioning this company at this university
             studies = main[
                 (main['Affiliations'].str.contains(university, na=False)) &
                 (main['Funding Sources'].str.contains(comp, na=False))
@@ -1644,7 +1990,6 @@ def show_res_connections(researcher):
         return False
     
     if len(matches) > 1:
-        # Combine all companies and pick the longest affiliation
         all_companies = sum(matches['Companies'], [])
         unique_affiliations = matches['Affiliation'].dropna().unique()
         combined_aff = '; '.join(unique_affiliations)
@@ -1661,13 +2006,12 @@ def show_res_connections(researcher):
     if aff == '':
         aff = 'Not Found'
 
-    # === Companies (Modern counting like network functions) ===
+    # Companies
     unique_companies = []
     labeled_companies = []
     
     for comp in data:
         if comp not in unique_companies:
-            # Count studies mentioning this researcher with this company
             studies = main[
                 (main['Authors'].str.contains(researcher, na=False)) &
                 (main['Funding Sources'].str.contains(comp, na=False))
@@ -1698,21 +2042,18 @@ def show_chem_connections(chemical=None, inchikey=None):
     if inchikey_val == 'Error':
         inchikey_val = 'Not Found'
 
-    # === Companies (Modern counting like network functions) ===
+    # Companies
     unique_companies = []
     labeled_companies = []
     
     for comp in data:
         if comp not in unique_companies:
-            # Count studies mentioning this chemical with this company
             if inchikey_val and inchikey_val != 'Not Found':
-                # Use InChIKey for search
                 studies = main[
                     (main['Funding Sources'].str.contains(comp, na=False)) &
                     (main['Chemicals with InChIKey'].str.contains(inchikey_val, na=False))
                 ]
             else:
-                # Fallback to chemical name
                 studies = main[
                     (main['Funding Sources'].str.contains(comp, na=False)) &
                     (main['Chemicals with InChIKey'].str.contains(chemical, na=False))
