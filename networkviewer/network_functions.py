@@ -352,17 +352,17 @@ def show_company_network_pyvis(company_name, category='Affiliations', chemical_g
         
         if category == 'Chemicals':
             if chemical_group == 'All':
-                output_file = f"networkviewer/static/network_{safe_company}_{safe_category}_all.html"
+                output_file = f"staticfiles/network_{safe_company}_{safe_category}_all.html"
             elif chemical_group == 'Organic':
-                output_file = f"networkviewer/static/network_{safe_company}_{safe_category}_organic.html"
+                output_file = f"staticfiles/network_{safe_company}_{safe_category}_organic.html"
         elif category == 'Affiliations':
             if sep_country:
-                output_file = f"networkviewer/static/network_{safe_company}_{safe_category}_by_country.html"
+                output_file = f"staticfiles/network_{safe_company}_{safe_category}_by_country.html"
             else:
-                output_file = f"networkviewer/static/network_{safe_company}_{safe_category}_combined.html"
+                output_file = f"staticfiles/network_{safe_company}_{safe_category}_combined.html"
         else:
             # For Universities, Researchers, etc.
-            output_file = f"networkviewer/static/network_{safe_company}_{safe_category}.html"
+            output_file = f"staticfiles/network_{safe_company}_{safe_category}.html"
     # Filter for the selected company
     row = company_assoc[company_assoc['Company'] == company_name]
     if row.empty:
@@ -906,12 +906,12 @@ def show_uni_network_pyvis(uni_name, category='Funding Sources', chemical_group=
         
         if category == 'Chemicals':
             if chemical_group == 'All':
-                output_file = f"networkviewer/static/network_{safe_uni}_{safe_category}_all.html"
+                output_file = f"staticfiles/network_{safe_uni}_{safe_category}_all.html"
             elif chemical_group == 'Organic':
-                output_file = f"networkviewer/static/network_{safe_uni}_{safe_category}_organic.html"
+                output_file = f"staticfiles/network_{safe_uni}_{safe_category}_organic.html"
         else:
             # For Companies, etc.
-            output_file = f"networkviewer/static/network_{safe_uni}_{safe_category}.html"    # Filter for the selected company
+            output_file = f"staticfiles/network_{safe_uni}_{safe_category}.html"    # Filter for the selected company
     row = comparing_unis[comparing_unis['University'] == uni_name]
     if row.empty:
         print(f"University '{uni_name}' not found.")
@@ -1270,7 +1270,7 @@ comparing_researchers = final_reduced.groupby('GroupKey').agg({
     'Companies': lambda lists: sum(lists, [])        # flatten company lists
 }).reset_index(drop=True)
 
-def show_researcher_network_pyvis(researcher, output_file = "networkviewer/static/company_network.html"):    # Filter for the selected company
+def show_researcher_network_pyvis(researcher, output_file = "staticfiles/company_network.html"):    # Filter for the selected company
     # Filter for the selected company
     matches = comparing_researchers[comparing_researchers['Researcher'].str.lower() == researcher.lower()]
     
@@ -1417,9 +1417,9 @@ def show_chemical_network(chemical, inch='Error', output_file=None):
         safe_chemical = chemical.replace(' ', '_').replace('/', '_').replace('\\', '_').replace('.', '_')
         if inch != 'Error':
             safe_inch = inch.replace('/', '_').replace('\\', '_').replace('-', '_')
-            output_file = f"networkviewer/static/network_{safe_chemical}_{safe_inch}.html"
+            output_file = f"staticfiles/network_{safe_chemical}_{safe_inch}.html"
         else:
-            output_file = f"networkviewer/static/network_{safe_chemical}_no_inchikey.html"
+            output_file = f"staticfiles/network_{safe_chemical}_no_inchikey.html"
     # Filter for the selected company
     if inch == 'Error':
         row = chem_per_row[chem_per_row['chemical'].apply(lambda x: any(chemical.lower() == name.lower() for name in x))]
@@ -1641,7 +1641,7 @@ def show_researcher_network_pyvis_from_row(row, output_file=None):
         safe_researcher = researcher.replace(' ', '_').replace(',', '').replace('/', '_').replace('\\', '_').replace('.', '_')
         # Use first 20 chars of affiliation to make filename more unique
         safe_aff = str(row['Affiliation'])[:20].replace(' ', '_').replace('/', '_').replace('\\', '_').replace('.', '_')
-        output_file = f"networkviewer/static/network_{safe_researcher}_{safe_aff}.html"
+        output_file = f"staticfiles/network_{safe_researcher}_{safe_aff}.html"
     data = row['Companies']
     aff = row['Affiliation']
     researcher = row['Researcher']
