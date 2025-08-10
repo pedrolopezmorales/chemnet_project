@@ -9,11 +9,11 @@ from django.conf import settings
 
 CSV_PATH = os.path.join(settings.BASE_DIR, 'data', 'esandt_papers_2024_with_inchikeys.csv')
 
-try:
-    main = pd.read_csv(CSV_PATH)
-except FileNotFoundError:
-    print(f"Warning: CSV file not found at {CSV_PATH}")
-    main = pd.DataFrame() 
+import requests
+import time
+from functools import lru_cache
+
+main = pd.read_csv(CSV_PATH)
 
 
 countries = dict(countries_for_language('en'))
@@ -30,8 +30,190 @@ countries.update({'U.K.':'United Kingdom',
                   'England':'England',
                   'Chinese':'China'
                  })
-university_keys = ['Academy of Sciences','chinese academy of sciences','institute','university','instituto','Universidad','Universita','Universit']
+university_keys = ['Academy of Sciences','institute of','university','instituto','Universidad','Universita','Universit']
 
+#function for categorizing funding sources
+
+@lru_cache(maxsize=1000)
+def categorize_funding_source(entity_name):
+    if not entity_name or pd.isna(entity_name):
+        return 'Unknown'
+    
+    result = categorize_funding_source_keywords(entity_name)
+    if result != 'Unknown':
+        return result
+
+    result = check_opencorporates_api(entity_name)
+    if result != 'Unknown':
+        return result
+    
+    result = check_wikipedia_api(entity_name)
+    if result != 'Unknown':
+        return result
+
+    result = check_government_databases(entity_name)
+    if result != 'Unknown':
+        return result
+    
+    return 'Unknown'
+
+@lru_cache(maxsize=1000)
+def check_opencorporates_api(entity_name):
+    try:
+        url = "https://api.opencorporates.com/v0.4/companies/search"
+        params = {
+            'q': entity_name,
+            'format': 'json',
+            'limit': 3,
+            'order': 'score'
+        }
+        response = requests.get(url, params=params, timeout=10)
+
+        if response.status_code == 200:
+            data = response.json()
+            companies = data.get('results', {}).get('companies', [])
+
+            for company_data in companies:
+                company = company_data.get('company', {})
+                name = company.get('name', '').lower()
+                entity_lower = entity_name.lower()
+
+                if entity_lower in name or name in entity_lower:
+                    company_type = company.get('company_type', '').lower()
+                    status = company.get('current_status', '').lower()
+
+                    if 'active' in status:
+                        if any(corp_type in company_type for corp_type in ['corporation', 'inc', 'llc', 'ltd', 'limited', 'company']):
+                            return 'Company'
+                        elif any(np_type in company_type for np_type in ['non-profit', 'nonprofit', 'foundation']):
+                            return 'Foundation'
+        time.sleep(0.2)
+    except Exception as e:
+        print(f"OpenCorporates API error for {entity_name}: {e}")
+    return 'Unknown'
+
+@lru_cache(maxsize=1000)
+def check_wikipedia_api(entity_name):
+    try: 
+        search_url = "https://en.wikipedia.org/api/rest_v1/page/summary/"
+        entity_encoded = entity_name.replace(' ', '_')
+        response = requests.get(f"{search_url}{entity_encoded}", timeout=10)
+
+        if response.status_code == 200:
+            data = response.json()
+            extract = data.get('extract', '').lower()
+            title = data.get('title', '').lower()
+
+            if any(term in extract for term in [
+                'government agency', 'federal agency', 'department of', 
+                'ministry of', 'government department', 'public agency',
+                'federal government', 'united states government', 'government'
+            ]):
+                return 'Government'
+            if any(term in extract for term in [
+                'university', 'college', 'institute of technology',
+                'academic institution', 'higher education', 'medical school'
+            ]):
+                return 'University'
+            if any(term in extract for term in [
+                'foundation', 'charitable foundation', 'non-profit',
+                'nonprofit', 'charity', 'philanthropic', 'endowment'
+            ]):
+                return 'Foundation'
+            if any(term in extract for term in [
+                'corporation', 'company', 'inc.', 'pharmaceutical company',
+                'biotechnology company', 'multinational corporation',
+                'publicly traded', 'private company'
+            ]):
+                return 'Company'
+        time.sleep(0.2)
+    except Exception as e:
+        print(f"Wikipedia API error for {entity_name}: {e}")
+    return 'Unknown'
+
+def check_government_databases(entity_name):
+    entity_lower = entity_name.lower().strip()
+
+    us_government = {
+        'national science foundation': 'Government',
+        'national institutes of health': 'Government',
+        'department of energy': 'Government',
+        'department of defense': 'Government',
+        'environmental protection agency': 'Government',
+        'nasa': 'Government',
+        'nih': 'Government',
+        'nsf': 'Government',
+        'doe': 'Government',
+        'dod': 'Government',
+        'epa': 'Government',
+        'cdc': 'Government',
+        'fda': 'Government'
+    }
+    for agency, classification in us_government.items():
+        if agency in entity_lower:
+            return classification
+    government_patterns = [
+        r'\b(u\.?s\.?|united states)\s+(department|agency|office)\b',
+        r'\bnational\s+(institute|center|laboratory)\b',
+        r'\bministry\s+of\b'
+    ]
+    
+    for pattern in government_patterns:
+        if re.search(pattern, entity_lower):
+            return 'Government'
+    
+    return 'Unknown'
+
+def categorize_funding_source_keywords(entity_name):
+    entity_lower = entity_name.lower().strip()
+    
+    for key in university_keys:
+        if key.lower() in entity_lower:
+            return 'University'
+    if any(term in entity_lower for term in ['foundation', 'trust', 'endowment', 'charity']):
+            return 'Foundation'
+    if any(term in entity_lower for term in ['inc.', 'corp.', 'corporation', 'llc', 'ltd', 'company', 'pharmaceutical', 'biotech', 'technologies']):
+            return 'Company'
+    if any(term in entity_lower for term in ['department', 'government']):
+            return 'Government'
+    return 'Unknown'
+#graphing funding source function to get category color
+def get_category_color(category):
+    color_map = {
+        'Government': '#FF6B6B',      # Red
+        'University': '#96CEB4',      # Light Green
+        'Foundation': '#4ECDC4',      # Teal
+        'Company': '#FFEAA7',         # Yellow
+        'Unknown': '#DDD6FE'          # Light Purple
+    }
+    return color_map.get(category, "#DDD6FE")
+def add_classification_to_funding_sources(funding_sources_list):
+\
+    classified_sources = []
+    for source in funding_sources_list:
+        if source and not pd.isna(source):
+            category = categorize_funding_source(source.strip())
+            classified_sources.append(f"{source.strip()} [{category}]")
+        else:
+            classified_sources.append(source)
+    return classified_sources
+def add_classification_to_funding_sources(funding_sources_list):
+\
+    classified_sources = []
+    for source in funding_sources_list:
+        if source and not pd.isna(source):
+            category = categorize_funding_source(source.strip())
+            classified_sources.append(f"{source.strip()} [{category}]")
+        else:
+            classified_sources.append(source)
+    return classified_sources
+def extract_name_and_class(classified_source):
+    if '[' in classified_source and ']' in classified_source:
+        parts = classified_source.rsplit('[',1)
+        name=parts[0].strip()
+        category=parts[1].replace(']','').strip()
+        return name, category
+    return classified_source, 'Unknown'
 # Modifying Database by removing certain columns
 
 comparing_companies = main.drop(['DOI', 'URL','Year','Title','Chemicals Mentioned','Abstract'], axis = 1)
@@ -771,7 +953,7 @@ def show_company_network_pyvis(company_name, category='Affiliations', chemical_g
     <style>
         .zoom-controls {{
             margin: 10px 0;
-            text-align: right;
+            text-align: center;
             padding: 10px;
             background: #f8f9fa;
             border-radius: 8px;
@@ -897,7 +1079,17 @@ comparing_unis = comparing_affiliations.groupby('University').agg({
     'Companies': lambda x: sum(x, [])
 })
 comparing_unis.reset_index(inplace = True)
-
+def classify_companies_series(companies_list):
+    classified_companies=[]
+    for company in companies_list:
+        if company and not pd.isna(company):
+            category = categorize_funding_source(company.strip())
+            classified_company = f"{company.strip()} [{category}]"
+            classified_companies.append(classified_company)
+        else:
+            classified_companies.append(company)
+    return classified_companies
+comparing_unis['Companies'] = comparing_unis['Companies'].apply(classify_companies_series)
 def show_uni_network_pyvis(uni_name, category='Funding Sources', chemical_group='All', output_file=None):
     if output_file is None:
         # Generate unique filename based on ALL parameters
@@ -1040,16 +1232,29 @@ def show_uni_network_pyvis(uni_name, category='Funding Sources', chemical_group=
                         )
     if category == 'Funding Sources':
         total_comp = []
-        for affil in data:
-            if affil not in total_comp:
-                net.add_node(affil, label=affil, title=affil, color="lightblue", shape="ellipse",size=15)
-                total_comp.append(affil)
+        entity_stats = {}
+        for comp in data:
+            if comp not in total_comp:
+                original_name, entity_category = extract_name_and_class(comp)
+                entity_color = get_category_color(entity_category)
+                entity_stats[entity_category] = entity_stats.get(entity_category, 0) + 1
+                net.add_node(
+                    original_name,
+                    label=original_name,
+                    title=f"{original_name}\n Category: {entity_category}",
+                    color=entity_color,
+                    shape="ellipse",
+                    size=15
+                )
+                total_comp.append(comp)
             else:
-                total_comp.append(affil)
+                _, entity_category = extract_name_and_class(comp)
+                entity_stats[entity_category] = entity_stats.get(entity_category, 0) + 1
+                total_comp.append(comp)
         study_counts = {}
         for node in net.nodes:
             if node['id'] != uni_name:  # Skip the university node itself
-                company = node.get('title', '')  # Company name is in title
+                company = node['id']  # Company name is in title
                 if company:
                     # Count studies mentioning this company at this university
                     studies = main[
@@ -1136,7 +1341,7 @@ def show_uni_network_pyvis(uni_name, category='Funding Sources', chemical_group=
     <style>
         .zoom-controls {{
             margin: 10px 0;
-            text-align: right;
+            text-align: center;
             padding: 10px;
             background: #f8f9fa;
             border-radius: 8px;
@@ -1969,14 +2174,15 @@ def show_uni_connections(university):
     labeled_companies = []
     
     for comp in companies:
-        if comp not in unique_companies:
+        original_name, _ = extract_name_and_class(comp)
+        if original_name not in unique_companies:
             studies = main[
                 (main['Affiliations'].str.contains(university, na=False)) &
-                (main['Funding Sources'].str.contains(comp, na=False))
+                (main['Funding Sources'].str.contains(original_name, na=False))
             ]
             study_count = len(studies.drop_duplicates(subset=['DOI']))
             labeled_companies.append(f"{comp} ({study_count})")
-            unique_companies.append(comp)
+            unique_companies.append(original_name)
 
     return {
         "Funding Sources": labeled_companies,
