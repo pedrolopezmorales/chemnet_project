@@ -525,17 +525,17 @@ def show_company_network_pyvis(company_name, category='Affiliations', chemical_g
         
         if category == 'Chemicals':
             if chemical_group == 'All':
-                output_file = f"staticfiles/network_{safe_company}_{safe_category}_all.html"
+                output_file = f"networkviewer/static/network_{safe_company}_{safe_category}_all.html"
             elif chemical_group == 'Organic':
-                output_file = f"staticfiles/network_{safe_company}_{safe_category}_organic.html"
+                output_file = f"networkviewer/static/network_{safe_company}_{safe_category}_organic.html"
         elif category == 'Affiliations':
             if sep_country:
-                output_file = f"staticfiles/network_{safe_company}_{safe_category}_by_country.html"
+                output_file = f"networkviewer/static/network_{safe_company}_{safe_category}_by_country.html"
             else:
-                output_file = f"staticfiles/network_{safe_company}_{safe_category}_combined.html"
+                output_file = f"networkviewer/static/network_{safe_company}_{safe_category}_combined.html"
         else:
             # For Universities, Researchers, etc.
-            output_file = f"staticfiles/network_{safe_company}_{safe_category}.html"
+            output_file = f"networkviewer/static/network_{safe_company}_{safe_category}.html"
     # Filter for the selected company
     row = company_assoc[company_assoc['Company'] == company_name]
     if row.empty:
@@ -1101,12 +1101,12 @@ def show_uni_network_pyvis(uni_name, category='Funding Sources', chemical_group=
         
         if category == 'Chemicals':
             if chemical_group == 'All':
-                output_file = f"staticfiles/network_{safe_uni}_{safe_category}_all.html"
+                output_file = f"networkviewer/static/network_{safe_uni}_{safe_category}_all.html"
             elif chemical_group == 'Organic':
-                output_file = f"staticfiles/network_{safe_uni}_{safe_category}_organic.html"
+                output_file = f"networkviewer/static/network_{safe_uni}_{safe_category}_organic.html"
         else:
             # For Companies, etc.
-            output_file = f"staticfiles/network_{safe_uni}_{safe_category}.html"    # Filter for the selected company
+            output_file = f"networkviewer/static/network_{safe_uni}_{safe_category}.html"    # Filter for the selected company
     row = comparing_unis[comparing_unis['University'] == uni_name]
     if row.empty:
         print(f"University '{uni_name}' not found.")
@@ -1340,15 +1340,50 @@ def show_uni_network_pyvis(uni_name, category='Funding Sources', chemical_group=
     net.show(output_file)
     with open(output_file, "r", encoding="utf-8") as f:
         html = f.read()
-
+    color_legend = ""
+    if category == 'Funding Sources':
+        color_legend = """
+        <div class="color-legend" style="flex: 1; padding: 10px; background: #f8f9fa; border-radius: 8px; margin-right: 10px;">
+            <h4 style="margin-bottom: 10px; color: #333; font-size: 16px;">Funding Source Categories:</h4>
+            <div style="display: flex; flex-wrap: wrap; gap: 12px;">
+                <div style="display: flex; align-items: center;">
+                    <div style="width: 16px; height: 16px; background: #FF6B6B; border-radius: 50%; margin-right: 8px;"></div>
+                    <span style="font-size: 13px; color: #333;">Government</span>
+                </div>
+                <div style="display: flex; align-items: center;">
+                    <div style="width: 16px; height: 16px; background: #96CEB4; border-radius: 50%; margin-right: 8px;"></div>
+                    <span style="font-size: 13px; color: #333;">University</span>
+                </div>
+                <div style="display: flex; align-items: center;">
+                    <div style="width: 16px; height: 16px; background: #4ECDC4; border-radius: 50%; margin-right: 8px;"></div>
+                    <span style="font-size: 13px; color: #333;">Foundation</span>
+                </div>
+                <div style="display: flex; align-items: center;">
+                    <div style="width: 16px; height: 16px; background: #FFEAA7; border-radius: 50%; margin-right: 8px;"></div>
+                    <span style="font-size: 13px; color: #333;">Company</span>
+                </div>
+                <div style="display: flex; align-items: center;">
+                    <div style="width: 16px; height: 16px; background: #DDD6FE; border-radius: 50%; margin-right: 8px;"></div>
+                    <span style="font-size: 13px; color: #333;">Unknown</span>
+                </div>
+            </div>
+        </div>
+        """
     injection = f"""
     <style>
+        .controls-container {{
+            display: flex;
+            marigin: 10px 0;
+            gap: 0;
+            align-items:stretch
+        }}
         .zoom-controls {{
-            margin: 10px 0;
+            flex: 0 0 auto;
             text-align: center;
             padding: 10px;
             background: #f8f9fa;
             border-radius: 8px;
+            min-width:300px;
         }}
         .zoom-btn {{
             padding: 10px 16px;
@@ -1368,10 +1403,13 @@ def show_uni_network_pyvis(uni_name, category='Funding Sources', chemical_group=
         .zoom-out {{ background: #6c757d; color: white; }}
         .zoom-reset {{ background: #28a745; color: white; }}
     </style>
-    <div class="zoom-controls">
-        <button class="zoom-btn zoom-in" onclick="zoomIn()">🔍+ Zoom In</button>
-        <button class="zoom-btn zoom-out" onclick="zoomOut()">🔍- Zoom Out</button>
-        <button class="zoom-btn zoom-reset" onclick="resetZoom()">🎯 Reset View</button>
+    <div class="controls-container">
+        {color_legend}
+        <div class="zoom-controls">
+            <button class="zoom-btn zoom-in" onclick="zoomIn()">🔍+ Zoom In</button>
+            <button class="zoom-btn zoom-out" onclick="zoomOut()">🔍- Zoom Out</button>
+            <button class="zoom-btn zoom-reset" onclick="resetZoom()">🎯 Reset View</button>
+        </div>
     </div>
     <div id="study-info" style="margin-top:20px; background:#fff; color:#222; padding:10px; border-radius:8px;"></div>
     <script type="text/javascript">
@@ -1479,7 +1517,7 @@ comparing_researchers = final_reduced.groupby('GroupKey').agg({
     'Companies': lambda lists: sum(lists, [])        # flatten company lists
 }).reset_index(drop=True)
 
-def show_researcher_network_pyvis(researcher, output_file = "staticfiles/company_network.html"):    # Filter for the selected company
+def show_researcher_network_pyvis(researcher, output_file = "networkviewer/static/company_network.html"):    # Filter for the selected company
     # Filter for the selected company
     matches = comparing_researchers[comparing_researchers['Researcher'].str.lower() == researcher.lower()]
     
@@ -1626,9 +1664,9 @@ def show_chemical_network(chemical, inch='Error', output_file=None):
         safe_chemical = chemical.replace(' ', '_').replace('/', '_').replace('\\', '_').replace('.', '_')
         if inch != 'Error':
             safe_inch = inch.replace('/', '_').replace('\\', '_').replace('-', '_')
-            output_file = f"staticfiles/network_{safe_chemical}_{safe_inch}.html"
+            output_file = f"networkviewer/static/network_{safe_chemical}_{safe_inch}.html"
         else:
-            output_file = f"staticfiles/network_{safe_chemical}_no_inchikey.html"
+            output_file = f"networkviewer/static/network_{safe_chemical}_no_inchikey.html"
     # Filter for the selected company
     if inch == 'Error':
         row = chem_per_row[chem_per_row['chemical'].apply(lambda x: any(chemical.lower() == name.lower() for name in x))]
@@ -1850,7 +1888,7 @@ def show_researcher_network_pyvis_from_row(row, output_file=None):
         safe_researcher = researcher.replace(' ', '_').replace(',', '').replace('/', '_').replace('\\', '_').replace('.', '_')
         # Use first 20 chars of affiliation to make filename more unique
         safe_aff = str(row['Affiliation'])[:20].replace(' ', '_').replace('/', '_').replace('\\', '_').replace('.', '_')
-        output_file = f"staticfiles/network_{safe_researcher}_{safe_aff}.html"
+        output_file = f"networkviewer/static/network_{safe_researcher}_{safe_aff}.html"
     data = row['Companies']
     aff = row['Affiliation']
     researcher = row['Researcher']
