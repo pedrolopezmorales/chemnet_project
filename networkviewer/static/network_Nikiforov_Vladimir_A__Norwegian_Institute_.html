@@ -1,0 +1,302 @@
+<html>
+    <head>
+        <meta charset="utf-8">
+        
+            <script src="lib/bindings/utils.js"></script>
+            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.2/dist/dist/vis-network.min.css" integrity="sha512-WgxfT5LWjfszlPHXRmBWHkV2eceiWTOBvrKCNbdgDYTHrT2AeLCGbF4sZlZw3UMN3WtL0tGUoIAKsu8mllg/XA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.2/dist/vis-network.min.js" integrity="sha512-LnvoEWDFrqGHlHmDD2101OrLcbsfkrzoSpvtSQtxK3RMnRV0eOkhhBN2dXHKRrUU8p2DGRTk35n4O8nWSVe1mQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+            
+        
+<center>
+<h1></h1>
+</center>
+
+<!-- <link rel="stylesheet" href="../node_modules/vis/dist/vis.min.css" type="text/css" />
+<script type="text/javascript" src="../node_modules/vis/dist/vis.js"> </script>-->
+        <link
+          href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/css/bootstrap.min.css"
+          rel="stylesheet"
+          integrity="sha384-eOJMYsd53ii+scO/bJGFsiCZc+5NDVN2yr8+0RDqr0Ql0h+rP48ckxlpbzKgwra6"
+          crossorigin="anonymous"
+        />
+        <script
+          src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.bundle.min.js"
+          integrity="sha384-JEW9xMcG8R+pH31jmWH6WWP0WintQrMb4s7ZOdauHnUtxwoG2vI5DkLtS3qm9Ekf"
+          crossorigin="anonymous"
+        ></script>
+
+
+        <center>
+          <h1></h1>
+        </center>
+        <style type="text/css">
+
+             #mynetwork {
+                 width: 100%;
+                 height: 600px;
+                 background-color: #ffffff;
+                 border: 1px solid lightgray;
+                 position: relative;
+                 float: left;
+             }
+
+             
+
+             
+
+             
+        </style>
+    </head>
+
+
+    <body>
+        <div class="card" style="width: 100%">
+            
+            
+            <div id="mynetwork" class="card-body"></div>
+        </div>
+
+        
+        
+
+        <script type="text/javascript">
+
+              // initialize global variables.
+              var edges;
+              var nodes;
+              var allNodes;
+              var allEdges;
+              var nodeColors;
+              var originalNodes;
+              var network;
+              var container;
+              var options, data;
+              var filter = {
+                  item : '',
+                  property : '',
+                  value : []
+              };
+
+              
+
+              
+
+              // This method is responsible for drawing the graph, returns the drawn network
+              function drawGraph() {
+                  var container = document.getElementById('mynetwork');
+
+                  
+
+                  // parsing and collecting nodes and edges from the python
+                  nodes = new vis.DataSet([{"color": "red", "font": {"color": "black"}, "id": "Nikiforov, Vladimir A.", "label": "Nikiforov, Vladimir A.", "shape": "ellipse", "size": 55, "title": "Affiliation: Norwegian Institute for Air Research (NILU), Fram Centre, 9296 Tromso\u0337, Norway"}, {"color": "#4ECDC4", "font": {"color": "black"}, "id": "Weston Family Foundation", "label": "Weston Family Foundation", "shape": "ellipse", "size": 15, "title": "Weston Family Foundation\nCategory: Foundation"}, {"color": "#DDD6FE", "font": {"color": "black"}, "id": "Agence Nationale de la Recherche", "label": "Agence Nationale de la Recherche", "shape": "ellipse", "size": 15, "title": "Agence Nationale de la Recherche\nCategory: Unknown"}, {"color": "#DDD6FE", "font": {"color": "black"}, "id": "Norges Forskningsr?d", "label": "Norges Forskningsr?d", "shape": "ellipse", "size": 15, "title": "Norges Forskningsr?d\nCategory: Unknown"}, {"color": "#FFEAA7", "font": {"color": "black"}, "id": "Fonds de recherche du Qu?bec ? Nature et technologies", "label": "Fonds de recherche du Qu?bec ? Nature et technologies", "shape": "ellipse", "size": 15, "title": "Fonds de recherche du Qu?bec ? Nature et technologies\nCategory: Company"}, {"color": "#DDD6FE", "font": {"color": "black"}, "id": "Framsenteret", "label": "Framsenteret", "shape": "ellipse", "size": 15, "title": "Framsenteret\nCategory: Unknown"}, {"color": "#DDD6FE", "font": {"color": "black"}, "id": "Institut Polaire Fran?ais Paul Emile Victor", "label": "Institut Polaire Fran?ais Paul Emile Victor", "shape": "ellipse", "size": 15, "title": "Institut Polaire Fran?ais Paul Emile Victor\nCategory: Unknown"}, {"color": "#FF6B6B", "font": {"color": "black"}, "id": "Polar Knowledge Canada", "label": "Polar Knowledge Canada", "shape": "ellipse", "size": 15, "title": "Polar Knowledge Canada\nCategory: Government"}, {"color": "#FF6B6B", "font": {"color": "black"}, "id": "Natural Sciences and Engineering Research Council of Canada", "label": "Natural Sciences and Engineering Research Council of Canada", "shape": "ellipse", "size": 15, "title": "Natural Sciences and Engineering Research Council of Canada\nCategory: Government"}, {"color": "#FF6B6B", "font": {"color": "black"}, "id": "Mitacs", "label": "Mitacs", "shape": "ellipse", "size": 15, "title": "Mitacs\nCategory: Government"}, {"color": "#DDD6FE", "font": {"color": "black"}, "id": "HORIZON EUROPE European Innovation Council", "label": "HORIZON EUROPE European Innovation Council", "shape": "ellipse", "size": 15, "title": "HORIZON EUROPE European Innovation Council\nCategory: Unknown"}, {"color": "#DDD6FE", "font": {"color": "black"}, "id": "Schweizerischer Nationalfonds zur F?rderung der Wissenschaftlichen Forschung", "label": "Schweizerischer Nationalfonds zur F?rderung der Wissenschaftlichen Forschung", "shape": "ellipse", "size": 15, "title": "Schweizerischer Nationalfonds zur F?rderung der Wissenschaftlichen Forschung\nCategory: Unknown"}, {"color": "#DDD6FE", "font": {"color": "black"}, "id": "Centre National de la Recherche Scientifique", "label": "Centre National de la Recherche Scientifique", "shape": "ellipse", "size": 15, "title": "Centre National de la Recherche Scientifique\nCategory: Unknown"}, {"color": "#96CEB4", "font": {"color": "black"}, "id": "La Rochelle Universit?", "label": "La Rochelle Universit?", "shape": "ellipse", "size": 15, "title": "La Rochelle Universit?\nCategory: University"}]);
+                  edges = new vis.DataSet([{"from": "Nikiforov, Vladimir A.", "title": "Studies: 1", "to": "Weston Family Foundation", "width": 1}, {"from": "Nikiforov, Vladimir A.", "title": "Studies: 2", "to": "Agence Nationale de la Recherche", "width": 2}, {"from": "Nikiforov, Vladimir A.", "title": "Studies: 0", "to": "Norges Forskningsr?d", "width": 1}, {"from": "Nikiforov, Vladimir A.", "title": "Studies: 0", "to": "Fonds de recherche du Qu?bec ? Nature et technologies", "width": 1}, {"from": "Nikiforov, Vladimir A.", "title": "Studies: 1", "to": "Framsenteret", "width": 1}, {"from": "Nikiforov, Vladimir A.", "title": "Studies: 0", "to": "Institut Polaire Fran?ais Paul Emile Victor", "width": 1}, {"from": "Nikiforov, Vladimir A.", "title": "Studies: 1", "to": "Polar Knowledge Canada", "width": 1}, {"from": "Nikiforov, Vladimir A.", "title": "Studies: 1", "to": "Natural Sciences and Engineering Research Council of Canada", "width": 1}, {"from": "Nikiforov, Vladimir A.", "title": "Studies: 1", "to": "Mitacs", "width": 1}, {"from": "Nikiforov, Vladimir A.", "title": "Studies: 1", "to": "HORIZON EUROPE European Innovation Council", "width": 1}, {"from": "Nikiforov, Vladimir A.", "title": "Studies: 0", "to": "Schweizerischer Nationalfonds zur F?rderung der Wissenschaftlichen Forschung", "width": 1}, {"from": "Nikiforov, Vladimir A.", "title": "Studies: 1", "to": "Centre National de la Recherche Scientifique", "width": 1}, {"from": "Nikiforov, Vladimir A.", "title": "Studies: 1", "to": "La Rochelle Universit?", "width": 1}]);
+
+                  nodeColors = {};
+                  allNodes = nodes.get({ returnType: "Object" });
+                  for (nodeId in allNodes) {
+                    nodeColors[nodeId] = allNodes[nodeId].color;
+                  }
+                  allEdges = edges.get({ returnType: "Object" });
+                  // adding nodes and edges to the graph
+                  data = {nodes: nodes, edges: edges};
+
+                  var options = {
+    "configure": {
+        "enabled": false
+    },
+    "edges": {
+        "color": {
+            "inherit": true
+        },
+        "smooth": {
+            "enabled": true,
+            "type": "dynamic"
+        }
+    },
+    "interaction": {
+        "dragView": true,
+        "hideEdgesOnDrag": false,
+        "hideEdgesOnZoom": false,
+        "keyboard": {
+            "bindToWindow": false,
+            "enabled": false
+        },
+        "maxZoom": 4.0,
+        "minZoom": 0.1,
+        "wheelSensitivity": 0,
+        "zoomSpeed": 1e-59,
+        "zoomView": true
+    },
+    "physics": {
+        "barnesHut": {
+            "avoidOverlap": 0,
+            "centralGravity": 0.3,
+            "damping": 0.09,
+            "gravitationalConstant": -500,
+            "springConstant": 0.002,
+            "springLength": 60
+        },
+        "enabled": true,
+        "minVelocity": 0.75,
+        "stabilization": {
+            "enabled": true,
+            "fit": true,
+            "iterations": 1000,
+            "onlyDynamicEdges": false,
+            "updateInterval": 50
+        }
+    }
+};
+
+                  
+
+
+                  
+
+                  network = new vis.Network(container, data, options);
+
+                  
+
+                  
+
+                  
+
+
+                  
+
+                  return network;
+
+              }
+              drawGraph();
+        </script>
+    
+    <style>
+        .controls-container {
+            display: flex;
+            margin: 10px 0;
+            gap: 0;
+            align-items: stretch;
+        }
+        .zoom-controls {
+            margin: 10px 0;
+            text-align: center;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        .zoom-btn {
+            padding: 10px 16px;
+            margin: 4px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 14px;
+            transition: all 0.2s ease;
+        }
+        .zoom-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        .zoom-in { background: #007bff; color: white; }
+        .zoom-out { background: #6c757d; color: white; }
+        .zoom-reset { background: #28a745; color: white; }
+    </style>
+    </style>
+    <div class="controls-container">
+        
+        <div class="color-legend" style="flex: 1; padding: 10px; background: #f8f9fa; border-radius: 8px; margin-right: 10px;">
+            <h4 style="margin-bottom: 10px; color: #333; font-size: 16px;">Funding Source Categories:</h4>
+            <div style="display: flex; flex-wrap: wrap; gap: 12px;">
+                <div style="display: flex; align-items: center;">
+                    <div style="width: 16px; height: 16px; background: #FF6B6B; border-radius: 50%; margin-right: 8px;"></div>
+                    <span style="font-size: 13px; color: #333;">Government</span>
+                </div>
+                <div style="display: flex; align-items: center;">
+                    <div style="width: 16px; height: 16px; background: #96CEB4; border-radius: 50%; margin-right: 8px;"></div>
+                    <span style="font-size: 13px; color: #333;">University</span>
+                </div>
+                <div style="display: flex; align-items: center;">
+                    <div style="width: 16px; height: 16px; background: #4ECDC4; border-radius: 50%; margin-right: 8px;"></div>
+                    <span style="font-size: 13px; color: #333;">Foundation</span>
+                </div>
+                <div style="display: flex; align-items: center;">
+                    <div style="width: 16px; height: 16px; background: #FFEAA7; border-radius: 50%; margin-right: 8px;"></div>
+                    <span style="font-size: 13px; color: #333;">Company</span>
+                </div>
+                <div style="display: flex; align-items: center;">
+                    <div style="width: 16px; height: 16px; background: #DDD6FE; border-radius: 50%; margin-right: 8px;"></div>
+                    <span style="font-size: 13px; color: #333;">Unknown</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="zoom-controls">
+            <button class="zoom-btn zoom-in" onclick="zoomIn()">🔍+ Zoom In</button>
+            <button class="zoom-btn zoom-out" onclick="zoomOut()">🔍- Zoom Out</button>
+            <button class="zoom-btn zoom-reset" onclick="resetZoom()">🎯 Reset View</button>
+        </div>
+    </div>
+    <div id="study-info" style="margin-top:20px; background:#fff; color:#222; padding:10px; border-radius:8px;"></div>
+    <script type="text/javascript">
+        // Configure zoom options to disable scroll zoom
+        network.setOptions({
+            interaction: {
+                zoomView: true,
+                dragView: true,
+                wheelSensitivity: 0,  // DISABLE scroll zoom
+                minZoom: 0.05,
+                maxZoom: 5.0
+            }
+        });
+        
+        // AGGRESSIVE SCROLL DISABLE
+        setTimeout(function() {
+            var visContainers = document.querySelectorAll('.vis-network');
+            visContainers.forEach(function(container) {
+                container.addEventListener('wheel', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    return false;
+                }, { passive: false });
+            });
+        }, 1000);
+        
+        // Zoom button functions
+        function zoomIn() {
+            var scale = network.getScale();
+            network.moveTo({
+                scale: Math.min(scale * 1.4, 5.0),
+                animation: {duration: 400, easingFunction: 'easeOutCubic'}
+            });
+        }
+        
+        function zoomOut() {
+            var scale = network.getScale();
+            network.moveTo({
+                scale: Math.max(scale * 0.7, 0.05),
+                animation: {duration: 400, easingFunction: 'easeOutCubic'}
+            });
+        }
+        
+        function resetZoom() {
+            network.moveTo({
+                scale: 1.0,
+                animation: {duration: 600, easingFunction: 'easeInOutCubic'}
+            });
+        }
+        
+        // Study click functionality
+        var companyStudyMap = {"Weston Family Foundation": "Winter Tracking Data Suggest that Migratory Seabirds Transport Per- and Polyfluoroalkyl Substances to Their Arctic Nesting Site (DOI: 10.1021/acs.est.4c02661)", "Agence Nationale de la Recherche": "Winter Tracking Data Suggest that Migratory Seabirds Transport Per- and Polyfluoroalkyl Substances to Their Arctic Nesting Site (DOI: 10.1021/acs.est.4c02661)<br>PFAS Exposure is Associated with a Lower Spermatic Quality in an Arctic Seabird (DOI: 10.1021/acs.est.4c04495)", "Norges Forskningsr?d": "Winter Tracking Data Suggest that Migratory Seabirds Transport Per- and Polyfluoroalkyl Substances to Their Arctic Nesting Site (DOI: 10.1021/acs.est.4c02661)<br>PFAS Exposure is Associated with a Lower Spermatic Quality in an Arctic Seabird (DOI: 10.1021/acs.est.4c04495)", "Fonds de recherche du Qu?bec ? Nature et technologies": "Winter Tracking Data Suggest that Migratory Seabirds Transport Per- and Polyfluoroalkyl Substances to Their Arctic Nesting Site (DOI: 10.1021/acs.est.4c02661)", "Framsenteret": "Winter Tracking Data Suggest that Migratory Seabirds Transport Per- and Polyfluoroalkyl Substances to Their Arctic Nesting Site (DOI: 10.1021/acs.est.4c02661)", "Institut Polaire Fran?ais Paul Emile Victor": "Winter Tracking Data Suggest that Migratory Seabirds Transport Per- and Polyfluoroalkyl Substances to Their Arctic Nesting Site (DOI: 10.1021/acs.est.4c02661)<br>PFAS Exposure is Associated with a Lower Spermatic Quality in an Arctic Seabird (DOI: 10.1021/acs.est.4c04495)", "Polar Knowledge Canada": "Winter Tracking Data Suggest that Migratory Seabirds Transport Per- and Polyfluoroalkyl Substances to Their Arctic Nesting Site (DOI: 10.1021/acs.est.4c02661)", "Natural Sciences and Engineering Research Council of Canada": "Winter Tracking Data Suggest that Migratory Seabirds Transport Per- and Polyfluoroalkyl Substances to Their Arctic Nesting Site (DOI: 10.1021/acs.est.4c02661)", "Mitacs": "Winter Tracking Data Suggest that Migratory Seabirds Transport Per- and Polyfluoroalkyl Substances to Their Arctic Nesting Site (DOI: 10.1021/acs.est.4c02661)", "HORIZON EUROPE European Innovation Council": "PFAS Exposure is Associated with a Lower Spermatic Quality in an Arctic Seabird (DOI: 10.1021/acs.est.4c04495)", "Schweizerischer Nationalfonds zur F?rderung der Wissenschaftlichen Forschung": "PFAS Exposure is Associated with a Lower Spermatic Quality in an Arctic Seabird (DOI: 10.1021/acs.est.4c04495)", "Centre National de la Recherche Scientifique": "PFAS Exposure is Associated with a Lower Spermatic Quality in an Arctic Seabird (DOI: 10.1021/acs.est.4c04495)", "La Rochelle Universit?": "PFAS Exposure is Associated with a Lower Spermatic Quality in an Arctic Seabird (DOI: 10.1021/acs.est.4c04495)"};
+        network.on("click", function(params) {
+            if (params.nodes.length > 0) {
+                var nodeId = params.nodes[0];
+                var node = nodes.get(nodeId);
+                var studies = companyStudyMap[node.label] || "No studies found for this connection.";
+                document.getElementById("study-info").innerHTML = "<h3>Studies for " + node.label + ":</h3>" + studies;
+            }
+        });
+    </script>
+    
+</body>
+</html>
