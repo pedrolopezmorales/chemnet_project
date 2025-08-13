@@ -205,6 +205,18 @@ def extract_name_and_class(classified_source):
         category=parts[1].replace(']','').strip()
         return name, category
     return classified_source, 'Unknown'
+
+def classify_companies_series(companies_list):
+    classified_companies=[]
+    for company in companies_list:
+        if company and not pd.isna(company):
+            category = categorize_funding_source(company.strip())
+            classified_company = f"{company.strip()} [{category}]"
+            classified_companies.append(classified_company)
+        else:
+            classified_companies.append(company)
+    return classified_companies
+
 # Modifying Database by removing certain columns
 
 comparing_companies = main.drop(['DOI', 'URL','Year','Title','Chemicals Mentioned','Abstract'], axis = 1)
@@ -525,17 +537,17 @@ def show_company_network_pyvis(company_name, category='Affiliations', chemical_g
         
         if category == 'Chemicals':
             if chemical_group == 'All':
-                output_file = f"staticfiles/network_{safe_company}_{safe_category}_all.html"
+                output_file = f"networkviewer/static/network_{safe_company}_{safe_category}_all.html"
             elif chemical_group == 'Organic':
-                output_file = f"staticfiles/network_{safe_company}_{safe_category}_organic.html"
+                output_file = f"networkviewer/static/network_{safe_company}_{safe_category}_organic.html"
         elif category == 'Affiliations':
             if sep_country:
-                output_file = f"staticfiles/network_{safe_company}_{safe_category}_by_country.html"
+                output_file = f"networkviewer/static/network_{safe_company}_{safe_category}_by_country.html"
             else:
-                output_file = f"staticfiles/network_{safe_company}_{safe_category}_combined.html"
+                output_file = f"networkviewer/static/network_{safe_company}_{safe_category}_combined.html"
         else:
             # For Universities, Researchers, etc.
-            output_file = f"staticfiles/network_{safe_company}_{safe_category}.html"
+            output_file = f"networkviewer/static/network_{safe_company}_{safe_category}.html"
     # Filter for the selected company
     row = company_assoc[company_assoc['Company'] == company_name]
     if row.empty:
@@ -1070,16 +1082,6 @@ comparing_unis = comparing_affiliations.groupby('University').agg({
     'Companies': lambda x: sum(x, [])
 })
 comparing_unis.reset_index(inplace = True)
-def classify_companies_series(companies_list):
-    classified_companies=[]
-    for company in companies_list:
-        if company and not pd.isna(company):
-            category = categorize_funding_source(company.strip())
-            classified_company = f"{company.strip()} [{category}]"
-            classified_companies.append(classified_company)
-        else:
-            classified_companies.append(company)
-    return classified_companies
 
 comparing_unis['Companies'] = comparing_unis['Companies'].apply(classify_companies_series)
 
@@ -1101,12 +1103,12 @@ def show_uni_network_pyvis(uni_name, category='Funding Sources', chemical_group=
         
         if category == 'Chemicals':
             if chemical_group == 'All':
-                output_file = f"staticfiles/network_{safe_uni}_{safe_category}_all.html"
+                output_file = f"networkviewer/static/network_{safe_uni}_{safe_category}_all.html"
             elif chemical_group == 'Organic':
-                output_file = f"staticfiles/network_{safe_uni}_{safe_category}_organic.html"
+                output_file = f"networkviewer/static/network_{safe_uni}_{safe_category}_organic.html"
         else:
             # For Companies, etc.
-            output_file = f"staticfiles/network_{safe_uni}_{safe_category}.html"    # Filter for the selected company
+            output_file = f"networkviewer/static/network_{safe_uni}_{safe_category}.html"    # Filter for the selected company
     row = comparing_unis[comparing_unis['University'] == uni_name]
     if row.empty:
         print(f"University '{uni_name}' not found.")
@@ -1373,9 +1375,9 @@ def show_uni_network_pyvis(uni_name, category='Funding Sources', chemical_group=
     <style>
         .controls-container {{
             display: flex;
-            marigin: 10px 0;
+            margin: 10px 0;
             gap: 0;
-            align-items:stretch
+            align-items:stretch;
         }}
         .zoom-controls {{
             flex: 0 0 auto;
@@ -1479,7 +1481,7 @@ def show_uni_network_pyvis(uni_name, category='Funding Sources', chemical_group=
     return True
 
 # showing researchers and their company funding
-
+'''
 reduced = main.drop(['DOI', 'URL','Year','Title','Chemicals Mentioned','Abstract','Chemicals with InChIKey'], axis = 1)
 
 reduced['Researchers'] = reduced['Authors'].apply(split_researchers)
@@ -1510,14 +1512,23 @@ final_reduced['NormalizedName'] = final_reduced['Researcher'].apply(normalize_na
 
 final_reduced['GroupKey'] = final_reduced['NormalizedName'] + '|' + final_reduced['Affiliation'].str[:20]
 
-
 comparing_researchers = final_reduced.groupby('GroupKey').agg({
     'Researcher': 'first',
     'Affiliation': lambda affs: max(affs, key=len),  # longest affiliation
     'Companies': lambda lists: sum(lists, [])        # flatten company lists
 }).reset_index(drop=True)
 
-def show_researcher_network_pyvis(researcher, output_file = "staticfiles/company_network.html"):    # Filter for the selected company
+comparing_researchers['Companies'] = comparing_researchers['Companies'].apply(classify_companies_series)
+
+comparing_researchers.to_csv(os.path.join(settings.BASE_DIR, 'data', 'comparing_researchers.csv'), index=False)
+'''
+CSV_PATH_researchers = os.path.join(settings.BASE_DIR, 'data', 'comparing_researchers.csv')
+comparing_researchers = pd.read_csv(CSV_PATH_researchers)
+comparing_researchers['Companies'] = comparing_researchers['Companies'].apply(
+    lambda x: ast.literal_eval(x) if isinstance(x, str) and x.startswith('[') else []
+)
+
+def show_researcher_network_pyvis(researcher, output_file = "networkviewer/static/company_network.html"):    # Filter for the selected company
     # Filter for the selected company
     matches = comparing_researchers[comparing_researchers['Researcher'].str.lower() == researcher.lower()]
     
@@ -1613,7 +1624,7 @@ def show_researcher_network_pyvis(researcher, output_file = "staticfiles/company
 
 
 # Creating a dataframe that has chemicals per row
-
+'''
 red_chem = main.drop(['DOI', 'URL','Year','Title','Chemicals Mentioned','Abstract','Authors','Affiliations'], axis = 1)
 def parse_chemicals(chem_string):
     chemicals = []
@@ -1658,15 +1669,26 @@ chem_per_row = (
     })
     .reset_index(drop=True)
 )
+chem_per_row['company'] = chem_per_row['company'].apply(classify_companies_series)
+chem_per_row.to_csv(os.path.join(settings.BASE_DIR, 'data', 'chem_per_row.csv'), index=False)
+'''
+CSV_PATH_chem = os.path.join(settings.BASE_DIR, 'data', 'chem_per_row.csv')
+chem_per_row = pd.read_csv(CSV_PATH_chem)
+chem_per_row['company'] = chem_per_row['company'].apply(
+    lambda x: ast.literal_eval(x) if isinstance(x, str) and x.startswith('[') else []
+)
+chem_per_row['chemical'] = chem_per_row['chemical'].apply(
+    lambda x: ast.literal_eval(x) if isinstance(x, str) and x.startswith('[') else []
+)
 
 def show_chemical_network(chemical, inch='Error', output_file=None):
     if output_file is None:
         safe_chemical = chemical.replace(' ', '_').replace('/', '_').replace('\\', '_').replace('.', '_')
         if inch != 'Error':
             safe_inch = inch.replace('/', '_').replace('\\', '_').replace('-', '_')
-            output_file = f"staticfiles/network_{safe_chemical}_{safe_inch}.html"
+            output_file = f"networkviewer/static/network_{safe_chemical}_{safe_inch}.html"
         else:
-            output_file = f"staticfiles/network_{safe_chemical}_no_inchikey.html"
+            output_file = f"networkviewer/static/network_{safe_chemical}_no_inchikey.html"
     # Filter for the selected company
     if inch == 'Error':
         row = chem_per_row[chem_per_row['chemical'].apply(lambda x: any(chemical.lower() == name.lower() for name in x))]
@@ -1698,27 +1720,36 @@ def show_chemical_network(chemical, inch='Error', output_file=None):
     total_comp = []
     for comp in data:
         if comp not in total_comp:
-            net.add_node(comp, label=comp, title=comp, color="lightblue", shape="ellipse",size=15)
+            original_name, entity_category = extract_name_and_class(comp)
+            entity_color = get_category_color(entity_category)
+            net.add_node(
+                    original_name,
+                    label=original_name,
+                    title=f"{original_name}\n Category: {entity_category}",
+                    color=entity_color,
+                    shape="ellipse",
+                    size=15
+                )
             total_comp.append(comp)
         else:
             total_comp.append(comp)
     study_counts = {}
     for node in net.nodes:
         if node['id'] != chemical:  # Skip the chemical node itself
-            company = node.get('label', '')  # Company name is the label
+            company = node.get('id')  # Company name is the id
             if company:
                 # Count studies mentioning this chemical with this company
                 if inch and inch != 'Error' and inch != 'Not Found':
                     # Use InChIKey for search
                     studies = main[
-                        (main['Funding Sources'].str.contains(company, na=False)) &
-                        (main['Chemicals with InChIKey'].str.contains(inch, na=False))
+                        (main['Funding Sources'].str.contains(company, na=False, regex=False)) &
+                        (main['Chemicals with InChIKey'].str.contains(inch, na=False, regex=False))
                     ]
                 else:
                     # Fallback to chemical name
                     studies = main[
-                        (main['Funding Sources'].str.contains(company, na=False)) &
-                        (main['Chemicals with InChIKey'].str.contains(chemical, na=False))
+                        (main['Funding Sources'].str.contains(company, na=False, regex=False)) &
+                        (main['Chemicals with InChIKey'].str.contains(chemical, na=False, regex=False))
                     ]
                 study_count = len(studies.drop_duplicates(subset=['DOI']))
                 
@@ -1764,33 +1795,67 @@ def show_chemical_network(chemical, inch='Error', output_file=None):
     os.makedirs(os.path.dirname(output_file), exist_ok=True)
     company_study_map = {}
     for comp in data:
+        original_name, entity_category = extract_name_and_class(comp)
         if inch and inch != 'Error' and inch != 'Not Found':
             studies = main[
-                (main['Funding Sources'].str.contains(comp, na=False, regex=False)) &
+                (main['Funding Sources'].str.contains(original_name, na=False, regex=False)) &
                 (main['Chemicals with InChIKey'].str.contains(inch, na=False))
             ]
         else:
             # fallback, but this should rarely happen
             studies = main[
-                (main['Funding Sources'].str.contains(comp, na=False)) &
-                (main['Chemicals with InChIKey'].str.contains(chemical, na=False))
+                (main['Funding Sources'].str.contains(original_name, na=False, regex=False)) &
+                (main['Chemicals with InChIKey'].str.contains(chemical, na=False, regex=False))
             ]
         study_info = "<br>".join(
             f"{row['Title']} (DOI: {row['DOI']})" for _, row in studies.iterrows()
         ) or "No studies found for this connection."
-        company_study_map[comp] = study_info
+        company_study_map[original_name] = study_info
     net.show(output_file)
     with open(output_file, "r", encoding="utf-8") as f:
         html = f.read()
-
+    color_legend = """
+        <div class="color-legend" style="flex: 1; padding: 10px; background: #f8f9fa; border-radius: 8px; margin-right: 10px;">
+            <h4 style="margin-bottom: 10px; color: #333; font-size: 16px;">Funding Source Categories:</h4>
+            <div style="display: flex; flex-wrap: wrap; gap: 12px;">
+                <div style="display: flex; align-items: center;">
+                    <div style="width: 16px; height: 16px; background: #FF6B6B; border-radius: 50%; margin-right: 8px;"></div>
+                    <span style="font-size: 13px; color: #333;">Government</span>
+                </div>
+                <div style="display: flex; align-items: center;">
+                    <div style="width: 16px; height: 16px; background: #96CEB4; border-radius: 50%; margin-right: 8px;"></div>
+                    <span style="font-size: 13px; color: #333;">University</span>
+                </div>
+                <div style="display: flex; align-items: center;">
+                    <div style="width: 16px; height: 16px; background: #4ECDC4; border-radius: 50%; margin-right: 8px;"></div>
+                    <span style="font-size: 13px; color: #333;">Foundation</span>
+                </div>
+                <div style="display: flex; align-items: center;">
+                    <div style="width: 16px; height: 16px; background: #FFEAA7; border-radius: 50%; margin-right: 8px;"></div>
+                    <span style="font-size: 13px; color: #333;">Company</span>
+                </div>
+                <div style="display: flex; align-items: center;">
+                    <div style="width: 16px; height: 16px; background: #DDD6FE; border-radius: 50%; margin-right: 8px;"></div>
+                    <span style="font-size: 13px; color: #333;">Unknown</span>
+                </div>
+            </div>
+        </div>
+    """
     injection = f"""
     <style>
-        .zoom-controls {{
+        .controls-container {{
+            display: flex;
             margin: 10px 0;
+            gap: 0;
+            align-items:stretch;
+        }}
+        .zoom-controls {{
+            flex: 0 0 auto;
             text-align: center;
             padding: 10px;
             background: #f8f9fa;
             border-radius: 8px;
+            min-width:300px;
         }}
         .zoom-btn {{
             padding: 10px 16px;
@@ -1810,10 +1875,13 @@ def show_chemical_network(chemical, inch='Error', output_file=None):
         .zoom-out {{ background: #6c757d; color: white; }}
         .zoom-reset {{ background: #28a745; color: white; }}
     </style>
-    <div class="zoom-controls">
-        <button class="zoom-btn zoom-in" onclick="zoomIn()">🔍+ Zoom In</button>
-        <button class="zoom-btn zoom-out" onclick="zoomOut()">🔍- Zoom Out</button>
-        <button class="zoom-btn zoom-reset" onclick="resetZoom()">🎯 Reset View</button>
+    <div class="controls-container">
+        {color_legend}
+        <div class="zoom-controls">
+            <button class="zoom-btn zoom-in" onclick="zoomIn()">🔍+ Zoom In</button>
+            <button class="zoom-btn zoom-out" onclick="zoomOut()">🔍- Zoom Out</button>
+            <button class="zoom-btn zoom-reset" onclick="resetZoom()">🎯 Reset View</button>
+        </div>
     </div>
     <div id="study-info" style="margin-top:20px; background:#fff; color:#222; padding:10px; border-radius:8px;"></div>
     <script type="text/javascript">
@@ -1888,7 +1956,7 @@ def show_researcher_network_pyvis_from_row(row, output_file=None):
         safe_researcher = researcher.replace(' ', '_').replace(',', '').replace('/', '_').replace('\\', '_').replace('.', '_')
         # Use first 20 chars of affiliation to make filename more unique
         safe_aff = str(row['Affiliation'])[:20].replace(' ', '_').replace('/', '_').replace('\\', '_').replace('.', '_')
-        output_file = f"staticfiles/network_{safe_researcher}_{safe_aff}.html"
+        output_file = f"networkviewer/static/network_{safe_researcher}_{safe_aff}.html"
     data = row['Companies']
     aff = row['Affiliation']
     researcher = row['Researcher']
@@ -1905,14 +1973,23 @@ def show_researcher_network_pyvis_from_row(row, output_file=None):
     total_comp = []
     for comp in data:
         if comp not in total_comp:
-            net.add_node(comp, label=comp, title=comp, color="lightblue", shape="ellipse", size=15)
+            original_name, entity_type = extract_name_and_class(comp)
+            entity_color = get_category_color(entity_type)
+            net.add_node(
+            original_name,
+            label=original_name,
+            title=f"{original_name}\nCategory: {entity_type}",
+            color=entity_color,
+            shape="ellipse",
+            size=15
+            )
             total_comp.append(comp)
         else:
             total_comp.append(comp)
     study_counts = {}
     for node in net.nodes:
         if node['id'] != researcher:  # Skip the researcher node itself
-            company = node.get('label', '')  # Company name is the label
+            company = node.get('id')  # Company name is the label
             if company:
                 # Count studies mentioning this researcher with this company
                 studies = main[
@@ -1962,20 +2039,53 @@ def show_researcher_network_pyvis_from_row(row, output_file=None):
     os.makedirs(os.path.dirname(output_file), exist_ok=True)
     company_study_map = {}
     for comp in data:
+        original_name, _ = extract_name_and_class(comp)
         studies = main[
-            (main['Funding Sources'].str.contains(comp, na=False, regex=False)) &
+            (main['Funding Sources'].str.contains(original_name, na=False, regex=False)) &
             (main['Authors'].str.contains(researcher, na=False, regex=False))
         ]
         study_info = "<br>".join(
             f"{row['Title']} (DOI: {row['DOI']})" for _, row in studies.drop_duplicates(subset=['DOI']).iterrows()
         ) or "No studies found for this connection."
-        company_study_map[comp] = study_info
+        company_study_map[original_name] = study_info
     net.show(output_file)
     with open(output_file, "r", encoding="utf-8") as f:
         html = f.read()
-
+    color_legend = """
+        <div class="color-legend" style="flex: 1; padding: 10px; background: #f8f9fa; border-radius: 8px; margin-right: 10px;">
+            <h4 style="margin-bottom: 10px; color: #333; font-size: 16px;">Funding Source Categories:</h4>
+            <div style="display: flex; flex-wrap: wrap; gap: 12px;">
+                <div style="display: flex; align-items: center;">
+                    <div style="width: 16px; height: 16px; background: #FF6B6B; border-radius: 50%; margin-right: 8px;"></div>
+                    <span style="font-size: 13px; color: #333;">Government</span>
+                </div>
+                <div style="display: flex; align-items: center;">
+                    <div style="width: 16px; height: 16px; background: #96CEB4; border-radius: 50%; margin-right: 8px;"></div>
+                    <span style="font-size: 13px; color: #333;">University</span>
+                </div>
+                <div style="display: flex; align-items: center;">
+                    <div style="width: 16px; height: 16px; background: #4ECDC4; border-radius: 50%; margin-right: 8px;"></div>
+                    <span style="font-size: 13px; color: #333;">Foundation</span>
+                </div>
+                <div style="display: flex; align-items: center;">
+                    <div style="width: 16px; height: 16px; background: #FFEAA7; border-radius: 50%; margin-right: 8px;"></div>
+                    <span style="font-size: 13px; color: #333;">Company</span>
+                </div>
+                <div style="display: flex; align-items: center;">
+                    <div style="width: 16px; height: 16px; background: #DDD6FE; border-radius: 50%; margin-right: 8px;"></div>
+                    <span style="font-size: 13px; color: #333;">Unknown</span>
+                </div>
+            </div>
+        </div>
+        """
     injection = f"""
     <style>
+        .controls-container {{
+            display: flex;
+            margin: 10px 0;
+            gap: 0;
+            align-items: stretch;
+        }}
         .zoom-controls {{
             margin: 10px 0;
             text-align: center;
@@ -2001,10 +2111,14 @@ def show_researcher_network_pyvis_from_row(row, output_file=None):
         .zoom-out {{ background: #6c757d; color: white; }}
         .zoom-reset {{ background: #28a745; color: white; }}
     </style>
-    <div class="zoom-controls">
-        <button class="zoom-btn zoom-in" onclick="zoomIn()">🔍+ Zoom In</button>
-        <button class="zoom-btn zoom-out" onclick="zoomOut()">🔍- Zoom Out</button>
-        <button class="zoom-btn zoom-reset" onclick="resetZoom()">🎯 Reset View</button>
+    </style>
+    <div class="controls-container">
+        {color_legend}
+        <div class="zoom-controls">
+            <button class="zoom-btn zoom-in" onclick="zoomIn()">🔍+ Zoom In</button>
+            <button class="zoom-btn zoom-out" onclick="zoomOut()">🔍- Zoom Out</button>
+            <button class="zoom-btn zoom-reset" onclick="resetZoom()">🎯 Reset View</button>
+        </div>
     </div>
     <div id="study-info" style="margin-top:20px; background:#fff; color:#222; padding:10px; border-radius:8px;"></div>
     <script type="text/javascript">
@@ -2295,16 +2409,17 @@ def show_chem_connections(chemical=None, inchikey=None):
     labeled_companies = []
     
     for comp in data:
-        if comp not in unique_companies:
+        original_name, _ = extract_name_and_class(comp)
+        if original_name not in unique_companies:
             if inchikey_val and inchikey_val != 'Not Found':
                 studies = main[
-                    (main['Funding Sources'].str.contains(comp, na=False)) &
-                    (main['Chemicals with InChIKey'].str.contains(inchikey_val, na=False))
+                    (main['Funding Sources'].str.contains(original_name, na=False, regex=False)) &
+                    (main['Chemicals with InChIKey'].str.contains(inchikey_val, na=False, regex=False))
                 ]
             else:
                 studies = main[
-                    (main['Funding Sources'].str.contains(comp, na=False)) &
-                    (main['Chemicals with InChIKey'].str.contains(chemical, na=False))
+                    (main['Funding Sources'].str.contains(original_name, na=False, regex=False)) &
+                    (main['Chemicals with InChIKey'].str.contains(chemical, na=False, regex=False))
                 ]
             study_count = len(studies.drop_duplicates(subset=['DOI']))
             labeled_companies.append(f"{comp} ({study_count})")
