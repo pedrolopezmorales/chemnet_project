@@ -25,7 +25,15 @@ SECRET_KEY = os.environ.get('SECRET_KEY', "django-insecure-w!c9*)3^jfo-#mwuxpzvv
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get('DEBUG', 'True').lower() == 'true'
 
-ALLOWED_HOSTS = ['pedrolopezmorales.pythonanywhere.com', 'localhost', '127.0.0.1']
+ALLOWED_HOSTS = [
+    'pedrolopezmorales.pythonanywhere.com', 
+    'localhost', 
+    '127.0.0.1',
+    '.railway.app',  # For Railway deployment
+    '.render.com',   # For Render deployment
+    '.vercel.app',   # If deploying Django on Vercel
+    '.herokuapp.com' # For Heroku deployment
+]
 
 # Application definition
 
@@ -36,10 +44,13 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "rest_framework",
+    "corsheaders",
     "networkviewer",  
 ]
 
 MIDDLEWARE = [
+    "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -125,3 +136,35 @@ STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'networkviewer', 'static'),
 ]
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+
+# REST Framework settings
+REST_FRAMEWORK = {
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.AllowAny',
+    ],
+    'DEFAULT_RENDERER_CLASSES': [
+        'rest_framework.renderers.JSONRenderer',
+    ],
+}
+
+# CORS settings for Next.js frontend
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",  # Next.js development server
+    "http://127.0.0.1:3000",
+    # Add your production URLs here
+    "https://your-chemnet-app.vercel.app",  # Replace with your actual Vercel URL
+]
+
+# For development only - disable in production
+CORS_ALLOW_ALL_ORIGINS = os.environ.get('DEBUG', 'False').lower() == 'true'
+CORS_ALLOWED_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+]

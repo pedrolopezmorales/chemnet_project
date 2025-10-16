@@ -22,10 +22,11 @@ from django.conf.urls.static import static
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', include('networkviewer.urls')),  # <-- this line
+    path('api/', include('networkviewer.api_urls')),  # API endpoints
+    path('', include('networkviewer.urls')),  # Original HTML views
 ]
 
 # Serve static files during development
 # Note: In production, web server (Apache/Nginx) should serve static files
 if settings.DEBUG:
-    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATICFILES_DIRS[0])
+    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
