@@ -8,14 +8,34 @@ import json
 from django.conf import settings
 import ast
 
-CSV_PATH = os.path.join(settings.BASE_DIR, 'data', 'esandt_papers_2024_with_inchikeys.csv')
-
 import requests
 import time
 from functools import lru_cache
 
-main = pd.read_csv(CSV_PATH)
+#creating the main dataframe
 
+def create_main_dataframe():
+    data_years = range(2020, 2025)
+    dataframes_list = []
+
+    for year in data_years:
+        filename = f'esandt_papers_{year}_with_inchikeys.csv'
+        file_path = os.path.join(settings.BASE_DIR, 'data', filename)
+        df =pd.read_csv(file_path)
+        dataframes_list.append(df)
+
+    combined_df = pd.concat(dataframes_list, ignore_index=True)
+
+    combined_path = os.path.join(settings.BASE_DIR, 'data', "esandt_papers_main.csv")
+    combined_df.to_csv(combined_path, index=False)
+    print(f"Combined dataset created! Total rows: {len(combined_df)}")
+
+# Run this function manually when you want to recreate the combined dataset:
+# create_main_dataframe()  # Only uncomment to create dataframe, if more years is addded to the dataframe
+
+CSV_PATH = os.path.join(settings.BASE_DIR, 'data', 'esandt_papers_main.csv')
+main = pd.read_csv(CSV_PATH)
+main = main.dropna(subset=['Authors'])
 
 countries = dict(countries_for_language('en'))
 country_names = list(countries.values())
@@ -205,18 +225,42 @@ def extract_name_and_class(classified_source):
         category=parts[1].replace(']','').strip()
         return name, category
     return classified_source, 'Unknown'
-
+'''
 def classify_companies_series(companies_list):
-    classified_companies=[]
-    for company in companies_list:
+    """
+    Classify companies using the pre-built classification dictionary for faster performance.
+    Falls back to the categorize_funding_source function for any companies not in the dictionary.
+    """
+    classified_companies = []
+    total = len(companies_list)
+    cache_hits = 0
+    api_calls = 0
+    
+    for i, company in enumerate(companies_list):
         if company and not pd.isna(company):
-            category = categorize_funding_source(company.strip())
-            classified_company = f"{company.strip()} [{category}]"
+            company_clean = company.strip()
+            # Try to get classification from our pre-built dictionary first
+            if company_clean in company_classification_dict:
+                category = company_classification_dict[company_clean]
+                cache_hits += 1
+            else:
+                # Fallback to API call if not in dictionary
+                category = categorize_funding_source(company_clean)
+                company_classification_dict[company_clean] = category  # Cache for future use
+                api_calls += 1
+            
+            classified_company = f"{company_clean} [{category}]"
             classified_companies.append(classified_company)
         else:
             classified_companies.append(company)
+        
+        if (i + 1) % 100 == 0 or (i + 1) == total:
+            percentage = ((i + 1) / total) * 100
+            print(f"Classified {i + 1} out of {total} companies ({percentage:.2f}%) - Cache hits: {cache_hits}, API calls: {api_calls}")
+    
+    print(f"Classification complete! Cache hits: {cache_hits}, API calls: {api_calls}")
     return classified_companies
-
+'''
 # Modifying Database by removing certain columns
 
 comparing_companies = main.drop(['DOI', 'URL','Year','Title','Chemicals Mentioned','Abstract'], axis = 1)
@@ -225,6 +269,77 @@ comparing_companies = main.drop(['DOI', 'URL','Year','Title','Chemicals Mentione
 
 companies = comparing_companies['Funding Sources'].str.split(r'[;]').explode().str.strip().tolist()
 no_dup_comp = list(set(companies))
+'''
+# Create company classification dictionary
+print("Creating company classification dictionary...")
+company_classification_dict = {}
+
+# Check if we have a saved classification dictionary
+classification_file_path = os.path.join(settings.BASE_DIR, 'data', 'company_classifications.json')
+
+if os.path.exists(classification_file_path):
+    print("Loading existing company classifications...")
+    import json
+    try:
+        with open(classification_file_path, 'r', encoding='utf-8') as f:
+            company_classification_dict = json.load(f)
+        print(f"Loaded {len(company_classification_dict)} existing classifications")
+    except Exception as e:
+        print(f"Error loading classifications: {e}")
+        company_classification_dict = {}
+
+# Classify any new companies not in the saved dictionary
+new_companies = [comp for comp in no_dup_comp if comp not in company_classification_dict]
+if new_companies:
+    print(f"Classifying {len(new_companies)} new companies...")
+    for i, company in enumerate(new_companies):
+        if company and not pd.isna(company):
+            category = categorize_funding_source(company.strip())
+            company_classification_dict[company.strip()] = category
+        else:
+            company_classification_dict[company] = 'Unknown'
+        
+        # Progress indicator
+        if (i + 1) % 50 == 0 or (i + 1) == len(new_companies):
+            percentage = ((i + 1) / len(new_companies)) * 100
+            print(f"Classified {i + 1} out of {len(new_companies)} new companies ({percentage:.2f}%)")
+    
+    # Save the updated dictionary
+    try:
+        import json
+        with open(classification_file_path, 'w', encoding='utf-8') as f:
+            json.dump(company_classification_dict, f, indent=2, ensure_ascii=False)
+        print(f"Saved updated classifications to {classification_file_path}")
+    except Exception as e:
+        print(f"Error saving classifications: {e}")
+else:
+    print("All companies already classified!")
+
+print(f"Company classification dictionary created with {len(company_classification_dict)} entries!")
+print(f"Sample classifications: {dict(list(company_classification_dict.items())[:5])}")
+
+# Helper functions for company classification
+def get_company_classification(company_name):
+    """Get the classification for a company from the pre-built dictionary."""
+    return company_classification_dict.get(company_name.strip() if company_name else '', 'Unknown')
+
+def get_classification_stats():
+    """Get statistics about company classifications."""
+    from collections import Counter
+    stats = Counter(company_classification_dict.values())
+    return dict(stats)
+
+def get_companies_by_category(category):
+    """Get all companies belonging to a specific category."""
+    return [company for company, cat in company_classification_dict.items() if cat == category]
+
+# Print classification statistics
+classification_stats = get_classification_stats()
+print("\nCompany Classification Statistics:")
+for category, count in sorted(classification_stats.items()):
+    print(f"  {category}: {count} companies")
+
+'''
 affiliations = comparing_companies['Affiliations'].str.split(r'[|]').explode().str.strip().tolist()
 no_dup_aff = list(set(affiliations))
 new_no_dup_aff = []
@@ -378,11 +493,18 @@ aff_per_company = (
 comparing_companies['Names'] = comparing_companies['Researchers'].apply(
     lambda name_list: [normalize_name(name) for name in name_list]
 )
+def create_researcher_affiliation_pairs_components(row):
+    researchers = row['Names']
+    affiliations = row['Aff']
 
-comparing_companies['ResearcherAffPairs'] = comparing_companies.apply(
-    lambda row: list(zip(row['Names'], row['Aff'])),
-    axis=1
-)
+    if len(researchers) > len(affiliations):
+        affiliations = affiliations + [''] * (len(researchers) - len(affiliations))
+    elif len(researchers) < len(affiliations):
+        affiliations = affiliations[:len(researchers)]
+    
+    return list(zip(researchers, affiliations))
+
+comparing_companies['ResearcherAffPairs'] = comparing_companies.apply(create_researcher_affiliation_pairs_components, axis=1)
 
 re_comp = comparing_companies.explode('ResearcherAffPairs')
 
@@ -390,6 +512,8 @@ re_comp[['Researcher', 'Aff']] = pd.DataFrame(
     re_comp['ResearcherAffPairs'].tolist(),
     index=re_comp.index
 )
+
+
 
 re_comp = re_comp.explode('Matched Companies')
 
@@ -1480,22 +1604,28 @@ def show_uni_network_pyvis(uni_name, category='Funding Sources', chemical_group=
         f.write(html)
     return True
 
+
 # showing researchers and their company funding
 '''
 reduced = main.drop(['DOI', 'URL','Year','Title','Chemicals Mentioned','Abstract','Chemicals with InChIKey'], axis = 1)
 
-reduced['Researchers'] = reduced['Authors'].apply(split_researchers)
+hwreduced['Researchers'] = reduced['Authors'].apply(split_researchers)
 reduced['Aff'] = reduced['Affiliations'].apply(
     lambda x: [item.strip() for item in x.split('|')] if isinstance(x, str) and x.strip() != '' else []
 )
 reduced['Companies'] = reduced['Funding Sources'].str.split(';').apply(lambda lst: [x.strip() for x in lst])
 reduced = reduced.drop(['Authors','Affiliations','Funding Sources'],axis=1)
 
-reduced['ResearcherAffPairs'] = reduced.apply(
-    lambda row: list(zip(row['Researchers'], row['Aff'])),
-    axis=1
-)
+def create_researcher_affiliation_paris(row):
+    researchers = row['Researchers']
+    affiliations = row['Aff']
+    if len(researchers) > len(affiliations):
+        affiliations.extend([''] * (len(researchers) - len(affiliations)))
+    elif len(researchers) < len(affiliations):
+        affiliations = affiliations[:len(researchers)]
+    return list(zip(researchers, affiliations))
 
+reduced['ResearcherAffPairs'] = reduced.apply(create_researcher_affiliation_paris, axis=1)
 
 reduced_expanded = reduced.explode('ResearcherAffPairs')
 
