@@ -34,7 +34,8 @@ def create_main_dataframe():
 # create_main_dataframe()  # Only uncomment to create dataframe, if more years is addded to the dataframe
 
 CSV_PATH = os.path.join(settings.BASE_DIR, 'data', 'esandt_papers_main.csv')
-main = pd.read_csv(CSV_PATH)
+MAIN_CSV_URL = "https://ucsf.box.com/shared/static/n5tdu7t8hj5lkwvmqmi5cwqhmnuksjm8.csv"
+main = pd.read_csv(MAIN_CSV_URL)
 main = main.dropna(subset=['Authors'])
 
 countries = dict(countries_for_language('en'))
@@ -661,17 +662,17 @@ def show_company_network_pyvis(company_name, category='Affiliations', chemical_g
         
         if category == 'Chemicals':
             if chemical_group == 'All':
-                output_file = f"staticfiles/network_{safe_company}_{safe_category}_all.html"
+                output_file = f"networkviewer/static/network_{safe_company}_{safe_category}_all.html"
             elif chemical_group == 'Organic':
-                output_file = f"staticfiles/network_{safe_company}_{safe_category}_organic.html"
+                output_file = f"networkviewer/static/network_{safe_company}_{safe_category}_organic.html"
         elif category == 'Affiliations':
             if sep_country:
-                output_file = f"staticfiles/network_{safe_company}_{safe_category}_by_country.html"
+                output_file = f"networkviewer/static/network_{safe_company}_{safe_category}_by_country.html"
             else:
-                output_file = f"staticfiles/network_{safe_company}_{safe_category}_combined.html"
+                output_file = f"networkviewer/static/network_{safe_company}_{safe_category}_combined.html"
         else:
             # For Universities, Researchers, etc.
-            output_file = f"staticfiles/network_{safe_company}_{safe_category}.html"
+            output_file = f"networkviewer/static/network_{safe_company}_{safe_category}.html"
     # Filter for the selected company
     row = company_assoc[company_assoc['Company'] == company_name]
     if row.empty:
@@ -1212,7 +1213,8 @@ comparing_unis['Companies'] = comparing_unis['Companies'].apply(classify_compani
 comparing_unis.to_csv(os.path.join(settings.BASE_DIR, 'data', 'comparing_unis.csv'), index=False)
 '''
 CSV_PATH_unis = os.path.join(settings.BASE_DIR, 'data', 'comparing_unis.csv')
-comparing_unis = pd.read_csv(CSV_PATH_unis)
+UNI_CSV_URL = 'https://ucsf.box.com/shared/static/4fn56emqmz756klkq98f9c6pj9fvcv2l.csv' 
+comparing_unis = pd.read_csv(UNI_CSV_URL)
 comparing_unis['Companies'] = comparing_unis['Companies'].apply(
     lambda x: ast.literal_eval(x) if isinstance(x, str) and x.startswith('[') else []
 )
@@ -1227,12 +1229,12 @@ def show_uni_network_pyvis(uni_name, category='Funding Sources', chemical_group=
         
         if category == 'Chemicals':
             if chemical_group == 'All':
-                output_file = f"staticfiles/network_{safe_uni}_{safe_category}_all.html"
+                output_file = f"networkviewer/static/network_{safe_uni}_{safe_category}_all.html"
             elif chemical_group == 'Organic':
-                output_file = f"staticfiles/network_{safe_uni}_{safe_category}_organic.html"
+                output_file = f"networkviewer/static/network_{safe_uni}_{safe_category}_organic.html"
         else:
             # For Companies, etc.
-            output_file = f"staticfiles/network_{safe_uni}_{safe_category}.html"    # Filter for the selected company
+            output_file = f"networkviewer/static/network_{safe_uni}_{safe_category}.html"    # Filter for the selected company
     row = comparing_unis[comparing_unis['University'] == uni_name]
     if row.empty:
         print(f"University '{uni_name}' not found.")
@@ -1653,12 +1655,13 @@ comparing_researchers['Companies'] = comparing_researchers['Companies'].apply(cl
 comparing_researchers.to_csv(os.path.join(settings.BASE_DIR, 'data', 'comparing_researchers.csv'), index=False)
 '''
 CSV_PATH_researchers = os.path.join(settings.BASE_DIR, 'data', 'comparing_researchers.csv')
-comparing_researchers = pd.read_csv(CSV_PATH_researchers)
+RESEARCHER_CSV_URL = 'https://ucsf.box.com/shared/static/qjdx3ixp6kndvm1flvte5pc3uuwztrll.csv'
+comparing_researchers = pd.read_csv(RESEARCHER_CSV_URL)
 comparing_researchers['Companies'] = comparing_researchers['Companies'].apply(
     lambda x: ast.literal_eval(x) if isinstance(x, str) and x.startswith('[') else []
 )
 
-def show_researcher_network_pyvis(researcher, output_file = "staticfiles/company_network.html"):    # Filter for the selected company
+def show_researcher_network_pyvis(researcher, output_file = "networkviewer/static/company_network.html"):    # Filter for the selected company
     # Filter for the selected company
     matches = comparing_researchers[comparing_researchers['Researcher'].str.lower() == researcher.lower()]
     
@@ -1803,7 +1806,8 @@ chem_per_row['company'] = chem_per_row['company'].apply(classify_companies_serie
 chem_per_row.to_csv(os.path.join(settings.BASE_DIR, 'data', 'chem_per_row.csv'), index=False)
 '''
 CSV_PATH_chem = os.path.join(settings.BASE_DIR, 'data', 'chem_per_row.csv')
-chem_per_row = pd.read_csv(CSV_PATH_chem)
+CHEM_CSV_URL = 'https://ucsf.box.com/shared/static/0d08l21cx0cv9og1hn1df6ud3jgbptjd.csv'
+chem_per_row = pd.read_csv(CHEM_CSV_URL)
 chem_per_row['company'] = chem_per_row['company'].apply(
     lambda x: ast.literal_eval(x) if isinstance(x, str) and x.startswith('[') else []
 )
@@ -1816,9 +1820,9 @@ def show_chemical_network(chemical, inch='Error', output_file=None):
         safe_chemical = chemical.replace(' ', '_').replace('/', '_').replace('\\', '_').replace('.', '_')
         if inch != 'Error':
             safe_inch = inch.replace('/', '_').replace('\\', '_').replace('-', '_')
-            output_file = f"staticfiles/network_{safe_chemical}_{safe_inch}.html"
+            output_file = f"networkviewer/static/network_{safe_chemical}_{safe_inch}.html"
         else:
-            output_file = f"staticfiles/network_{safe_chemical}_no_inchikey.html"
+            output_file = f"networkviewer/static/network_{safe_chemical}_no_inchikey.html"
     # Filter for the selected company
     if inch == 'Error':
         row = chem_per_row[chem_per_row['chemical'].apply(lambda x: any(chemical.lower() == name.lower() for name in x))]
@@ -2086,7 +2090,7 @@ def show_researcher_network_pyvis_from_row(row, output_file=None):
         safe_researcher = researcher.replace(' ', '_').replace(',', '').replace('/', '_').replace('\\', '_').replace('.', '_')
         # Use first 20 chars of affiliation to make filename more unique
         safe_aff = str(row['Affiliation'])[:20].replace(' ', '_').replace('/', '_').replace('\\', '_').replace('.', '_')
-        output_file = f"staticfiles/network_{safe_researcher}_{safe_aff}.html"
+        output_file = f"networkviewer/static/network_{safe_researcher}_{safe_aff}.html"
     data = row['Companies']
     aff = row['Affiliation']
     researcher = row['Researcher']
@@ -2560,3 +2564,17 @@ def show_chem_connections(chemical=None, inchikey=None):
         "Inchikey": inchikey_val,
         "Funding Sources": labeled_companies
     }
+
+# code for creating "periodic table of companies"
+classification_file_path = os.path.join(settings.BASE_DIR, 'data', 'company_classifications.json')
+with open(classification_file_path, 'r', encoding='utf-8') as f:
+    company_classification_dict = json.load(f)
+
+company_counts = {}
+for company in company_classification_dict.keys():
+    if company and company.strip():
+        count = main['Funding Sources'].str.contains(company, na=False, regex=False).sum()
+        company_counts[company] = count
+
+sorted_companies = sorted(company_counts.items(), key=lambda x: x[1], reverse=True)
+top_50_with_classification = [(company, count, company_classification_dict[company]) for company, count in sorted_companies[:50]]

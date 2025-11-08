@@ -1,6 +1,9 @@
 from django.shortcuts import render
+from django.conf import settings
 import random
 import difflib 
+import json
+import os
 from .network_functions import (
     show_chemical_network,
     show_company_network_pyvis,
@@ -13,7 +16,8 @@ from .network_functions import (
     show_res_connections,
     chem_per_row,
     no_dup_comp,
-    comparing_unis
+    comparing_unis, 
+    top_50_with_classification
 )
 
 
@@ -313,3 +317,24 @@ def data_view(request):
     return render(request, 'networkviewer/data.html')
 def contact_view(request):
     return render(request, 'networkviewer/contact.html')
+
+def funding_table_view(request):
+    print(f"top_50_with_classification length: {len(top_50_with_classification)}")
+    print(f"First few items: {top_50_with_classification[:3]}")
+    
+    periodic_data = []
+    for company, count, classification in top_50_with_classification:
+        periodic_data.append({
+            'company': company,
+            'count': int(count),
+            'classification': classification
+        })
+    
+    print(f"periodic_data length: {len(periodic_data)}")
+    print(f"First item: {periodic_data[0] if periodic_data else 'None'}")
+    
+    context = {
+        'periodic_data': periodic_data,
+        'show_main_nav': True
+    }
+    return render(request, 'networkviewer/funding_table.html', context)
