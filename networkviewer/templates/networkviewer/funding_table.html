@@ -1,36 +1,8 @@
 {% load static %}
 <!DOCTYPE html>
 <html>
-<head>
-    <title>Funding Sources Table - ChemNet</title>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-</head>
 <body>
-    <div style="display: flex; align-items: center; justify-content: space-between;">
-        <div style="display: flex; align-items: center;">
-            <a href="{% url 'home' %}">
-                <img src="{% static 'barcawp.jpg' %}" alt="Logo" style="height: 50px; margin-right: 20px;">
-            </a>
-            <nav>
-                <a href="{% url 'about' %}">About Us</a> |
-                <a href="{% url 'data' %}">Data</a> |
-                <a href="{% url 'contact' %}">Contact</a> |
-                <a href="{% url 'funding_table' %}" class="nav-link">Funding Table</a>
-            </nav>
-        </div>
-        {% if show_main_nav %}
-        <nav>
-            <a href="{% url 'chemical_view' %}">Chemical</a> |
-            <a href="{% url 'company_view' %}">Funding Source</a> |
-            <a href="{% url 'university_view' %}">University</a> |
-            <a href="{% url 'researcher_view' %}">Researcher</a>
-        </nav>
-        {% endif %}
-    </div>
-    <hr>
-
+    {% include "networkviewer/tabs.html" %}
     <div class="container mt-4">
         <h1 class="text-center mb-4">Research Funding Sources</h1>
         <p class="text-center text-muted">Top 50 funding sources by number of studies funded</p>
@@ -43,16 +15,46 @@
                      data-classification="{{ item.classification }}">
                     <div class="company-name">{{ item.company|truncatechars:20 }}</div>
                     <div class="study-count">{{ item.count }} studies</div>
-                    <div class="classification">{{ item.classification }}</div>
                 </div>
             {% endfor %}
         </div>
     </div>
-
+    <div id="companyModal" class="modal">
+    <div class="modal-backdrop"></div>
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 id="modalCompanyName">Company Name</h2>
+            <span class="modal-close">&times;</span>
+        </div>
+        <div class="modal-body">
+            <div class="company-info">
+                <div class="info-item">
+                    <strong>Classification:</strong> 
+                    <span id="modalClassification" class="classification-badge"></span>
+                </div>
+                <div class="info-item">
+                    <strong>Studies Funded:</strong> 
+                    <span id="modalStudyCount">0</span>
+                </div>
+                <div class="info-item">
+                    <strong>Top Chemicals:</strong>
+                    <div id="modalChemicals">Loading...</div>
+                </div>
+                <div class="info-item">
+                    <strong>Key Affiliations:</strong>
+                    <div id="modalAffiliations">Loading...</div>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-primary" id="viewNetworkBtn">View Full Network</button>
+            </div>
+        </div>
+    </div>
+    </div>
     <style>
     .periodic-table-container {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
         gap: 15px;
         padding: 20px;
     }
@@ -88,11 +90,221 @@
         font-size: 12px;
         margin-bottom: 3px;
     }
-
+    
     .classification {
         font-size: 10px;
         opacity: 0.8;
     }
+
+    .modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1000;
+    }
+    .modal-backdrop {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(2px);
+    }
+    .modal-content {
+    position: absolute;
+    right: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 400px;
+    max-width: 90vw;
+    max-height: 80vh;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+    overflow: hidden;
+    animation: slideInRight 0.3s ease-out;
+    }
+    @keyframes slideInRight {
+    from {
+        transform: translateY(-50%) translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(-50%) translateX(0);
+        opacity: 1;
+    }
+    }
+    .modal-header {
+    padding: 20px;
+    background: #f8f9fa;
+    border-bottom: 1px solid #e9ecef;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    }
+    .modal-header h2 {
+    margin: 0;
+    font-size: 18px;
+    color: #333;
+    }
+    .modal-close {
+    font-size: 24px;
+    cursor: pointer;
+    color: #999;
+    line-height: 1;
+    }
+
+    .modal-close:hover {
+        color: #333;
+    }
+
+    .modal-body {
+        padding: 20px;
+        max-height: 60vh;
+        overflow-y: auto;
+    }
+
+    .company-info {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .info-item {
+        border-bottom: 1px solid #eee;
+        padding-bottom: 10px;
+    }
+
+    .info-item:last-child {
+        border-bottom: none;
+    }
+
+    .classification-badge {
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 12px;
+        font-weight: bold;
+    }
+
+    .classification-badge.government {
+        background-color: #FF6B6B;
+        color: white;
+    }
+
+    .classification-badge.university {
+        background-color: #96CEB4;
+        color: black;
+    }
+
+    .classification-badge.foundation {
+        background-color: #4ECDC4;
+        color: white;
+    }
+
+    .classification-badge.company {
+        background-color: #FFEAA7;
+        color: black;
+    }
+
+    .classification-badge.unknown {
+        background-color: #DDD6FE;
+        color: black;
+    }
+
+    .modal-actions {
+        margin-top: 20px;
+        padding-top: 15px;
+        border-top: 1px solid #eee;
+    }
+
+    .btn {
+        padding: 8px 16px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 14px;
+    }
+
+    .btn-primary {
+        background-color: #007bff;
+        color: white;
+    }
+
+    .btn-primary:hover {
+        background-color: #0056b3;
+    }
     </style>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const fundingBoxes = document.querySelectorAll('.funding-box');
+        const modal = document.getElementById('companyModal');
+        const modalBackdrop = modal.querySelector('.modal-backdrop');
+        const modalClose = modal.querySelector('.modal-close');
+        const viewNetworkBtn = document.getElementById('viewNetworkBtn');
+        
+        let currentCompany = null;
+        
+        // Add click handlers to funding boxes
+        fundingBoxes.forEach(box => {
+            box.addEventListener('click', function() {
+                const companyName = this.dataset.company;
+                const companyCount = this.dataset.count;
+                const companyClassification = this.dataset.classification;
+                
+                currentCompany = companyName;
+                showModal(companyName, companyCount, companyClassification);
+            });
+        });
+        
+        // Close modal handlers
+        modalBackdrop.addEventListener('click', hideModal);
+        modalClose.addEventListener('click', hideModal);
+        
+        // View network button
+        viewNetworkBtn.addEventListener('click', function() {
+            if (currentCompany) {
+                window.location.href = `/company/?company_name=${encodeURIComponent(currentCompany)}`;
+            }
+        });
+        
+        function showModal(companyName, studyCount, classification) {
+            // Update modal content
+            document.getElementById('modalCompanyName').textContent = companyName;
+            document.getElementById('modalStudyCount').textContent = studyCount;
+            
+            const classificationBadge = document.getElementById('modalClassification');
+            classificationBadge.textContent = classification;
+            classificationBadge.className = `classification-badge ${classification.toLowerCase()}`;
+            
+            // Show modal
+            modal.style.display = 'block';
+            
+            // Load additional data (chemicals, affiliations)
+            loadCompanyDetails(companyName);
+        }
+        
+        function hideModal() {
+            modal.style.display = 'none';
+            currentCompany = null;
+        }
+        
+        function loadCompanyDetails(companyName) {
+            // For now, show placeholder - you'll replace this with actual AJAX call
+            document.getElementById('modalChemicals').innerHTML = '<em>Loading chemical data...</em>';
+            document.getElementById('modalAffiliations').innerHTML = '<em>Loading affiliation data...</em>';
+            
+            // TODO: Add AJAX call to fetch real data
+            // fetch(`/api/company-details/?name=${encodeURIComponent(companyName)}`)
+            //     .then(response => response.json())
+            //     .then(data => {
+            //         updateModalContent(data);
+            //     });
+        }
+    });
+    </script>
 </body>
 </html>

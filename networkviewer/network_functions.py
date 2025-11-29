@@ -2573,8 +2573,9 @@ with open(classification_file_path, 'r', encoding='utf-8') as f:
 company_counts = {}
 for company in company_classification_dict.keys():
     if company and company.strip():
-        count = main['Funding Sources'].str.contains(company, na=False, regex=False).sum()
-        company_counts[company] = count
+        if company.strip().lower() != 'not found':
+            count = main['Funding Sources'].str.contains(company, na=False, regex=False).sum()
+            company_counts[company] = count
 
 sorted_companies = sorted(company_counts.items(), key=lambda x: x[1], reverse=True)
 top_50_with_classification = [(company, count, company_classification_dict[company]) for company, count in sorted_companies[:50]]
