@@ -7,6 +7,7 @@ from .serializers import (
     UniversitySearchSerializer,
     ResearcherSearchSerializer
 )
+from django.http import JsonResponse
 from .network_functions import (
     show_chemical_network,
     show_company_network_pyvis,
@@ -19,7 +20,8 @@ from .network_functions import (
     show_res_connections,
     chem_per_row,
     no_dup_comp,
-    comparing_unis
+    comparing_unis,
+    get_top_chemicals_for_company
 )
 import difflib
 import random
@@ -340,3 +342,46 @@ class ResearcherSearchAPI(APIView):
             'needs_selection': True,
             'message': f"Multiple matches found for '{researcher}'. Please select one or combine all."
         })
+
+class FundingTableAPI(APIView):
+    def get(self, request):
+        company_name = request.GET.get('company_name')
+        if company_name:
+            try:
+                top_chemicals = get_top_chemicals_for_company(company_name, limit=5)
+                connections = show_company_connections(company_name)
+                top_affiliations = connections.get('Affiliations', [])[:5] if connections else []
+                
+                return Response({
+                    'success': True,
+                    'company_name': company_name,
+                    'top_chemicals': top_chemicals,
+                    'top_affiliations': top_affiliations
+                })
+            except Exception as e:
+                return Response({
+                    'success': False,
+                    'error': str(e)
+                }, status=500)
+        else:
+            try:
+                from .views import top_50_with_classification
+                
+                funding_data = []
+                for company, count, classification in top_50_with_classification:
+                    funding_data.append({
+                        'company': company,
+                        'count': int(count),
+                        'classification': classification
+                    })
+                
+                return Response({
+                    'success': True,
+                    'funding_data': funding_data,
+                    'total_companies': len(funding_data)
+                })
+            except Exception as e:
+                return Response({
+                    'success': False,
+                    'error': str(e)
+                }, status=500)

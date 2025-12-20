@@ -3,7 +3,8 @@ from .api_views import (
     ChemicalSearchAPI,
     CompanySearchAPI,
     UniversitySearchAPI,
-    ResearcherSearchAPI
+    ResearcherSearchAPI,
+    FundingTableAPI
 )
 
 urlpatterns = [
@@ -11,4 +12,5 @@ urlpatterns = [
     path('companies/', CompanySearchAPI.as_view(), name='company-search-api'),
     path('universities/', UniversitySearchAPI.as_view(), name='university-search-api'),
     path('researchers/', ResearcherSearchAPI.as_view(), name='researcher-search-api'),
+    path('funding-table/', FundingTableAPI.as_view(), name='funding-table-api'),
 ]
