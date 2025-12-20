@@ -7,7 +7,7 @@ import os
 import json
 from django.conf import settings
 import ast
-
+from collections import Counter
 import requests
 import time
 from functools import lru_cache
@@ -662,17 +662,17 @@ def show_company_network_pyvis(company_name, category='Affiliations', chemical_g
         
         if category == 'Chemicals':
             if chemical_group == 'All':
-                output_file = f"staticfiles/network_{safe_company}_{safe_category}_all.html"
+                output_file = f"networkviewer/static/network_{safe_company}_{safe_category}_all.html"
             elif chemical_group == 'Organic':
-                output_file = f"staticfiles/network_{safe_company}_{safe_category}_organic.html"
+                output_file = f"networkviewer/static/network_{safe_company}_{safe_category}_organic.html"
         elif category == 'Affiliations':
             if sep_country:
-                output_file = f"staticfiles/network_{safe_company}_{safe_category}_by_country.html"
+                output_file = f"networkviewer/static/network_{safe_company}_{safe_category}_by_country.html"
             else:
-                output_file = f"staticfiles/network_{safe_company}_{safe_category}_combined.html"
+                output_file = f"networkviewer/static/network_{safe_company}_{safe_category}_combined.html"
         else:
             # For Universities, Researchers, etc.
-            output_file = f"staticfiles/network_{safe_company}_{safe_category}.html"
+            output_file = f"networkviewer/static/network_{safe_company}_{safe_category}.html"
     # Filter for the selected company
     row = company_assoc[company_assoc['Company'] == company_name]
     if row.empty:
@@ -1229,12 +1229,12 @@ def show_uni_network_pyvis(uni_name, category='Funding Sources', chemical_group=
         
         if category == 'Chemicals':
             if chemical_group == 'All':
-                output_file = f"staticfiles/network_{safe_uni}_{safe_category}_all.html"
+                output_file = f"networkviewer/static/network_{safe_uni}_{safe_category}_all.html"
             elif chemical_group == 'Organic':
-                output_file = f"staticfiles/network_{safe_uni}_{safe_category}_organic.html"
+                output_file = f"networkviewer/static/network_{safe_uni}_{safe_category}_organic.html"
         else:
             # For Companies, etc.
-            output_file = f"staticfiles/network_{safe_uni}_{safe_category}.html"    # Filter for the selected company
+            output_file = f"networkviewer/static/network_{safe_uni}_{safe_category}.html"    # Filter for the selected company
     row = comparing_unis[comparing_unis['University'] == uni_name]
     if row.empty:
         print(f"University '{uni_name}' not found.")
@@ -1661,7 +1661,7 @@ comparing_researchers['Companies'] = comparing_researchers['Companies'].apply(
     lambda x: ast.literal_eval(x) if isinstance(x, str) and x.startswith('[') else []
 )
 
-def show_researcher_network_pyvis(researcher, output_file = "staticfiles/company_network.html"):    # Filter for the selected company
+def show_researcher_network_pyvis(researcher, output_file = "networkviewer/static/company_network.html"):    # Filter for the selected company
     # Filter for the selected company
     matches = comparing_researchers[comparing_researchers['Researcher'].str.lower() == researcher.lower()]
     
@@ -1820,9 +1820,9 @@ def show_chemical_network(chemical, inch='Error', output_file=None):
         safe_chemical = chemical.replace(' ', '_').replace('/', '_').replace('\\', '_').replace('.', '_')
         if inch != 'Error':
             safe_inch = inch.replace('/', '_').replace('\\', '_').replace('-', '_')
-            output_file = f"staticfiles/network_{safe_chemical}_{safe_inch}.html"
+            output_file = f"networkviewer/static/network_{safe_chemical}_{safe_inch}.html"
         else:
-            output_file = f"staticfiles/network_{safe_chemical}_no_inchikey.html"
+            output_file = f"networkviewer/static/network_{safe_chemical}_no_inchikey.html"
     # Filter for the selected company
     if inch == 'Error':
         row = chem_per_row[chem_per_row['chemical'].apply(lambda x: any(chemical.lower() == name.lower() for name in x))]
@@ -2090,7 +2090,7 @@ def show_researcher_network_pyvis_from_row(row, output_file=None):
         safe_researcher = researcher.replace(' ', '_').replace(',', '').replace('/', '_').replace('\\', '_').replace('.', '_')
         # Use first 20 chars of affiliation to make filename more unique
         safe_aff = str(row['Affiliation'])[:20].replace(' ', '_').replace('/', '_').replace('\\', '_').replace('.', '_')
-        output_file = f"staticfiles/network_{safe_researcher}_{safe_aff}.html"
+        output_file = f"networkviewer/static/network_{safe_researcher}_{safe_aff}.html"
     data = row['Companies']
     aff = row['Affiliation']
     researcher = row['Researcher']
@@ -2579,3 +2579,51 @@ for company in company_classification_dict.keys():
 
 sorted_companies = sorted(company_counts.items(), key=lambda x: x[1], reverse=True)
 top_50_with_classification = [(company, count, company_classification_dict[company]) for company, count in sorted_companies[:50]]
+
+def get_pubchem_image_url(chemical_name, inchikey=None):
+    try:
+        if inchikey and inchikey != 'Error':
+            try:
+                compounds = pcp.get_compounds(inchikey, 'inchikey')
+                if compounds:
+                    cid = compounds[0].cid
+                    return f"https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/{cid}/PNG"
+            except:
+                pass
+        if chemical_name:
+            try:
+                compounds = pcp.get_compounds(chemical_name, 'name')
+                if compounds:
+                    cid = compounds[0].cid
+                    return f"https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/{cid}/PNG"
+            except:
+                pass
+    except Exception as e:
+        print(f"Error fetching PubChem data for InChIKey {inchikey}: {e}")
+    return None
+
+def get_top_chemicals_for_company(company_name, limit=5):
+    try:
+        company_studies = main[main['Funding Sources'].str.contains(company_name, na=False)]
+
+        if company_studies.empty:
+            return []
+        
+        all_chemicals = []
+        for chemicals_str in company_studies['Chemicals with InChIKey'].dropna():
+            chemicals = chemicals_str.split(';')
+            for chemical in chemicals:  
+                chemical = chemical.strip()  
+                if chemical and '(' in chemical:
+                    name = chemical.split('(')[0].strip()
+                    if name:
+                        all_chemicals.append(name)
+                elif chemical:
+                    all_chemicals.append(chemical)
+        chemical_counts = Counter(all_chemicals)
+        top_chemicals = chemical_counts.most_common(limit)
+        
+        return top_chemicals
+    except Exception as e:
+        print(f"Error getting top chemicals for company {company_name}: {e}")
+        return []

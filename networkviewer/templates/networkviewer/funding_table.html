@@ -237,6 +237,40 @@
     .btn-primary:hover {
         background-color: #0056b3;
     }
+
+    
+    .chemical-item, .affiliation-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid #eee;
+    }
+
+    .chemical-item:last-child, .affiliation-item:last-child {
+        border-bottom: none;
+    }
+
+    .chemical-name {
+        font-weight: 500;
+        color: #333;
+        flex: 1;
+    }
+
+    .chemical-count {
+        font-size: 12px;
+        color: #666;
+        background: #f8f9fa;
+        padding: 2px 6px;
+        border-radius: 3px;
+    }
+
+    .loading {
+        text-align: center;
+        padding: 10px;
+        color: #666;
+        font-style: italic;
+    }
     </style>
     <script>
     document.addEventListener('DOMContentLoaded', function() {
@@ -298,13 +332,43 @@
             document.getElementById('modalAffiliations').innerHTML = '<em>Loading affiliation data...</em>';
             
             // TODO: Add AJAX call to fetch real data
-            // fetch(`/api/company-details/?name=${encodeURIComponent(companyName)}`)
-            //     .then(response => response.json())
-            //     .then(data => {
-            //         updateModalContent(data);
-            //     });
-        }
-    });
+            fetch(`/api/company-details/?company_name=${encodeURIComponent(companyName)}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Update chemicals section
+                        if (data.top_chemicals && data.top_chemicals.length > 0) {
+                            const chemicalsList = data.top_chemicals.map(([name, count]) => 
+                                `<div class="chemical-item">
+                                    <span class="chemical-name">${name}</span>
+                                    <span class="chemical-count">${count} studies</span>
+                                </div>`
+                            ).join('');
+                            document.getElementById('modalChemicals').innerHTML = chemicalsList;
+                        } else {
+                            document.getElementById('modalChemicals').innerHTML = '<em>No chemical data available</em>';
+                        }
+                        
+                        // Update affiliations section
+                        if (data.top_affiliations && data.top_affiliations.length > 0) {
+                            const affiliationsList = data.top_affiliations.map(affiliation => 
+                                `<div class="affiliation-item">${affiliation}</div>`
+                            ).join('');
+                            document.getElementById('modalAffiliations').innerHTML = affiliationsList;
+                        } else {
+                            document.getElementById('modalAffiliations').innerHTML = '<em>No affiliation data available</em>';
+                        }
+                    } else {
+                        document.getElementById('modalChemicals').innerHTML = '<em>Error loading data</em>';
+                        document.getElementById('modalAffiliations').innerHTML = '<em>Error loading data</em>';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching company details:', error);
+                    document.getElementById('modalChemicals').innerHTML = '<em>Error loading chemical data</em>';
+                    document.getElementById('modalAffiliations').innerHTML = '<em>Error loading affiliation data</em>';
+                });
+            }})
     </script>
 </body>
 </html>

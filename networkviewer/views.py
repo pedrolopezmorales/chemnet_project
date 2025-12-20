@@ -1,9 +1,7 @@
 from django.shortcuts import render
-from django.conf import settings
 import random
 import difflib 
-import json
-import os
+from django.http import JsonResponse
 from .network_functions import (
     show_chemical_network,
     show_company_network_pyvis,
@@ -17,7 +15,9 @@ from .network_functions import (
     chem_per_row,
     no_dup_comp,
     comparing_unis, 
-    top_50_with_classification
+    top_50_with_classification,
+    get_pubchem_image_url,
+    get_top_chemicals_for_company
 )
 
 
@@ -34,6 +34,7 @@ def chemical_view(request):
     iframe = None
     message = None
     connections = None 
+    image_url = None
 
     all_chemical_names = sorted((name for names in chem_per_row['chemical'] for name in names))
     example_chemicals = [
@@ -53,10 +54,13 @@ def chemical_view(request):
         chemical = request.POST.get('chemical', '').strip()
         inchikey = request.POST.get('inchikey', '').strip()
 
+
         if inchikey:  # If InChIKey is provided, use the new function
+            image_url = get_pubchem_image_url(chemical, inchikey)
             found = show_chemical_network(chemical, inch=inchikey)
             connections = show_chem_connections(inchikey=inchikey)
         elif chemical:  # If only chemical name is provided, use the old function
+            image_url = get_pubchem_image_url(chemical, inchikey)
             found = show_chemical_network(chemical, inch='Error')
             connections = show_chem_connections(chemical)
         else:
@@ -87,7 +91,8 @@ def chemical_view(request):
                'connections': connections,
                'show_main_nav': True,
                'example_chemicals': random_examples,
-               'all_chemical_names': all_chemical_names
+               'all_chemical_names': all_chemical_names,
+               'image_url': image_url
             }
     return render(request, 'networkviewer/chemical_view.html', context)
 
@@ -338,3 +343,30 @@ def funding_table_view(request):
         'show_main_nav': True
     }
     return render(request, 'networkviewer/funding_table.html', context)
+
+def get_company_details(request):
+    """AJAX endpoint to get detailed company information for modal"""
+    if request.method == 'GET':
+        company_name = request.GET.get('company_name', '')
+        
+        if not company_name:
+            return JsonResponse({'error': 'Company name required'}, status=400)
+        
+        try:
+            # Get top chemicals
+            top_chemicals = get_top_chemicals_for_company(company_name, limit=5)
+            
+            # Get existing connections data
+            connections = show_company_connections(company_name)
+            top_affiliations = connections.get('Affiliations', [])[:5] if connections else []
+            
+            data = {
+                'top_chemicals': top_chemicals,
+                'top_affiliations': top_affiliations,
+                'success': True
+            }
+            
+            return JsonResponse(data)
+            
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
