@@ -17,7 +17,8 @@ from .network_functions import (
     comparing_unis, 
     top_50_with_classification,
     get_pubchem_image_url,
-    get_top_chemicals_for_company
+    get_top_chemicals_for_company,
+    get_pubchem_description
 )
 
 
@@ -35,6 +36,7 @@ def chemical_view(request):
     message = None
     connections = None 
     image_url = None
+    description = None
 
     all_chemical_names = sorted((name for names in chem_per_row['chemical'] for name in names))
     example_chemicals = [
@@ -57,10 +59,12 @@ def chemical_view(request):
 
         if inchikey:  # If InChIKey is provided, use the new function
             image_url = get_pubchem_image_url(chemical, inchikey)
+            description = get_pubchem_description(chemical, inchikey)
             found = show_chemical_network(chemical, inch=inchikey)
             connections = show_chem_connections(inchikey=inchikey)
         elif chemical:  # If only chemical name is provided, use the old function
             image_url = get_pubchem_image_url(chemical, inchikey)
+            description = get_pubchem_description(chemical)
             found = show_chemical_network(chemical, inch='Error')
             connections = show_chem_connections(chemical)
         else:
@@ -92,7 +96,8 @@ def chemical_view(request):
                'show_main_nav': True,
                'example_chemicals': random_examples,
                'all_chemical_names': all_chemical_names,
-               'image_url': image_url
+               'image_url': image_url,
+               'description': description
             }
     return render(request, 'networkviewer/chemical_view.html', context)
 

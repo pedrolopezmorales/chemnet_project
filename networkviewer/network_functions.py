@@ -2627,3 +2627,161 @@ def get_top_chemicals_for_company(company_name, limit=5):
     except Exception as e:
         print(f"Error getting top chemicals for company {company_name}: {e}")
         return []
+
+def get_pubchem_description(chemical_name, inchikey=None):
+    """Get comprehensive PubChem description for a chemical compound."""
+    try:
+        compound = None
+        
+        if inchikey and inchikey != 'Error':
+            try:
+                compounds = pcp.get_compounds(inchikey, 'inchikey')
+                if compounds:
+                    compound = compounds[0]
+            except:
+                pass
+        
+        # Fall back to chemical name if inchikey didn't work
+        if not compound and chemical_name:
+            try:
+                compounds = pcp.get_compounds(chemical_name, 'name')
+                if compounds:
+                    compound = compounds[0]
+            except:
+                pass
+        
+        if compound:
+            try:
+                # Try to get description text from PubChem's REST API
+                import requests
+                import json
+                
+                # Get description from PubChem's compound summary
+                url = f"https://pubchem.ncbi.nlm.nih.gov/rest/pug_view/data/compound/{compound.cid}/JSON"
+                print(f"Fetching PubChem data from: {url}")  # Debug line
+                response = requests.get(url, timeout=10)
+                
+                if response.status_code == 200:
+                    data = response.json()
+                    
+                    # Look for high-priority descriptions in specific sections
+                    if 'Record' in data and 'Section' in data['Record']:
+                        priority_descriptions = []
+                        all_descriptions = []
+                        
+                        def extract_from_information(info_list, section_heading=""):
+                            """Extract text from Information array with priority based on section."""
+                            texts = []
+                            for info in info_list:
+                                # Check Description field
+                                description_text = info.get('Description', '')
+                                
+                                # Prioritize certain descriptions
+                                priority_keywords = ['record description', 'drug summary', 'fda pharmacology', 
+                                                   'physical description', 'livertox summary', 'mechanism of action']
+                                is_priority = any(keyword in description_text.lower() for keyword in priority_keywords)
+                                
+                                # Extract from StringValue 
+                                if 'StringValue' in info:
+                                    text = info['StringValue'].strip()
+                                    if len(text) > 30:
+                                        if is_priority:
+                                            priority_descriptions.append(text)
+                                        texts.append(text)
+                                
+                                # Extract from Value -> StringWithMarkup
+                                elif 'Value' in info and isinstance(info['Value'], dict):
+                                    if 'StringWithMarkup' in info['Value']:
+                                        for markup in info['Value']['StringWithMarkup']:
+                                            if isinstance(markup, dict) and 'String' in markup:
+                                                text = markup['String'].strip()
+                                                if len(text) > 30:
+                                                    if is_priority:
+                                                        priority_descriptions.append(text)
+                                                    texts.append(text)
+                            return texts
+                        
+                        def process_section(section, depth=0):
+                            """Recursively process sections, prioritizing key ones."""
+                            if depth > 3:
+                                return
+                                
+                            section_heading = section.get('TOCHeading', '').lower()
+                            
+                            # High priority sections for rich descriptions
+                            high_priority = ['names and identifiers', 'drug and medication information', 
+                                           'pharmacology and biochemistry']
+                            is_high_priority = any(priority in section_heading for priority in high_priority)
+                            
+                            if 'Information' in section:
+                                texts = extract_from_information(section['Information'], section_heading)
+                                if is_high_priority:
+                                    priority_descriptions.extend(texts[:3])  # Take first 3 from priority sections
+                                all_descriptions.extend(texts)
+                            
+                            # Recurse into subsections
+                            if 'Section' in section:
+                                for subsection in section['Section']:
+                                    process_section(subsection, depth + 1)
+                        
+                        # Process all sections
+                        for section in data['Record']['Section']:
+                            process_section(section)
+                        
+                        # Return best description based on priority and content quality
+                        # First try priority descriptions
+                        for desc in priority_descriptions:
+                            # Look for rich pharmaceutical/medical descriptions
+                            if len(desc) > 100 and any(word in desc.lower() for word in [
+                                'is a', 'medication', 'drug', 'agent', 'compound', 'used for', 
+                                'treatment', 'inhibitor', 'analgesic', 'anti-inflammatory', 'therapeutic'
+                            ]):
+                                return desc
+                            
+                        # Then try substantial descriptions with good keywords
+                        for desc in all_descriptions:
+                            if len(desc) > 80 and any(word in desc.lower() for word in [
+                                'is a member of', 'belongs to', 'medication', 'drug', 'therapeutic',
+                                'appears as', 'crystalline', 'powder', 'used for', 'treatment of'
+                            ]):
+                                return desc
+                        
+                        # Finally, try any decent description
+                        for desc in all_descriptions:
+                            if len(desc) > 50:
+                                return desc
+                
+                # Fallback to basic compound information
+                full_record = pcp.Compound.from_cid(compound.cid)
+                
+                description_parts = []
+                
+                if hasattr(full_record, 'iupac_name') and full_record.iupac_name:
+                    description_parts.append(f"IUPAC Name: {full_record.iupac_name}")
+                    
+                if hasattr(full_record, 'molecular_formula') and full_record.molecular_formula:
+                    formula_info = f"Molecular Formula: {full_record.molecular_formula}"
+                    if hasattr(full_record, 'molecular_weight') and full_record.molecular_weight:
+                        formula_info += f" | Molecular Weight: {full_record.molecular_weight} g/mol"
+                    description_parts.append(formula_info)
+                
+                if description_parts:
+                    return " | ".join(description_parts)
+                else:
+                    return f"PubChem CID: {compound.cid}"
+                    
+            except Exception as e:
+                print(f"Error in detailed lookup: {e}")
+                # Simple fallback
+                try:
+                    full_record = pcp.Compound.from_cid(compound.cid)
+                    if hasattr(full_record, 'molecular_formula') and full_record.molecular_formula:
+                        return f"Molecular Formula: {full_record.molecular_formula}"
+                    return f"PubChem CID: {compound.cid}"
+                except:
+                    return f"PubChem CID: {compound.cid}"
+                
+    except Exception as e:
+        print(f"Error fetching PubChem description for {chemical_name} (InChIKey: {inchikey}): {e}")
+    
+    return None

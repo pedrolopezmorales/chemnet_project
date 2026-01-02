@@ -21,7 +21,12 @@ from .network_functions import (
     chem_per_row,
     no_dup_comp,
     comparing_unis,
-    get_top_chemicals_for_company
+    get_top_chemicals_for_company,
+    top_50_with_classification,
+    parse_chemical_entry,
+    main,
+    company_assoc,
+    get_pubchem_description
 )
 import difflib
 import random
@@ -80,12 +85,16 @@ class ChemicalSearchAPI(APIView):
                 safe_chemical = chemical.replace(' ', '_').replace('/', '_').replace('\\', '_').replace('.', '_')
                 iframe_url = f"/static/network_{safe_chemical}_no_inchikey.html"
             
+            # Get PubChem description
+            description = get_pubchem_description(chemical, inchikey if inchikey != 'Error' else None)
+            
             return Response({
                 'success': True,
                 'chemical': chemical,
                 'inchikey': inchikey,
                 'iframe_url': iframe_url,
-                'connections': connections
+                'connections': connections,
+                'description': description
             })
         else:
             all_chemical_names = sorted((name for names in chem_per_row['chemical'] for name in names))

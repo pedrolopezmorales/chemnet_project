@@ -104,6 +104,13 @@
         </div>
         {% endif %}
 
+        {% if description %}
+        <div style="margin: 20px 0; padding: 20px; background: #e8f5e8; border-radius: 8px; border-left: 4px solid #28a745;">
+            <h3 style="color: #155724; margin: 0 0 10px 0;">Chemical Information</h3>
+            <p style="color: #155724; margin: 0; line-height: 1.5;">{{ description }}</p>
+        </div>
+        {% endif %}
+
         {% if iframe %}
         <h2>Network for: {{ chemical }}</h2>
         <iframe src="{{ iframe }}" width="100%" height="600px" frameborder="0"></iframe>
