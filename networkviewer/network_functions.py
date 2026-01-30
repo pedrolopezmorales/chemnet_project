@@ -999,8 +999,8 @@ def show_company_network_pyvis(company_name, category='Affiliations', chemical_g
             else:
                 # Fallback to chemical name search
                 studies = main[
-                    (main['Funding Sources'].str.contains(company_name, na=False)) &
-                    (main['Chemicals with InChIKey'].str.contains(name, na=False))
+                    (main['Funding Sources'].str.contains(company_name, na=False, regex=False)) &
+                    (main['Chemicals with InChIKey'].str.contains(name, na=False, regex=False))
                 ]
             study_info = "<br>".join(
                 f"{row['Title']} (DOI: {row['DOI']})" for _, row in studies.iterrows()
@@ -2355,8 +2355,8 @@ def show_company_connections(company_name):
         else:
             # Chemicals without InChIKey
             studies = main[
-                (main['Funding Sources'].str.contains(company_name, na=False)) &
-                (main['Chemicals with InChIKey'].str.contains(name, na=False))
+                (main['Funding Sources'].str.contains(company_name, na=False, regex=False)) &
+                (main['Chemicals with InChIKey'].str.contains(name, na=False,regex=False))
             ]
             study_count = len(studies.drop_duplicates(subset=['DOI']))
             labeled_chemicals.append(f"{name} ({study_count})")
@@ -2604,7 +2604,7 @@ def get_pubchem_image_url(chemical_name, inchikey=None):
 
 def get_top_chemicals_for_company(company_name, limit=5):
     try:
-        company_studies = main[main['Funding Sources'].str.contains(company_name, na=False)]
+        company_studies = main[main['Funding Sources'].str.contains(company_name, na=False, regex=False)]
 
         if company_studies.empty:
             return []
