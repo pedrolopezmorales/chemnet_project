@@ -12,26 +12,6 @@ import requests
 import time
 from functools import lru_cache
 
-#creating the main dataframe
-
-def create_main_dataframe():
-    data_years = range(2020, 2025)
-    dataframes_list = []
-
-    for year in data_years:
-        filename = f'esandt_papers_{year}_with_inchikeys.csv'
-        file_path = os.path.join(settings.BASE_DIR, 'data', filename)
-        df =pd.read_csv(file_path)
-        dataframes_list.append(df)
-
-    combined_df = pd.concat(dataframes_list, ignore_index=True)
-
-    combined_path = os.path.join(settings.BASE_DIR, 'data', "esandt_papers_main.csv")
-    combined_df.to_csv(combined_path, index=False)
-    print(f"Combined dataset created! Total rows: {len(combined_df)}")
-
-# Run this function manually when you want to recreate the combined dataset:
-# create_main_dataframe()  # Only uncomment to create dataframe, if more years is addded to the dataframe
 
 #CSV_PATH = os.path.join(settings.BASE_DIR, 'data', 'esandt_papers_main.csv')
 MAIN_CSV_URL = "https://ucsf.box.com/shared/static/n5tdu7t8hj5lkwvmqmi5cwqhmnuksjm8.csv"
@@ -207,7 +187,7 @@ def get_category_color(category):
         'Foundation': '#4ECDC4',      # Teal
         'Company': '#FFEAA7',         # Yellow
         'Unknown': '#DDD6FE'          # Light Purple
-    }
+      }
     return color_map.get(category, "#DDD6FE")
 
 def add_classification_to_funding_sources(funding_sources_list):
@@ -226,7 +206,7 @@ def extract_name_and_class(classified_source):
         category=parts[1].replace(']','').strip()
         return name, category
     return classified_source, 'Unknown'
-'''
+
 def classify_companies_series(companies_list):
     """
     Classify companies using the pre-built classification dictionary for faster performance.
@@ -261,7 +241,7 @@ def classify_companies_series(companies_list):
     
     print(f"Classification complete! Cache hits: {cache_hits}, API calls: {api_calls}")
     return classified_companies
-'''
+
 # Modifying Database by removing certain columns
 
 comparing_companies = main.drop(['DOI', 'URL','Year','Title','Chemicals Mentioned','Abstract'], axis = 1)
@@ -389,20 +369,6 @@ def match_items_against_master(df, column, master_list, delimiters=r'[;]'):
     return split_series.apply(match_items)
 # function specifically for affiliations series because it decided to be really confusing
 def match_items_against_master_aff(df, column, master_list):
-    """
-    Splits affiliation strings intelligently using '|' always, and ';' only when it follows a country.
-    Matches split items against a master list.
-    
-    Parameters:
-    - df: pandas DataFrame
-    - column: column name (expects strings)
-    - master_list: list of values to match
-    - country_names: list of full country names
-    - abbreviations: list of country abbreviations
-    
-    Returns:
-    - A Series of lists with matched values
-    """
     def split_affiliations(aff_string):
         if not isinstance(aff_string, str) or aff_string.strip() == '':
             return []
@@ -451,49 +417,7 @@ def normalize_name(name):
     name = re.sub(r'\s+', ' ', name)  # collapse multiple spaces
     name = name.strip()
     return name
-comparing_companies['Matched Companies'] = match_items_against_master(comparing_companies,'Funding Sources', no_dup_comp)
-comparing_companies['Matched Chemicals'] = comparing_companies['Chemicals with InChIKey'].str.split(';').apply(lambda lst: [x.strip() for x in lst])
-comparing_companies['Matched Affiliations'] = match_items_against_master_aff(comparing_companies,'Affiliations', new_no_dup_aff)
-comparing_companies['Researchers'] = comparing_companies['Authors'].apply(split_researchers)
-comparing_companies['Aff'] = comparing_companies['Affiliations'].apply(
-    lambda x: [item.strip() for item in x.split('|')] if isinstance(x, str) and x.strip() != '' else []
-)
-comparing_companies = comparing_companies.drop(['Affiliations','Funding Sources','Chemicals with InChIKey','Authors'],axis=1)
 
-# having one company per row, with a list of affiliations and chemicals associated alongside them 
-
-match_chem = []
-for idx, (companies, chemicals) in comparing_companies[['Matched Companies', 'Matched Chemicals']].iterrows():
-    for company in companies:
-        for chemical in chemicals:
-            match_chem.append({'Company': company, 'Chemical': chemical})
-
-match_chem_df = pd.DataFrame(match_chem)
-chemicals_per_company = (
-    match_chem_df
-    .groupby('Company')['Chemical']
-    .unique()
-    .reset_index()
-    .rename(columns={'Chemical': 'Chemicals'})
-)
-matched_aff = []
-for idx, (companies, affiliations) in comparing_companies[['Matched Companies', 'Matched Affiliations']].iterrows():
-    for company in companies:
-        for affiliation in affiliations:
-            matched_aff.append({'Company': company, 'Affiliations': affiliation})
-
-matched_aff_df = pd.DataFrame(matched_aff)
-
-aff_per_company = (
-    matched_aff_df
-    .groupby('Company')['Affiliations']
-    .unique()
-    .reset_index()
-)
-
-comparing_companies['Names'] = comparing_companies['Researchers'].apply(
-    lambda name_list: [normalize_name(name) for name in name_list]
-)
 def create_researcher_affiliation_pairs_components(row):
     researchers = row['Names']
     affiliations = row['Aff']
@@ -505,23 +429,7 @@ def create_researcher_affiliation_pairs_components(row):
     
     return list(zip(researchers, affiliations))
 
-comparing_companies['ResearcherAffPairs'] = comparing_companies.apply(create_researcher_affiliation_pairs_components, axis=1)
 
-re_comp = comparing_companies.explode('ResearcherAffPairs')
-
-re_comp[['Researcher', 'Aff']] = pd.DataFrame(
-    re_comp['ResearcherAffPairs'].tolist(),
-    index=re_comp.index
-)
-
-
-
-re_comp = re_comp.explode('Matched Companies')
-
-
-re_comp = re_comp.rename(columns={'Matched Companies': 'Company'})
-
-final_recomp = re_comp[['Company','Researcher', 'Aff']].reset_index(drop=True)
 
 def normalize_comma_name(name):
     if not isinstance(name, str):
@@ -544,23 +452,7 @@ def normalize_comma_name(name):
     return f"{smart_title(last)}, {smart_title(first)}"
 
 
-final_recomp['Researcher'] = final_recomp['Researcher'].apply(normalize_comma_name)
 
-res_per_comp = (
-    final_recomp.groupby('Company')
-      .agg({
-          'Researcher': list,
-          'Aff': list
-      })
-      .reset_index()
-      .rename(columns={
-          'Researcher': 'Researchers',
-          'Aff': 'Affs'
-      })
-)
-
-company_assoc = pd.merge(aff_per_company, chemicals_per_company, on ='Company')
-company_assoc = pd.merge(company_assoc , res_per_comp, on = 'Company')
 
 
 def extract_university_comp(affil, university_keys):
@@ -592,7 +484,6 @@ def extract_uni_affil(affils, university_keys):
         if extract_university_comp(affil,university_keys) != None:
             universities.append(extract_university_comp(affil,university_keys))
     return universities
-company_assoc['Universities'] = company_assoc['Affiliations'].apply(lambda x: extract_uni_affil(x, university_keys))
 
 # Creating a function that works for plotting a network graph with company at the middle
 
@@ -620,7 +511,6 @@ def extract_country_list(affiliation_list):
             countries_lists.append(None)  # in case the list is empty
     return countries_lists
 
-company_assoc['Countries'] = company_assoc['Affiliations'].apply(extract_country_list)
 
 organic_suffixes = [
     'ane', 'ene', 'yne','ol', 'diol', 'triol','al','one', 'anone','oic acid', 'carboxylic acid', 'anoate', 'oate','amide','amine','nitrile',    
@@ -653,6 +543,8 @@ def is_organic(name):
         return 'C' in formula and 'H' in formula
     except:
         return None  # Not found
+
+from .dataframes_creation import company_assoc
 
 def show_company_network_pyvis(company_name, category='Affiliations', chemical_group='All', sep_country=False, output_file=None):
     if output_file is None:
@@ -1165,53 +1057,7 @@ def show_company_network_pyvis(company_name, category='Affiliations', chemical_g
         f.write(html)
     return True
 
-'''
-# Having the affiliations per row
 
-cut_down = main.drop(['DOI', 'URL','Year','Title','Chemicals Mentioned','Abstract','Authors'], axis = 1)
-
-cut_down['Affiliation'] = match_items_against_master_aff(cut_down, 'Affiliations', new_no_dup_aff)
-cut_down.drop('Affiliations',axis=1)
-cut_down['Chemicals'] = cut_down['Chemicals with InChIKey'].str.split(';').apply(lambda lst: [x.strip() for x in lst])
-cut_down['Companies'] = cut_down['Funding Sources'].str.split(';').apply(lambda lst: [x.strip() for x in lst])
-cut_down_exploded = cut_down.explode('Affiliation').reset_index(drop=True)
-comparing_affiliations = cut_down_exploded.drop(['Affiliations','Funding Sources','Chemicals with InChIKey'], axis =1)
-
-def extract_university(affil, university_keys):
-    if pd.isna(affil) or affil is None:
-        return None
-    affil = str(affil)
-    if ',' in affil:
-        found = False
-        attributes = [a.strip() for a in affil.split(',')]
-        for attr in attributes:
-            for key in university_keys:
-                if (key.lower() in attr.lower()) and (not any(char.isdigit() for char in attr)):
-                    if ';' in attr:
-                        att = [a.strip() for a in affil.split(';')]
-                        for at in att:
-                            if key.lower() in at.lower():
-                                found = True
-                                uni = at.strip()
-                    else:
-                        found = True 
-                        uni = attr.strip()
-        if (found == False):
-                    return ', '.join(attributes)  # fallback
-        else:
-            return uni
-    return affil
-comparing_affiliations['University'] = comparing_affiliations['Affiliation'].apply(lambda x: extract_university(x, university_keys))
-comparing_unis = comparing_affiliations.groupby('University').agg({
-    'Chemicals': lambda x: sum(x, []),   # Flattens with duplicates
-    'Companies': lambda x: sum(x, [])
-})
-comparing_unis.reset_index(inplace = True)
-
-comparing_unis['Companies'] = comparing_unis['Companies'].apply(classify_companies_series)
-
-comparing_unis.to_csv(os.path.join(settings.BASE_DIR, 'data', 'comparing_unis.csv'), index=False)
-'''
 #CSV_PATH_unis = os.path.join(settings.BASE_DIR, 'data', 'comparing_unis.csv')
 UNI_CSV_URL = 'https://ucsf.box.com/shared/static/4fn56emqmz756klkq98f9c6pj9fvcv2l.csv' 
 comparing_unis = pd.read_csv(UNI_CSV_URL)
@@ -1607,53 +1453,7 @@ def show_uni_network_pyvis(uni_name, category='Funding Sources', chemical_group=
     return True
 
 
-# showing researchers and their company funding
-'''
-reduced = main.drop(['DOI', 'URL','Year','Title','Chemicals Mentioned','Abstract','Chemicals with InChIKey'], axis = 1)
 
-hwreduced['Researchers'] = reduced['Authors'].apply(split_researchers)
-reduced['Aff'] = reduced['Affiliations'].apply(
-    lambda x: [item.strip() for item in x.split('|')] if isinstance(x, str) and x.strip() != '' else []
-)
-reduced['Companies'] = reduced['Funding Sources'].str.split(';').apply(lambda lst: [x.strip() for x in lst])
-reduced = reduced.drop(['Authors','Affiliations','Funding Sources'],axis=1)
-
-def create_researcher_affiliation_paris(row):
-    researchers = row['Researchers']
-    affiliations = row['Aff']
-    if len(researchers) > len(affiliations):
-        affiliations.extend([''] * (len(researchers) - len(affiliations)))
-    elif len(researchers) < len(affiliations):
-        affiliations = affiliations[:len(researchers)]
-    return list(zip(researchers, affiliations))
-
-reduced['ResearcherAffPairs'] = reduced.apply(create_researcher_affiliation_paris, axis=1)
-
-reduced_expanded = reduced.explode('ResearcherAffPairs')
-
-
-reduced_expanded[['Researcher', 'Affiliation']] = pd.DataFrame(
-    reduced_expanded['ResearcherAffPairs'].tolist(),
-    index=reduced_expanded.index
-)
-
-final_reduced = reduced_expanded[['Researcher', 'Affiliation', 'Companies']].reset_index(drop=True)
-
-final_reduced['NormalizedName'] = final_reduced['Researcher'].apply(normalize_name)
-
-
-final_reduced['GroupKey'] = final_reduced['NormalizedName'] + '|' + final_reduced['Affiliation'].str[:20]
-
-comparing_researchers = final_reduced.groupby('GroupKey').agg({
-    'Researcher': 'first',
-    'Affiliation': lambda affs: max(affs, key=len),  # longest affiliation
-    'Companies': lambda lists: sum(lists, [])        # flatten company lists
-}).reset_index(drop=True)
-
-comparing_researchers['Companies'] = comparing_researchers['Companies'].apply(classify_companies_series)
-
-comparing_researchers.to_csv(os.path.join(settings.BASE_DIR, 'data', 'comparing_researchers.csv'), index=False)
-'''
 #CSV_PATH_researchers = os.path.join(settings.BASE_DIR, 'data', 'comparing_researchers.csv')
 RESEARCHER_CSV_URL = 'https://ucsf.box.com/shared/static/qjdx3ixp6kndvm1flvte5pc3uuwztrll.csv'
 comparing_researchers = pd.read_csv(RESEARCHER_CSV_URL)
@@ -1756,55 +1556,7 @@ def show_researcher_network_pyvis(researcher, output_file = "staticfiles/company
     return True
 
 
-# Creating a dataframe that has chemicals per row
-'''
-red_chem = main.drop(['DOI', 'URL','Year','Title','Chemicals Mentioned','Abstract','Authors','Affiliations'], axis = 1)
-def parse_chemicals(chem_string):
-    chemicals = []
-    for entry in chem_string.split(';'):
-        entry = entry.strip()
-        parts = re.findall(r'\(([^()]*)\)', entry)
-        if parts:
-            inchikey = parts[-1]  # Last set of parentheses is likely InChIKey
-            name = entry[:entry.rfind('(')].strip()
-            chemicals.append((name, inchikey))
-        else:
-            chemicals.append((entry, None))  # No InChIKey found
-    return chemicals
-def parse_companies(company_string):
-    return [c.strip() for c in company_string.split(';') if c.strip()]
 
-records = []
-for idx, row in red_chem.iterrows():
-    chemicals = parse_chemicals(row['Chemicals with InChIKey'])
-    companies = parse_companies(row['Funding Sources'])
-    
-    for chem_name, inchikey in chemicals:
-        for company in companies:
-            records.append({
-                'chemical': chem_name,
-                'inchikey': inchikey,
-                'company': company
-            })
-flat_red_chem = pd.DataFrame(records)
-flat_red_chem['group_key'] = flat_red_chem.apply(
-    lambda row: row['inchikey'] if row['inchikey'] != 'Error' else row['chemical'],
-    axis=1
-)
-
-chem_per_row = (
-    flat_red_chem
-    .groupby(['group_key'])  # Smart key: inchikey or chemical name
-    .agg({
-        'inchikey': 'first',  # Retain original InChIKey (or Error)
-        'chemical': lambda names: sorted(set(names)),  # All name variants
-        'company': list  # All associated companies
-    })
-    .reset_index(drop=True)
-)
-chem_per_row['company'] = chem_per_row['company'].apply(classify_companies_series)
-chem_per_row.to_csv(os.path.join(settings.BASE_DIR, 'data', 'chem_per_row.csv'), index=False)
-'''
 #CSV_PATH_chem = os.path.join(settings.BASE_DIR, 'data', 'chem_per_row.csv')
 CHEM_CSV_URL = 'https://ucsf.box.com/shared/static/0d08l21cx0cv9og1hn1df6ud3jgbptjd.csv'
 chem_per_row = pd.read_csv(CHEM_CSV_URL)
