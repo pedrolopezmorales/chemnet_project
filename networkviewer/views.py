@@ -128,6 +128,9 @@ def company_view(request):
 
     random_examples = random.sample(example_companies, 3)
 
+    if not company and request.method == 'GET':
+        company = request.GET.get('company_name', '')
+
     if request.method == 'POST':
         company = request.POST.get('company')
         category = request.POST.get('category', 'Affiliations')
