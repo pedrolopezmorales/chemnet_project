@@ -18,7 +18,8 @@ from .network_functions import (
     top_50_with_classification,
     get_pubchem_image_url,
     get_top_chemicals_for_company,
-    get_pubchem_description
+    get_pubchem_description,
+    get_wikipedia_description_fundingsource
 )
 
 
@@ -106,6 +107,8 @@ def company_view(request):
     iframe = None
     message = None
     connections = None
+    description = None
+
 
     category_options = ['Affiliations', 'Chemicals', 'Researchers', 'Universities']
     chemical_group_options = ['All', 'Organic']
@@ -161,11 +164,14 @@ def company_view(request):
                 message = "Did you mean: " + ", ".join([f"<span style='color:red'>{s}</span>" for s in suggestions])
             else:
                 message = f"Company '{company}' not found"
+    if company and company.strip():
+        description = get_wikipedia_description_fundingsource(company.strip())
     context = {
         'company': company,
         'iframe': iframe, 
         'message': message, 
         'category': category, 
+        'description' : description,
         'sep_country': sep_country,
         'chemical_group': chemical_group,
         'category_options': category_options,

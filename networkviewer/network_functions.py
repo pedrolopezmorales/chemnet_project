@@ -2537,3 +2537,29 @@ def get_pubchem_description(chemical_name, inchikey=None):
         print(f"Error fetching PubChem description for {chemical_name} (InChIKey: {inchikey}): {e}")
     
     return None
+def get_wikipedia_description_fundingsource(funding_source):
+    if not funding_source or pd.isna(funding_source):
+        return None
+    try:
+        search_url = "https://en.wikipedia.org/api/rest_v1/page/summary/"
+        funding_source_encoded = funding_source.replace(' ', '_')
+        headers = {
+            'User-Agent': 'ChemNet Research Tool (no-email@example.com)'
+        }
+        response = requests.get(f"{search_url}{funding_source_encoded}", headers=headers, timeout=200)
+
+        if response.status_code == 200:
+            data = response.json()
+        
+            extract = data.get('extract', '')
+
+            if extract:
+                return {
+                    'description': extract,
+                    'title' : data.get('title', funding_source),
+                    'url' : data.get('content_urls', {}).get('desktop', {}).get('page', ''),
+                    'thumbnail': data.get('thumbnail', {}).get('source', '') if data.get('thumbnail') else None
+                }
+    except Exception as e:
+        print(f"Error fetching Wikipedia description for {funding_source}: {e}")
+    return None
