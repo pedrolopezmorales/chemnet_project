@@ -22,11 +22,8 @@ from .network_functions import (
     no_dup_comp,
     comparing_unis,
     get_top_chemicals_for_company,
-    top_50_with_classification,
-    parse_chemical_entry,
-    main,
-    company_assoc,
-    get_pubchem_description
+    get_pubchem_description,
+    get_wikipedia_description_fundingsource
 )
 import difflib
 import random
@@ -163,11 +160,14 @@ class CompanySearchAPI(APIView):
             
             connections = show_company_connections(company)
             
+            description = get_wikipedia_description_fundingsource(company)
+
             return Response({
                 'success': True,
                 'company': company,
                 'iframe_url': iframe_url,
-                'connections': connections
+                'connections': connections,
+                'description': description
             })
         else:
             all_company_names = sorted(set(no_dup_comp))
