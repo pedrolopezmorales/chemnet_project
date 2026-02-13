@@ -44,6 +44,10 @@
                     <strong>Key Affiliations:</strong>
                     <div id="modalAffiliations">Loading...</div>
                 </div>
+                <div class=""info-item">
+                    <strong>Description:</strong>
+                    <div id="modalDescription">Loading...</div>
+                </div>
             </div>
             <div class="modal-actions">
                 <button class="btn btn-primary" id="viewNetworkBtn">View Full Network</button>
@@ -265,6 +269,13 @@
         border-radius: 3px;
     }
 
+    .description-text {
+        font-style: normal;
+        line-height: 1.5;
+        margin: 0;
+        text-align: justify;
+    }
+
     .loading {
         text-align: center;
         padding: 10px;
@@ -330,7 +341,7 @@
             // For now, show placeholder - you'll replace this with actual AJAX call
             document.getElementById('modalChemicals').innerHTML = '<em>Loading chemical data...</em>';
             document.getElementById('modalAffiliations').innerHTML = '<em>Loading affiliation data...</em>';
-            
+            document.getElementById('modalDescription').innerHTML = '<em>Loading description...</em>';
             // TODO: Add AJAX call to fetch real data
             fetch(`/api/company-details/?company_name=${encodeURIComponent(companyName)}`)
                 .then(response => response.json())
@@ -358,15 +369,24 @@
                         } else {
                             document.getElementById('modalAffiliations').innerHTML = '<em>No affiliation data available</em>';
                         }
+
+                        if (data.description && data.description !== 'No description found.') {
+                            document.getElementById('modalDescription').innerHTML = `<p class="description-text">${data.description.description}</p>`;
+                        } else {
+                            document.getElementById('modalDescription').innerHTML = '<em>No description available</em>';
+                        }
                     } else {
                         document.getElementById('modalChemicals').innerHTML = '<em>Error loading data</em>';
                         document.getElementById('modalAffiliations').innerHTML = '<em>Error loading data</em>';
+                        document.getElementById('modalDescription').innerHTML = '<em>Error loading data</em>';
                     }
                 })
                 .catch(error => {
                     console.error('Error fetching company details:', error);
                     document.getElementById('modalChemicals').innerHTML = '<em>Error loading chemical data</em>';
                     document.getElementById('modalAffiliations').innerHTML = '<em>Error loading affiliation data</em>';
+                    document.getElementById('modalDescription').innerHTML = '<em>Error loading description</em>';
+
                 });
             }})
     </script>

@@ -373,10 +373,11 @@ def get_company_details(request):
             # Get existing connections data
             connections = show_company_connections(company_name)
             top_affiliations = connections.get('Affiliations', [])[:5] if connections else []
-            
+            description = get_wikipedia_description_fundingsource(company_name)
             data = {
                 'top_chemicals': top_chemicals,
                 'top_affiliations': top_affiliations,
+                'description': description,
                 'success': True
             }
             
