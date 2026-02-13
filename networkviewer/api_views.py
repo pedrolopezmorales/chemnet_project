@@ -360,12 +360,14 @@ class FundingTableAPI(APIView):
                 top_chemicals = get_top_chemicals_for_company(company_name, limit=5)
                 connections = show_company_connections(company_name)
                 top_affiliations = connections.get('Affiliations', [])[:5] if connections else []
+                description = get_wikipedia_description_fundingsource(company_name)
                 
                 return Response({
                     'success': True,
                     'company_name': company_name,
                     'top_chemicals': top_chemicals,
-                    'top_affiliations': top_affiliations
+                    'top_affiliations': top_affiliations,
+                    'description': description
                 })
             except Exception as e:
                 return Response({
