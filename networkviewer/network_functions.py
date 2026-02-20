@@ -544,7 +544,38 @@ def is_organic(name):
     except:
         return None  # Not found
 
-from .dataframes_creation import company_assoc
+FUNDING_SOURCE_CSV_URL =  "https://ucsf.box.com/shared/static/8y6x1ay815151ut49srqnc7xmzctty7g"
+company_assoc = pd.read_csv(FUNDING_SOURCE_CSV_URL)
+
+def _safe_parse_list_cell(value):
+    if isinstance(value, list):
+        return value
+    if pd.isna(value) or value is None:
+        return []
+    if not isinstance(value, str):
+        return []
+
+    text = value.strip()
+    if not text:
+        return []
+
+    try:
+        parsed = ast.literal_eval(text)
+        return parsed if isinstance(parsed, list) else [str(parsed)]
+    except Exception:
+        cleaned = text.strip('[]').strip()
+        cleaned = cleaned.strip('"').strip("'")
+        return [cleaned] if cleaned else []
+
+company_assoc['Affiliations'] = company_assoc['Affiliations'].apply(_safe_parse_list_cell)
+company_assoc['Chemicals'] = company_assoc['Chemicals'].apply(_safe_parse_list_cell)
+company_assoc['Researchers'] = company_assoc['Researchers'].apply(_safe_parse_list_cell)
+company_assoc['Affs'] = company_assoc['Affs'].apply(_safe_parse_list_cell)
+company_assoc['Universities'] = company_assoc['Universities'].apply(_safe_parse_list_cell)
+company_assoc['Countries'] = company_assoc['Countries'].apply(_safe_parse_list_cell)
+
+company_assoc['Company'] = company_assoc['Company'].fillna('').astype(str).str.strip()
+company_assoc = company_assoc[company_assoc['Company'] != ''].reset_index(drop=True)
 
 def show_company_network_pyvis(company_name, category='Affiliations', chemical_group='All', sep_country=False, output_file=None):
     if output_file is None:
@@ -624,16 +655,16 @@ def show_company_network_pyvis(company_name, category='Affiliations', chemical_g
                         if inchikey and inchikey != 'Not Found':
                             # Count studies mentioning this InChIKey
                             studies = main[
-                                (main['Funding Sources'].str.contains(company_name, na=False)) &
-                                (main['Chemicals with InChIKey'].str.contains(inchikey, na=False))
+                                (main['Funding Sources'].str.contains(company_name, na=False, regex=False)) &
+                                (main['Chemicals with InChIKey'].str.contains(inchikey, na=False, regex=False))
                             ]
                             study_count = len(studies.drop_duplicates(subset=['DOI']))
                         else:
                             # Fallback to chemical name for chemicals without InChIKey
                             chemical_name = node.get('label', '')
                             studies = main[
-                                (main['Funding Sources'].str.contains(company_name, na=False)) &
-                                (main['Chemicals with InChIKey'].str.contains(chemical_name, na=False))
+                                (main['Funding Sources'].str.contains(company_name, na=False, regex=False)) &
+                                (main['Chemicals with InChIKey'].str.contains(chemical_name, na=False, regex=False))
                             ]
                             study_count = len(studies.drop_duplicates(subset=['DOI']))
                         
@@ -679,16 +710,16 @@ def show_company_network_pyvis(company_name, category='Affiliations', chemical_g
                         if inchikey and inchikey != 'Not Found':
                             # Count studies mentioning this InChIKey
                             studies = main[
-                                (main['Funding Sources'].str.contains(company_name, na=False)) &
-                                (main['Chemicals with InChIKey'].str.contains(inchikey, na=False))
+                                (main['Funding Sources'].str.contains(company_name, na=False, regex=False)) &
+                                (main['Chemicals with InChIKey'].str.contains(inchikey, na=False, regex=False))
                             ]
                             study_count = len(studies.drop_duplicates(subset=['DOI']))
                         else:
                             # Fallback to chemical name
                             chemical_name = node.get('label', '')
                             studies = main[
-                                (main['Funding Sources'].str.contains(company_name, na=False)) &
-                                (main['Chemicals with InChIKey'].str.contains(chemical_name, na=False))
+                                (main['Funding Sources'].str.contains(company_name, na=False, regex=False)) &
+                                (main['Chemicals with InChIKey'].str.contains(chemical_name, na=False, regex=False))
                             ]
                             study_count = len(studies.drop_duplicates(subset=['DOI']))
                         
@@ -726,7 +757,7 @@ def show_company_network_pyvis(company_name, category='Affiliations', chemical_g
                     if affiliation:
                         # Count studies mentioning this affiliation
                         studies = main[
-                            (main['Funding Sources'].str.contains(company_name, na=False)) &
+                            (main['Funding Sources'].str.contains(company_name, na=False, regex=False)) &
                             (main['Affiliations'].str.contains(affiliation, na=False, regex=False))
                         ]
                         study_count = len(studies.drop_duplicates(subset=['DOI']))
@@ -781,7 +812,7 @@ def show_company_network_pyvis(company_name, category='Affiliations', chemical_g
                 
                 # REPLACE affiliation counting with study counting
                 studies = main[
-                    (main['Funding Sources'].str.contains(company_name, na=False)) &
+                    (main['Funding Sources'].str.contains(company_name, na=False, regex=False)) &
                     (main['Affiliations'].str.contains(affil, na=False, regex=False))
                 ]
                 study_count = len(studies.drop_duplicates(subset=['DOI']))
@@ -807,8 +838,8 @@ def show_company_network_pyvis(company_name, category='Affiliations', chemical_g
                 if university:
                     # Count studies mentioning this university
                     studies = main[
-                        (main['Funding Sources'].str.contains(company_name, na=False)) &
-                        (main['Affiliations'].str.contains(university, na=False))
+                        (main['Funding Sources'].str.contains(company_name, na=False, regex=False)) &
+                        (main['Affiliations'].str.contains(university, na=False, regex=False))
                     ]
                     study_count = len(studies.drop_duplicates(subset=['DOI']))
                     
@@ -834,8 +865,8 @@ def show_company_network_pyvis(company_name, category='Affiliations', chemical_g
                 if researcher:
                     # Count studies mentioning this researcher
                     studies = main[
-                        (main['Funding Sources'].str.contains(company_name, na=False)) &
-                        (main['Authors'].str.contains(researcher, na=False))
+                        (main['Funding Sources'].str.contains(company_name, na=False, regex=False)) &
+                        (main['Authors'].str.contains(researcher, na=False, regex=False))
                     ]
                     study_count = len(studies.drop_duplicates(subset=['DOI']))
                     
@@ -885,8 +916,8 @@ def show_company_network_pyvis(company_name, category='Affiliations', chemical_g
             if inchikey and inchikey != 'Not Found':
                 # Search by InChIKey if available
                 studies = main[
-                    (main['Funding Sources'].str.contains(company_name, na=False)) &
-                    (main['Chemicals with InChIKey'].str.contains(inchikey, na=False))
+                    (main['Funding Sources'].str.contains(company_name, na=False, regex=False)) &
+                    (main['Chemicals with InChIKey'].str.contains(inchikey, na=False, regex=False))
                 ]
             else:
                 # Fallback to chemical name search
@@ -908,7 +939,7 @@ def show_company_network_pyvis(company_name, category='Affiliations', chemical_g
             for affil in affiliations:
                 affil_str = str(affil)
                 studies = main[
-                    (main['Funding Sources'].str.contains(company_name, na=False)) &
+                    (main['Funding Sources'].str.contains(company_name, na=False, regex=False)) &
                     (main['Affiliations'].str.contains(affil_str, na=False, regex=False))
                 ]
                 study_info = "<br>".join(
@@ -921,7 +952,7 @@ def show_company_network_pyvis(company_name, category='Affiliations', chemical_g
             for country in countries:
                 country_str = str(country)
                 studies = main[
-                    (main['Funding Sources'].str.contains(company_name, na=False)) &
+                    (main['Funding Sources'].str.contains(company_name, na=False, regex=False)) &
                     (main['Affiliations'].str.contains(country_str, na=False, regex=False))
                 ]
                 study_info = "<br>".join(
@@ -932,7 +963,7 @@ def show_company_network_pyvis(company_name, category='Affiliations', chemical_g
             for affil in data:
                 affil_str = str(affil)
                 studies = main[
-                    (main['Funding Sources'].str.contains(company_name, na=False)) &
+                    (main['Funding Sources'].str.contains(company_name, na=False, regex=False)) &
                     (main['Affiliations'].str.contains(affil_str, na=False, regex=False))
                 ]
                 study_info = "<br>".join(
@@ -942,8 +973,8 @@ def show_company_network_pyvis(company_name, category='Affiliations', chemical_g
     elif category =='Universities':
         for uni in data:
             studies = main[
-                (main['Funding Sources'].str.contains(company_name, na = False)) &
-                (main['Affiliations'].str.contains(uni, na = False))
+                (main['Funding Sources'].str.contains(company_name, na=False, regex=False)) &
+                (main['Affiliations'].str.contains(uni, na=False, regex=False))
             ]
             study_info = '<br>'.join(
                 f"{row['Title']} (DOI: {row['DOI']})" for _, row in studies.iterrows()
@@ -952,9 +983,9 @@ def show_company_network_pyvis(company_name, category='Affiliations', chemical_g
     elif category == 'Researchers':
         res_list = row.iloc[0]['Researchers']
         for res in res_list:
-            studies = main[(
-                main['Funding Sources'].str.contains(company_name, na = False)) &
-                (main['Authors'].str.contains(res, na = False))
+            studies = main[
+                (main['Funding Sources'].str.contains(company_name, na=False, regex=False)) &
+                (main['Authors'].str.contains(res, na=False, regex=False))
             ]
             study_info = "<br>".join(
                 f"{row['Title']} (DOI: {row['DOI']})" for _, row in studies.iterrows()
@@ -1187,16 +1218,16 @@ def show_uni_network_pyvis(uni_name, category='Funding Sources', chemical_group=
                         if inchikey and inchikey != 'Not Found':
                             # Count studies mentioning this InChIKey
                             studies = main[
-                                (main['Affiliations'].str.contains(uni_name, na=False)) &
-                                (main['Chemicals with InChIKey'].str.contains(inchikey, na=False))
+                                (main['Affiliations'].str.contains(uni_name, na=False, regex=False)) &
+                                (main['Chemicals with InChIKey'].str.contains(inchikey, na=False, regex=False))
                             ]
                             study_count = len(studies.drop_duplicates(subset=['DOI']))
                         else:
                             # Fallback to chemical name
                             chemical_name = node.get('label', '')
                             studies = main[
-                                (main['Affiliations'].str.contains(uni_name, na=False)) &
-                                (main['Chemicals with InChIKey'].str.contains(chemical_name, na=False))
+                                (main['Affiliations'].str.contains(uni_name, na=False, regex=False)) &
+                                (main['Chemicals with InChIKey'].str.contains(chemical_name, na=False, regex=False))
                             ]
                             study_count = len(studies.drop_duplicates(subset=['DOI']))
                         
@@ -1522,8 +1553,8 @@ def show_researcher_network_pyvis(researcher, output_file = "staticfiles/company
             if company:
                 # Count studies mentioning this researcher with this company
                 studies = main[
-                    (main['Funding Sources'].str.contains(company, na=False)) &
-                    (main['Authors'].str.contains(researcher, na=False))
+                    (main['Funding Sources'].str.contains(company, na=False, regex=False)) &
+                    (main['Authors'].str.contains(researcher, na=False, regex=False))
                 ]
                 study_count = len(studies.drop_duplicates(subset=['DOI']))
                 
@@ -1685,7 +1716,7 @@ def show_chemical_network(chemical, inch='Error', output_file=None):
         if inch and inch != 'Error' and inch != 'Not Found':
             studies = main[
                 (main['Funding Sources'].str.contains(original_name, na=False, regex=False)) &
-                (main['Chemicals with InChIKey'].str.contains(inch, na=False))
+                (main['Chemicals with InChIKey'].str.contains(inch, na=False, regex=False))
             ]
         else:
             # fallback, but this should rarely happen
@@ -1879,8 +1910,8 @@ def show_researcher_network_pyvis_from_row(row, output_file=None):
             if company:
                 # Count studies mentioning this researcher with this company
                 studies = main[
-                    (main['Funding Sources'].str.contains(company, na=False)) &
-                    (main['Authors'].str.contains(researcher, na=False))
+                    (main['Funding Sources'].str.contains(company, na=False, regex=False)) &
+                    (main['Authors'].str.contains(researcher, na=False, regex=False))
                 ]
                 study_count = len(studies.drop_duplicates(subset=['DOI']))
                 
@@ -2098,8 +2129,8 @@ def show_company_connections(company_name):
             if inchikey not in processed_inchikeys:
                 # Chemicals with InChIKey
                 studies = main[
-                    (main['Funding Sources'].str.contains(company_name, na=False)) &
-                    (main['Chemicals with InChIKey'].str.contains(inchikey, na=False))
+                    (main['Funding Sources'].str.contains(company_name, na=False, regex=False)) &
+                    (main['Chemicals with InChIKey'].str.contains(inchikey, na=False, regex=False))
                 ]
                 study_count = len(studies.drop_duplicates(subset=['DOI']))
                 labeled_chemicals.append(f"{name} ({study_count})")
@@ -2134,7 +2165,7 @@ def show_company_connections(company_name):
     for affil in affiliations:
         if affil not in unique_affiliations:
             studies = main[
-                (main['Funding Sources'].str.contains(company_name, na=False)) &
+                (main['Funding Sources'].str.contains(company_name, na=False, regex=False)) &
                 (main['Affiliations'].str.contains(affil, na=False, regex=False))
             ]
             study_count = len(studies.drop_duplicates(subset=['DOI']))
@@ -2148,8 +2179,8 @@ def show_company_connections(company_name):
     for res in res_list:
         if res not in unique_researchers:
             studies = main[
-                (main['Funding Sources'].str.contains(company_name, na=False)) &
-                (main['Authors'].str.contains(res, na=False))
+                (main['Funding Sources'].str.contains(company_name, na=False, regex=False)) &
+                (main['Authors'].str.contains(res, na=False, regex=False))
             ]
             study_count = len(studies.drop_duplicates(subset=['DOI']))
             labeled_researchers.append(f"{res} ({study_count})")
@@ -2163,8 +2194,8 @@ def show_company_connections(company_name):
         if uni not in unique_universities:
             # Count studies mentioning this university
             studies = main[
-                (main['Funding Sources'].str.contains(company_name, na=False)) &
-                (main['Affiliations'].str.contains(uni, na=False))
+                (main['Funding Sources'].str.contains(company_name, na=False, regex=False)) &
+                (main['Affiliations'].str.contains(uni, na=False, regex=False))
             ]
             study_count = len(studies.drop_duplicates(subset=['DOI']))
             labeled_universities.append(f"{uni} ({study_count})")
@@ -2219,7 +2250,7 @@ def show_uni_connections(university):
         original_name, _ = extract_name_and_class(comp)
         if original_name not in unique_companies:
             studies = main[
-                (main['Affiliations'].str.contains(university, na=False)) &
+                (main['Affiliations'].str.contains(university, na=False, regex=False)) &
                 (main['Funding Sources'].str.contains(original_name, na=False, regex=False))
             ]
             study_count = len(studies.drop_duplicates(subset=['DOI']))
@@ -2321,16 +2352,6 @@ def show_chem_connections(chemical=None, inchikey=None):
 classification_file_path = os.path.join(settings.BASE_DIR, 'data', 'company_classifications.json')
 with open(classification_file_path, 'r', encoding='utf-8') as f:
     company_classification_dict = json.load(f)
-
-company_counts = {}
-for company in company_classification_dict.keys():
-    if company and company.strip():
-        if company.strip().lower() != 'not found':
-            count = main['Funding Sources'].str.contains(company, na=False, regex=False).sum()
-            company_counts[company] = count
-
-sorted_companies = sorted(company_counts.items(), key=lambda x: x[1], reverse=True)
-top_50_with_classification = [(company, count, company_classification_dict[company]) for company, count in sorted_companies[:50]]
 
 def get_pubchem_image_url(chemical_name, inchikey=None):
     try:
@@ -2563,3 +2584,108 @@ def get_wikipedia_description_fundingsource(funding_source):
     except Exception as e:
         print(f"Error fetching Wikipedia description for {funding_source}: {e}")
     return None
+
+company_counts = {}
+for company in company_classification_dict.keys():
+    if company and company.strip():
+        if company.strip().lower() != 'not found':
+            count = main['Funding Sources'].str.contains(company, na=False, regex=False).sum()
+            company_counts[company] = count
+
+
+# sorted_companies = sorted(company_counts.items(), key=lambda x: x[1], reverse=True)
+# top_50_with_classification = [(company, count, company_classification_dict[company]) for company, count in sorted_companies[:50]]
+
+# def create_funding_source_dataframe(chem_limit):
+#     rows = []
+#     total = len(top_50_with_classification)
+    
+#     for i, (company, study_count, classification) in enumerate(top_50_with_classification, 1):
+#         print(f"Processing {i}/{total}: {company}")
+        
+#         try:
+#             # Get top chemicals as formatted strings
+#             top_chem_pairs = get_top_chemicals_for_company(company, chem_limit) or []
+#             top_chemicals = ";".join([f"{name} ({count})" for name, count in top_chem_pairs])
+            
+
+#             # Get Wikipedia description
+#             wiki = get_wikipedia_description_fundingsource(company)
+#             description = wiki.get('description', '') if isinstance(wiki, dict) else ""
+#             wiki_url = wiki.get('url', '') if isinstance(wiki, dict) else ""
+            
+#             rows.append({
+#                 "company": company,
+#                 "study_count": int(study_count),
+#                 "classification": classification,
+#                 "top_chemicals": top_chemicals,
+#                 "description": description,
+#                 "wiki_url": wiki_url,
+#             })
+#         except Exception as e:
+#             print(f"⚠️ Error processing {company}: {e}")
+#             # Add minimal row to continue processing
+#             rows.append({
+#                 "company": company,
+#                 "study_count": int(study_count),
+#                 "classification": classification,
+#                 "top_chemicals": "",
+#                 "description": "",
+#                 "wiki_url": "",
+#             })
+    
+#     print(f"✓ Completed! Processed {len(rows)} companies")
+#     return pd.DataFrame(rows)
+
+FUNDING_SOURCE_TABLE_URL = "https://ucsf.box.com/shared/static/cvkqn0ms0cq598yxpsw6yt4nkk76hi6n"
+funding_source_table_df = pd.read_csv(FUNDING_SOURCE_TABLE_URL)
+
+
+def parse_list_cell(value):
+    if isinstance(value, list):
+        return value
+    if pd.isna(value) or value in ("", None):
+        return []
+    if isinstance(value, str):
+        # Split on semicolons and clean up
+        items = [item.strip() for item in value.split(";") if item.strip()]
+        return items
+    return []
+
+def parse_chemical_with_count(chem_str):
+    """Parse 'chemical (count)' format into [name, count] pair."""
+    import re
+    match = re.match(r'^(.+?)\s+\((\d+)\)$', chem_str.strip())
+    if match:
+        return [match.group(1), int(match.group(2))]
+    return [chem_str.strip(), 0]
+
+def parse_chemicals_list(chemicals_str):
+    """Parse semicolon-separated chemicals into [[name, count], ...] format."""
+    if not chemicals_str:
+        return []
+    items = parse_list_cell(chemicals_str)
+    return [parse_chemical_with_count(item) for item in items]
+def get_funding_source_row(company_name):
+    row = funding_source_table_df[funding_source_table_df["company"] == company_name]
+    if row.empty:
+        return None
+    record = row.iloc[0]
+    
+    # Handle NaN values by converting to empty strings or safe defaults
+    description = record["description"]
+    if pd.isna(description):
+        description = ""
+    
+    wiki_url = record["wiki_url"]
+    if pd.isna(wiki_url):
+        wiki_url = ""
+    
+    return {
+        "company": record["company"],
+        "study_count": int(record["study_count"]),
+        "classification": record["classification"],
+        "top_chemicals": record["top_chemicals"],
+        "description": description,
+        "wiki_url": wiki_url,
+    }

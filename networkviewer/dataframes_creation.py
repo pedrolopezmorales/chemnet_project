@@ -13,7 +13,8 @@ from .network_functions import (
     comparing_companies,
     no_dup_comp,
     new_no_dup_aff,
-    university_keys
+    university_keys,
+    main
 )
 #creating the main dataframe
 def create_main_dataframe():
@@ -32,7 +33,7 @@ def create_main_dataframe():
     combined_df.to_csv(combined_path, index=False)
     print(f"Combined dataset created! Total rows: {len(combined_df)}")
 # create_main_dataframe()  # Only uncomment to create dataframe, if more years is addded to the dataframe
-
+'''
 comparing_companies['Matched Companies'] = match_items_against_master(comparing_companies,'Funding Sources', no_dup_comp)
 comparing_companies['Matched Chemicals'] = comparing_companies['Chemicals with InChIKey'].str.split(';').apply(lambda lst: [x.strip() for x in lst])
 comparing_companies['Matched Affiliations'] = match_items_against_master_aff(comparing_companies,'Affiliations', new_no_dup_aff)
@@ -133,8 +134,8 @@ company_assoc['Universities'] = company_assoc['Affiliations'].apply(lambda x: ex
 
 company_assoc['Countries'] = company_assoc['Affiliations'].apply(extract_country_list)
 
-
-
+company_assoc.to_csv(os.path.join(settings.BASE_DIR, 'data', 'comparing_fundingsources.csv'), index=False)
+'''
 # Having the affiliations per row
 '''
 cut_down = main.drop(['DOI', 'URL','Year','Title','Chemicals Mentioned','Abstract','Authors'], axis = 1)
@@ -277,5 +278,7 @@ chem_per_row = (
     .reset_index(drop=True)
 )
 chem_per_row['company'] = chem_per_row['company'].apply(classify_companies_series)
-chem_per_row.to_csv(os.path.join(settings.BASE_DIR, 'data', 'chem_per_row.csv'), index=False)
+chem_per_row.to_csv(os.path.join(settings.BASE_DIR, 'data', 'comparing_chemicals.csv'), index=False)
 '''
+
+

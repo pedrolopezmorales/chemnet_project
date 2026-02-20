@@ -14,12 +14,14 @@ from .network_functions import (
     show_res_connections,
     chem_per_row,
     no_dup_comp,
-    comparing_unis, 
-    top_50_with_classification,
+    comparing_unis,
     get_pubchem_image_url,
     get_top_chemicals_for_company,
     get_pubchem_description,
-    get_wikipedia_description_fundingsource
+    get_wikipedia_description_fundingsource,
+    funding_source_table_df,
+    get_funding_source_row,
+    parse_chemicals_list
 )
 
 
@@ -338,20 +340,15 @@ def contact_view(request):
     return render(request, 'networkviewer/contact.html')
 
 def funding_table_view(request):
-    print(f"top_50_with_classification length: {len(top_50_with_classification)}")
-    print(f"First few items: {top_50_with_classification[:3]}")
-    
     periodic_data = []
-    for company, count, classification in top_50_with_classification:
+    for _, row in funding_source_table_df.iterrows():
+        count_value = row.get('study_count', row.get('count', 0))
         periodic_data.append({
-            'company': company,
-            'count': int(count),
-            'classification': classification
+            'company': row.get('company', ''),
+            'count': int(count_value) if count_value is not None else 0,
+            'classification': row.get('classification', 'Unknown')
         })
-    
-    print(f"periodic_data length: {len(periodic_data)}")
-    print(f"First item: {periodic_data[0] if periodic_data else 'None'}")
-    
+
     context = {
         'periodic_data': periodic_data,
         'show_main_nav': True
@@ -360,28 +357,40 @@ def funding_table_view(request):
 
 def get_company_details(request):
     """AJAX endpoint to get detailed company information for modal"""
-    if request.method == 'GET':
-        company_name = request.GET.get('company_name', '')
-        
-        if not company_name:
-            return JsonResponse({'error': 'Company name required'}, status=400)
-        
-        try:
-            # Get top chemicals
-            top_chemicals = get_top_chemicals_for_company(company_name, limit=5)
-            
-            # Get existing connections data
-            connections = show_company_connections(company_name)
-            top_affiliations = connections.get('Affiliations', [])[:5] if connections else []
-            description = get_wikipedia_description_fundingsource(company_name)
-            data = {
+    if request.method != 'GET':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+
+    company_name = request.GET.get('company_name', '').strip()
+    if not company_name:
+        return JsonResponse({'error': 'Company name required'}, status=400)
+
+    try:
+        row_data = get_funding_source_row(company_name)
+        if row_data:
+            # Parse chemicals with counts from semicolon-separated string
+            top_chemicals = parse_chemicals_list(row_data.get('top_chemicals', ''))[:5]
+
+            description_text = row_data.get('description')
+            description = {
+                'title': row_data.get('company', company_name),
+                'description': description_text or '',
+                'url': row_data.get('wiki_url') or '',
+                'thumbnail': None,
+            } if description_text else None
+
+            return JsonResponse({
+                'success': True,
                 'top_chemicals': top_chemicals,
-                'top_affiliations': top_affiliations,
                 'description': description,
-                'success': True
-            }
-            
-            return JsonResponse(data)
-            
-        except Exception as e:
-            return JsonResponse({'error': str(e)}, status=500)
+            })
+
+        top_chemicals = get_top_chemicals_for_company(company_name, limit=5)
+        description = get_wikipedia_description_fundingsource(company_name)
+
+        return JsonResponse({
+            'success': True,
+            'top_chemicals': top_chemicals,
+            'description': description,
+        })
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)

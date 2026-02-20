@@ -40,10 +40,6 @@
                     <strong>Top Chemicals:</strong>
                     <div id="modalChemicals">Loading...</div>
                 </div>
-                <div class="info-item">
-                    <strong>Key Affiliations:</strong>
-                    <div id="modalAffiliations">Loading...</div>
-                </div>
                 <div class=""info-item">
                     <strong>Description:</strong>
                     <div id="modalDescription">Loading...</div>
@@ -243,7 +239,7 @@
     }
 
     
-    .chemical-item, .affiliation-item {
+    .chemical-item {
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -251,7 +247,7 @@
     border-bottom: 1px solid #eee;
     }
 
-    .chemical-item:last-child, .affiliation-item:last-child {
+    .chemical-item:last-child {
         border-bottom: none;
     }
 
@@ -328,7 +324,7 @@
             // Show modal
             modal.style.display = 'block';
             
-            // Load additional data (chemicals, affiliations)
+            // Load additional data (chemicals)
             loadCompanyDetails(companyName);
         }
         
@@ -340,7 +336,6 @@
         function loadCompanyDetails(companyName) {
             // For now, show placeholder - you'll replace this with actual AJAX call
             document.getElementById('modalChemicals').innerHTML = '<em>Loading chemical data...</em>';
-            document.getElementById('modalAffiliations').innerHTML = '<em>Loading affiliation data...</em>';
             document.getElementById('modalDescription').innerHTML = '<em>Loading description...</em>';
             // TODO: Add AJAX call to fetch real data
             fetch(`/api/company-details/?company_name=${encodeURIComponent(companyName)}`)
@@ -359,16 +354,6 @@
                         } else {
                             document.getElementById('modalChemicals').innerHTML = '<em>No chemical data available</em>';
                         }
-                        
-                        // Update affiliations section
-                        if (data.top_affiliations && data.top_affiliations.length > 0) {
-                            const affiliationsList = data.top_affiliations.map(affiliation => 
-                                `<div class="affiliation-item">${affiliation}</div>`
-                            ).join('');
-                            document.getElementById('modalAffiliations').innerHTML = affiliationsList;
-                        } else {
-                            document.getElementById('modalAffiliations').innerHTML = '<em>No affiliation data available</em>';
-                        }
 
                         if (data.description && data.description !== 'No description found.') {
                             document.getElementById('modalDescription').innerHTML = `<p class="description-text">${data.description.description}</p>`;
@@ -377,14 +362,12 @@
                         }
                     } else {
                         document.getElementById('modalChemicals').innerHTML = '<em>Error loading data</em>';
-                        document.getElementById('modalAffiliations').innerHTML = '<em>Error loading data</em>';
                         document.getElementById('modalDescription').innerHTML = '<em>Error loading data</em>';
                     }
                 })
                 .catch(error => {
                     console.error('Error fetching company details:', error);
                     document.getElementById('modalChemicals').innerHTML = '<em>Error loading chemical data</em>';
-                    document.getElementById('modalAffiliations').innerHTML = '<em>Error loading affiliation data</em>';
                     document.getElementById('modalDescription').innerHTML = '<em>Error loading description</em>';
 
                 });

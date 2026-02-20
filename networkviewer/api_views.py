@@ -7,7 +7,6 @@ from .serializers import (
     UniversitySearchSerializer,
     ResearcherSearchSerializer
 )
-from django.http import JsonResponse
 from .network_functions import (
     show_chemical_network,
     show_company_network_pyvis,
@@ -23,7 +22,10 @@ from .network_functions import (
     comparing_unis,
     get_top_chemicals_for_company,
     get_pubchem_description,
-    get_wikipedia_description_fundingsource
+    get_wikipedia_description_fundingsource,
+    funding_source_table_df,
+    get_funding_source_row,
+    parse_chemicals_list
 )
 import difflib
 import random
@@ -357,16 +359,33 @@ class FundingTableAPI(APIView):
         company_name = request.GET.get('company_name')
         if company_name:
             try:
+                row_data = get_funding_source_row(company_name)
+                if row_data:
+                    # Parse chemicals with counts from semicolon-separated string
+                    top_chemicals = parse_chemicals_list(row_data.get('top_chemicals', ''))[:5]
+
+                    description_text = row_data.get('description')
+                    description = {
+                        'title': row_data.get('company', company_name),
+                        'description': description_text or '',
+                        'url': row_data.get('wiki_url') or '',
+                        'thumbnail': None,
+                    } if description_text else None
+
+                    return Response({
+                        'success': True,
+                        'company_name': company_name,
+                        'top_chemicals': top_chemicals,
+                        'description': description
+                    })
+
                 top_chemicals = get_top_chemicals_for_company(company_name, limit=5)
-                connections = show_company_connections(company_name)
-                top_affiliations = connections.get('Affiliations', [])[:5] if connections else []
                 description = get_wikipedia_description_fundingsource(company_name)
                 
                 return Response({
                     'success': True,
                     'company_name': company_name,
                     'top_chemicals': top_chemicals,
-                    'top_affiliations': top_affiliations,
                     'description': description
                 })
             except Exception as e:
@@ -376,14 +395,13 @@ class FundingTableAPI(APIView):
                 }, status=500)
         else:
             try:
-                from .views import top_50_with_classification
-                
                 funding_data = []
-                for company, count, classification in top_50_with_classification:
+                for _, row in funding_source_table_df.iterrows():
+                    count_value = row.get('study_count', row.get('count', 0))
                     funding_data.append({
-                        'company': company,
-                        'count': int(count),
-                        'classification': classification
+                        'company': row.get('company', ''),
+                        'count': int(count_value) if count_value is not None else 0,
+                        'classification': row.get('classification', 'Unknown')
                     })
                 
                 return Response({
