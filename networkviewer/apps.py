@@ -13,7 +13,7 @@ class NetworkviewerConfig(AppConfig):
     
     #     try:
     #         print("🔄 Building funding source enriched dataframe...")
-    #         funding_source_table_df = create_funding_source_dataframe(chem_limit=5, aff_limit=5)
+    #         funding_source_table_df = create_funding_source_dataframe(chem_limit=5)
     #         csv_path = os.path.join(settings.BASE_DIR, 'data', 'funding_source_table_df.csv')
     #         funding_source_table_df.to_csv(csv_path, index=False)
     #         print(f"✓ Funding dataframe saved to {csv_path}")

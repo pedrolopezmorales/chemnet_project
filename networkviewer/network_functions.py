@@ -2626,52 +2626,63 @@ for company in company_classification_dict.keys():
             count = main['Funding Sources'].str.contains(company, na=False, regex=False).sum()
             company_counts[company] = count
 
+def create_funding_source_dataframe(chem_limit=5, top_n=50):
+    """
+    Build funding table dataframe from the same company_assoc pipeline used by company search.
+    This keeps funding table popup chemicals/counts consistent with company page results.
+    """
+    company_assoc_names = set(company_assoc['Company'].dropna().astype(str).str.strip())
+    sorted_companies = sorted(company_counts.items(), key=lambda x: x[1], reverse=True)
+    top_companies = [(name, count) for name, count in sorted_companies if name in company_assoc_names][:top_n]
 
-# sorted_companies = sorted(company_counts.items(), key=lambda x: x[1], reverse=True)
-# top_50_with_classification = [(company, count, company_classification_dict[company]) for company, count in sorted_companies[:50]]
+    rows = []
+    total = len(top_companies)
 
-# def create_funding_source_dataframe(chem_limit):
-#     rows = []
-#     total = len(top_50_with_classification)
-    
-#     for i, (company, study_count, classification) in enumerate(top_50_with_classification, 1):
-#         print(f"Processing {i}/{total}: {company}")
-        
-#         try:
-#             # Get top chemicals as formatted strings
-#             top_chem_pairs = get_top_chemicals_for_company(company, chem_limit) or []
-#             top_chemicals = ";".join([f"{name} ({count})" for name, count in top_chem_pairs])
-            
+    for i, (company, study_count) in enumerate(top_companies, 1):
+        print(f"Processing {i}/{total}: {company}")
 
-#             # Get Wikipedia description
-#             wiki = get_wikipedia_description_fundingsource(company)
-#             description = wiki.get('description', '') if isinstance(wiki, dict) else ""
-#             wiki_url = wiki.get('url', '') if isinstance(wiki, dict) else ""
-            
-#             rows.append({
-#                 "company": company,
-#                 "study_count": int(study_count),
-#                 "classification": classification,
-#                 "top_chemicals": top_chemicals,
-#                 "description": description,
-#                 "wiki_url": wiki_url,
-#             })
-#         except Exception as e:
-#             print(f"⚠️ Error processing {company}: {e}")
-#             # Add minimal row to continue processing
-#             rows.append({
-#                 "company": company,
-#                 "study_count": int(study_count),
-#                 "classification": classification,
-#                 "top_chemicals": "",
-#                 "description": "",
-#                 "wiki_url": "",
-#             })
-    
-#     print(f"✓ Completed! Processed {len(rows)} companies")
-#     return pd.DataFrame(rows)
+        try:
+            classification = company_classification_dict.get(company, 'Unknown')
 
-FUNDING_SOURCE_TABLE_URL = "https://ucsf.box.com/shared/static/cvkqn0ms0cq598yxpsw6yt4nkk76hi6n"
+            connections = show_company_connections(company)
+            chem_entries = []
+            if isinstance(connections, dict):
+                chem_entries = connections.get('Chemicals', []) or []
+
+            def _chem_count(entry):
+                m = re.match(r'^.+\((\d+)\)$', entry.strip())
+                return int(m.group(1)) if m else 0
+
+            chem_entries_sorted = sorted(chem_entries, key=_chem_count, reverse=True)
+            top_chemicals = ";".join(chem_entries_sorted[:chem_limit])
+
+            wiki = get_wikipedia_description_fundingsource(company)
+            description = wiki.get('description', '') if isinstance(wiki, dict) else ""
+            wiki_url = wiki.get('url', '') if isinstance(wiki, dict) else ""
+
+            rows.append({
+                "company": company,
+                "study_count": int(study_count),
+                "classification": classification,
+                "top_chemicals": top_chemicals,
+                "description": description,
+                "wiki_url": wiki_url,
+            })
+        except Exception as e:
+            print(f"⚠️ Error processing {company}: {e}")
+            rows.append({
+                "company": company,
+                "study_count": int(study_count),
+                "classification": company_classification_dict.get(company, 'Unknown'),
+                "top_chemicals": "",
+                "description": "",
+                "wiki_url": "",
+            })
+
+    print(f"✓ Completed! Processed {len(rows)} companies")
+    return pd.DataFrame(rows)
+
+FUNDING_SOURCE_TABLE_URL = "https://ucsf.box.com/shared/static/ocmu9c17slhjj5enb48dr3gnr4hctbcj"
 funding_source_table_df = pd.read_csv(FUNDING_SOURCE_TABLE_URL)
 
 
