@@ -559,13 +559,47 @@ def _safe_parse_list_cell(value):
     if not text:
         return []
 
+    def _split_numpy_style_list_string(raw_text):
+        raw_text = raw_text.strip()
+        if not (raw_text.startswith('[') and raw_text.endswith(']')):
+            return None
+        inner = raw_text[1:-1]
+        # Matches values quoted as 'value' or "value" in strings like ['a' 'b' 'c']
+        matches = re.findall(r"'([^']*)'|\"([^\"]*)\"", inner)
+        if not matches:
+            return None
+        items = [(m1 or m2).strip() for m1, m2 in matches if (m1 or m2).strip()]
+        return items if len(items) > 1 else None
+
     try:
         parsed = ast.literal_eval(text)
-        return parsed if isinstance(parsed, list) else [str(parsed)]
+        if isinstance(parsed, list):
+            # Handle NumPy-style serialization without commas: ['a' 'b' 'c']
+            # ast.literal_eval may fold this into a single concatenated string.
+            numpy_style_items = _split_numpy_style_list_string(text)
+            if numpy_style_items:
+                return numpy_style_items
+            return parsed
+        return [str(parsed)]
     except Exception:
+        numpy_style_items = _split_numpy_style_list_string(text)
+        if numpy_style_items:
+            return numpy_style_items
+
         cleaned = text.strip('[]').strip()
         cleaned = cleaned.strip('"').strip("'")
-        return [cleaned] if cleaned else []
+        if not cleaned:
+            return []
+
+        for delimiter in [';', '|']:
+            if delimiter in cleaned:
+                return [item.strip().strip('"').strip("'") for item in cleaned.split(delimiter) if item.strip()]
+
+        paren_groups = re.findall(r'[^()]+\([^()]*\)', cleaned)
+        if len(paren_groups) > 1:
+            return [item.strip() for item in paren_groups if item.strip()]
+
+        return [cleaned]
 
 company_assoc['Affiliations'] = company_assoc['Affiliations'].apply(_safe_parse_list_cell)
 company_assoc['Chemicals'] = company_assoc['Chemicals'].apply(_safe_parse_list_cell)
