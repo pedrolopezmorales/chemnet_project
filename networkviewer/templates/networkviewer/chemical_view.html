@@ -119,21 +119,20 @@
         {% if connections %}
         <div style="margin-top: 40px; background: #0b4e86; padding: 20px; border-radius: 8px;">
             <h3> Connections</h3>
-            <ul>
-                {% for key, items in connections.items %}
-                    <li><strong>{{ key }}:</strong>
-                        <ul>
-                            {% if key == "Inchikey" or key == "Affiliation(s)" %}
-                                <li>{{ items }}</li>
-                            {% else %}
-                                {% for item in items %}
-                                    <li>{{ item|colorize_categories|safe }}</li>
-                                {% endfor %}
-                            {% endif %}
-                        </ul>
-                    </li>
-                {% endfor %}
-            </ul>
+            {% for key, items in connections.items %}
+                <details style="margin-bottom: 12px; background: #ffffff; border-radius: 6px; padding: 8px 12px; color: #0b4e86;">
+                    <summary style="cursor: pointer; font-weight: 700;">{{ key }}</summary>
+                    <ul style="margin: 10px 0 4px 18px; color: #1f2937;">
+                        {% if key == "Inchikey" or key == "Affiliation(s)" %}
+                            <li>{{ items }}</li>
+                        {% else %}
+                            {% for item in items %}
+                                <li>{{ item|colorize_categories|safe }}</li>
+                            {% endfor %}
+                        {% endif %}
+                    </ul>
+                </details>
+            {% endfor %}
         </div>
     {% endif %}
     </div>
