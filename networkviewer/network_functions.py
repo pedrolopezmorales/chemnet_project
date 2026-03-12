@@ -2140,7 +2140,9 @@ def show_researcher_network_pyvis_from_row(row, output_file=None):
     with open(output_file, "w", encoding="utf-8") as f:
         f.write(html)
     return True
-
+def count_key(number):
+    num = re.match(r'^.+\((\d+)\)$', number.strip())
+    return int(num.group(1)) if num else 0
 def show_company_connections(company_name):
     row = company_assoc[company_assoc['Company'] == company_name]
     if row.empty:
@@ -2177,6 +2179,7 @@ def show_company_connections(company_name):
             ]
             study_count = len(studies.drop_duplicates(subset=['DOI']))
             labeled_chemicals.append(f"{name} ({study_count})")
+    labeled_chemicals = sorted(labeled_chemicals, key=count_key, reverse=True)
 
     # Countries
     unique_countries = []
@@ -2189,8 +2192,9 @@ def show_company_connections(company_name):
     for country in country_affil_counts:
         if country not in unique_countries:    
             affiliation_count = country_affil_counts[country]
-            labeled_countries.append(f"{country} ({affiliation_count} affiliations)")
+            labeled_countries.append(f"{country} ({affiliation_count})")
             unique_countries.append(country)
+    labeled_countries = sorted(labeled_countries, key=count_key, reverse=True)
 
     # Affiliations 
     unique_affiliations = []
@@ -2205,7 +2209,7 @@ def show_company_connections(company_name):
             study_count = len(studies.drop_duplicates(subset=['DOI']))
             labeled_affiliations.append(f"{affil} ({study_count})")
             unique_affiliations.append(affil)
-
+    labeled_affiliations = sorted(labeled_affiliations, key=count_key, reverse=True)
     # Researchers
     unique_researchers = []
     labeled_researchers = []
@@ -2219,7 +2223,7 @@ def show_company_connections(company_name):
             study_count = len(studies.drop_duplicates(subset=['DOI']))
             labeled_researchers.append(f"{res} ({study_count})")
             unique_researchers.append(res)
-
+    labeled_researchers = sorted(labeled_researchers, key=count_key, reverse=True)
     # Universities
     unique_universities = []
     labeled_universities = []
@@ -2234,7 +2238,7 @@ def show_company_connections(company_name):
             study_count = len(studies.drop_duplicates(subset=['DOI']))
             labeled_universities.append(f"{uni} ({study_count})")
             unique_universities.append(uni)
-
+    labeled_universities = sorted(labeled_universities, key=count_key, reverse=True)
     return {
         "Affiliations": labeled_affiliations,
         "Countries": labeled_countries,
@@ -2275,7 +2279,7 @@ def show_uni_connections(university):
             ]
             study_count = len(studies.drop_duplicates(subset=['DOI']))
             labeled_chemicals.append(f"{name} ({study_count})")
-
+    labeled_chemicals = sorted(labeled_chemicals, key=count_key, reverse=True)
     # Companies
     unique_companies = []
     labeled_companies = []
@@ -2290,6 +2294,7 @@ def show_uni_connections(university):
             study_count = len(studies.drop_duplicates(subset=['DOI']))
             labeled_companies.append(f"{comp} ({study_count})")
             unique_companies.append(original_name)
+    labeled_companies = sorted(labeled_companies, key=count_key, reverse=True)
 
     return {
         "Funding Sources": labeled_companies,
@@ -2333,7 +2338,7 @@ def show_res_connections(researcher):
             study_count = len(studies.drop_duplicates(subset=['DOI']))
             labeled_companies.append(f"{comp} ({study_count})")
             unique_companies.append(comp)
-
+    labeled_companies = sorted(labeled_companies, key=count_key, reverse=True)
     return {
         "Affiliation(s)": aff,
         "Funding Sources": labeled_companies
@@ -2376,7 +2381,7 @@ def show_chem_connections(chemical=None, inchikey=None):
             study_count = len(studies.drop_duplicates(subset=['DOI']))
             labeled_companies.append(f"{comp} ({study_count})")
             unique_companies.append(comp)
-
+    labeled_companies = sorted(labeled_companies, key=count_key, reverse=True)
     return {
         "Inchikey": inchikey_val,
         "Funding Sources": labeled_companies
@@ -2649,11 +2654,7 @@ def create_funding_source_dataframe(chem_limit=5, top_n=50):
             if isinstance(connections, dict):
                 chem_entries = connections.get('Chemicals', []) or []
 
-            def _chem_count(entry):
-                m = re.match(r'^.+\((\d+)\)$', entry.strip())
-                return int(m.group(1)) if m else 0
-
-            chem_entries_sorted = sorted(chem_entries, key=_chem_count, reverse=True)
+            chem_entries_sorted = sorted(chem_entries, key=count_key, reverse=True)
             top_chemicals = ";".join(chem_entries_sorted[:chem_limit])
 
             wiki = get_wikipedia_description_fundingsource(company)
@@ -2717,7 +2718,6 @@ def get_funding_source_row(company_name):
         return None
     record = row.iloc[0]
     
-    # Handle NaN values by converting to empty strings or safe defaults
     description = record["description"]
     if pd.isna(description):
         description = ""
