@@ -2159,7 +2159,7 @@ def show_company_connections(company_name):
     # Chemicals
     labeled_chemicals = []
     processed_inchikeys = set()
-    
+    unique_no_inch_chemicals = []
     for name, inchikey in parsed_chems:
         if inchikey and inchikey != 'Not Found':
             if inchikey not in processed_inchikeys:
@@ -2173,12 +2173,14 @@ def show_company_connections(company_name):
                 processed_inchikeys.add(inchikey)
         else:
             # Chemicals without InChIKey
-            studies = main[
-                (main['Funding Sources'].str.contains(company_name, na=False, regex=False)) &
-                (main['Chemicals with InChIKey'].str.contains(name, na=False,regex=False))
-            ]
-            study_count = len(studies.drop_duplicates(subset=['DOI']))
-            labeled_chemicals.append(f"{name} ({study_count})")
+            if name not in unique_no_inch_chemicals:
+                studies = main[
+                    (main['Funding Sources'].str.contains(company_name, na=False, regex=False)) &
+                    (main['Chemicals with InChIKey'].str.contains(name, na=False,regex=False))
+                ]
+                study_count = len(studies.drop_duplicates(subset=['DOI']))
+                labeled_chemicals.append(f"{name} ({study_count})")
+                unique_no_inch_chemicals.append(name)
     labeled_chemicals = sorted(labeled_chemicals, key=count_key, reverse=True)
 
     # Countries
@@ -2259,7 +2261,7 @@ def show_uni_connections(university):
     # Chemicals
     labeled_chemicals = []
     processed_inchikeys = set()
-    
+    unique_no_inch_chemicals = []
     for name, inchikey in parsed_chems:
         if inchikey and inchikey != 'Not Found':
             if inchikey not in processed_inchikeys:
@@ -2273,12 +2275,14 @@ def show_uni_connections(university):
                 processed_inchikeys.add(inchikey)
         else:
             # Chemicals without InChIKey
-            studies = main[
-                (main['Affiliations'].str.contains(university, na=False, regex=False)) &
-                (main['Chemicals with InChIKey'].str.contains(name, na=False, regex=False))
-            ]
-            study_count = len(studies.drop_duplicates(subset=['DOI']))
-            labeled_chemicals.append(f"{name} ({study_count})")
+            if name not in unique_no_inch_chemicals:
+                studies = main[
+                    (main['Affiliations'].str.contains(university, na=False, regex=False)) &
+                    (main['Chemicals with InChIKey'].str.contains(name, na=False, regex=False))
+                ]
+                study_count = len(studies.drop_duplicates(subset=['DOI']))
+                labeled_chemicals.append(f"{name} ({study_count})")
+                unique_no_inch_chemicals.append(name)
     labeled_chemicals = sorted(labeled_chemicals, key=count_key, reverse=True)
     # Companies
     unique_companies = []
