@@ -450,10 +450,17 @@ def normalize_comma_name(name):
         ])
 
     return f"{smart_title(last)}, {smart_title(first)}"
-
-
-
-
+def normalize_author_text(text):
+    if pd.isna(text):
+        return ""
+    text = str(text).lower()
+    text = re.sub(r'[\u2010-\u2015-]', ' ', text)
+    text = re.sub(r'\s+', ' ', text).strip()
+    return text
+def author_match_mask(authors_series, target_name):
+    normalized_authors = authors_series.apply(normalize_author_text)
+    normalized_target = normalize_author_text(target_name)
+    return normalized_authors.str.contains(normalized_target, na=False, regex=False)
 
 def extract_university_comp(affil, university_keys):
     if pd.isna(affil) or affil is None:
@@ -1019,7 +1026,7 @@ def show_company_network_pyvis(company_name, category='Affiliations', chemical_g
         for res in res_list:
             studies = main[
                 (main['Funding Sources'].str.contains(company_name, na=False, regex=False)) &
-                (main['Authors'].str.contains(res, na=False, regex=False))
+                (author_match_mask(main['Authors'], res))
             ]
             study_info = "<br>".join(
                 f"{row['Title']} (DOI: {row['DOI']})" for _, row in studies.iterrows()
@@ -2153,7 +2160,6 @@ def show_company_connections(company_name):
     countries = row.iloc[0]['Countries']
     parsed_chems = list(parse_chemical_entry(c) for c in row.iloc[0]['Chemicals'])
     res_list = row.iloc[0]['Researchers']
-    aff_list = row.iloc[0]['Affs']
     universities = row.iloc[0]['Universities']
 
     # Chemicals
@@ -2220,9 +2226,10 @@ def show_company_connections(company_name):
         if res not in unique_researchers:
             studies = main[
                 (main['Funding Sources'].str.contains(company_name, na=False, regex=False)) &
-                (main['Authors'].str.contains(res, na=False, regex=False))
+                (author_match_mask(main['Authors'], res))
             ]
             study_count = len(studies.drop_duplicates(subset=['DOI']))
+            
             labeled_researchers.append(f"{res} ({study_count})")
             unique_researchers.append(res)
     labeled_researchers = sorted(labeled_researchers, key=count_key, reverse=True)
