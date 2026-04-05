@@ -1,3 +1,5 @@
+from email.mime import text
+
 import pandas as pd
 from pyvis.network import Network
 import re
@@ -461,7 +463,26 @@ def author_match_mask(authors_series, target_name):
     normalized_authors = authors_series.apply(normalize_author_text)
     normalized_target = normalize_author_text(target_name)
     return normalized_authors.str.contains(normalized_target, na=False, regex=False)
+def normalize_funding_source_text(text):
+    if pd.isna(text):
+        return ""
+    text = str(text).lower()
+    text = re.sub(r"\s+", " ", text).strip()
+    return text
+def funding_source_match_mask(funding_sources_series, target_name):
+    normalized_target = normalize_funding_source_text(target_name)
+    def matches(cell_value):
+        if pd.isna(cell_value):
+            return False
 
+        parts = [
+            normalize_funding_source_text(part)
+            for part in str(cell_value).split(";")
+            if part.strip()
+        ]
+        return normalized_target in parts
+
+    return funding_sources_series.apply(matches)
 def extract_university_comp(affil, university_keys):
     if pd.isna(affil) or affil is None:
         return None
@@ -707,7 +728,7 @@ def show_company_network_pyvis(company_name, category='Affiliations', chemical_g
         print(f"Company '{company_name}' not found.")
         return False
     company_funding_rows = main[
-        main['Funding Sources'].str.contains(company_name, na=False, regex=False)
+        funding_source_match_mask(main['Funding Sources'], company_name)
     ]
     if category != 'Affiliations':
         data = row.iloc[0][category]
