@@ -2230,7 +2230,9 @@ def show_company_connections(company_name):
     if row.empty:
         print(f"Company '{company_name}' not found.")
         return False
-
+    company_funding_rows = main[
+        funding_source_match_mask(main['Funding Sources'], company_name)
+    ]
     affiliations = row.iloc[0]['Affs']
     countries = row.iloc[0]['Countries']
     parsed_chems = list(parse_chemical_entry(c) for c in row.iloc[0]['Chemicals'])
@@ -2245,9 +2247,8 @@ def show_company_connections(company_name):
         if inchikey and inchikey != 'Not Found':
             if inchikey not in processed_inchikeys:
                 # Chemicals with InChIKey
-                studies = main[
-                    (main['Funding Sources'].str.contains(company_name, na=False, regex=False)) &
-                    (main['Chemicals with InChIKey'].str.contains(inchikey, na=False, regex=False))
+                studies = company_funding_rows[
+                    (company_funding_rows['Chemicals with InChIKey'].str.contains(inchikey, na=False, regex=False))
                 ]
                 study_count = len(studies.drop_duplicates(subset=['DOI']))
                 labeled_chemicals.append(f"{name} ({study_count})")
@@ -2255,9 +2256,8 @@ def show_company_connections(company_name):
         else:
             # Chemicals without InChIKey
             if name not in unique_no_inch_chemicals:
-                studies = main[
-                    (main['Funding Sources'].str.contains(company_name, na=False, regex=False)) &
-                    (main['Chemicals with InChIKey'].str.contains(name, na=False,regex=False))
+                studies = company_funding_rows[
+                    (company_funding_rows['Chemicals with InChIKey'].str.contains(name, na=False,regex=False))
                 ]
                 study_count = len(studies.drop_duplicates(subset=['DOI']))
                 labeled_chemicals.append(f"{name} ({study_count})")
@@ -2285,9 +2285,8 @@ def show_company_connections(company_name):
     
     for affil in affiliations:
         if affil not in unique_affiliations:
-            studies = main[
-                (main['Funding Sources'].str.contains(company_name, na=False, regex=False)) &
-                (main['Affiliations'].str.contains(affil, na=False, regex=False))
+            studies = company_funding_rows[
+                (company_funding_rows['Affiliations'].str.contains(affil, na=False, regex=False))
             ]
             study_count = len(studies.drop_duplicates(subset=['DOI']))
             labeled_affiliations.append(f"{affil} ({study_count})")
@@ -2299,9 +2298,8 @@ def show_company_connections(company_name):
     
     for res in res_list:
         if res not in unique_researchers:
-            studies = main[
-                (main['Funding Sources'].str.contains(company_name, na=False, regex=False)) &
-                (author_match_mask(main['Authors'], res))
+            studies = company_funding_rows[
+                (author_match_mask(company_funding_rows['Authors'], res))
             ]
             study_count = len(studies.drop_duplicates(subset=['DOI']))
             
@@ -2315,9 +2313,8 @@ def show_company_connections(company_name):
     for uni in universities:
         if uni not in unique_universities:
             # Count studies mentioning this university
-            studies = main[
-                (main['Funding Sources'].str.contains(company_name, na=False, regex=False)) &
-                (main['Affiliations'].str.contains(uni, na=False, regex=False))
+            studies = company_funding_rows[
+                (company_funding_rows['Affiliations'].str.contains(uni, na=False, regex=False))
             ]
             study_count = len(studies.drop_duplicates(subset=['DOI']))
             labeled_universities.append(f"{uni} ({study_count})")
