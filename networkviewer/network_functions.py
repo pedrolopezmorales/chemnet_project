@@ -2711,7 +2711,7 @@ company_counts = {}
 for company in company_classification_dict.keys():
     if company and company.strip():
         if company.strip().lower() != 'not found':
-            count = main['Funding Sources'].str.contains(company, na=False, regex=False).sum()
+            count = funding_source_match_mask(main["Funding Sources"], company).sum()
             company_counts[company] = count
 
 def create_funding_source_dataframe(chem_limit=5, top_n=50):
@@ -2766,7 +2766,7 @@ def create_funding_source_dataframe(chem_limit=5, top_n=50):
     print(f"✓ Completed! Processed {len(rows)} companies")
     return pd.DataFrame(rows)
 
-FUNDING_SOURCE_TABLE_URL = "https://ucsf.box.com/shared/static/ocmu9c17slhjj5enb48dr3gnr4hctbcj"
+FUNDING_SOURCE_TABLE_URL = "https://ucsf.box.com/shared/static/xn6tz4uzwn5mgujyaizevi2qxphq7xx9"
 funding_source_table_df = pd.read_csv(FUNDING_SOURCE_TABLE_URL)
 
 
