@@ -2708,11 +2708,11 @@ def get_wikipedia_description_fundingsource(funding_source):
     return None
 
 company_counts = {}
-for company in company_classification_dict.keys():
-    if company and company.strip():
-        if company.strip().lower() != 'not found':
-            count = funding_source_match_mask(main["Funding Sources"], company).sum()
-            company_counts[company] = count
+# for company in company_classification_dict.keys():
+#     if company and company.strip():
+#         if company.strip().lower() != 'not found':
+#             count = funding_source_match_mask(main["Funding Sources"], company).sum()
+#             company_counts[company] = count
 
 def create_funding_source_dataframe(chem_limit=5, top_n=50):
     """
