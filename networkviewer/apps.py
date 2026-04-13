@@ -1,3 +1,5 @@
+import os
+
 from django.apps import AppConfig
 
 
@@ -23,3 +25,19 @@ class NetworkviewerConfig(AppConfig):
     #         print(f"⚠ Error creating funding source dataframe: {e}")
     #         import traceback
     #         traceback.print_exc()
+
+    # def ready(self):
+    #     import os 
+    #     if os.environ.get("RUN_MAIN") != "true":
+    #         return
+
+    #     try:
+    #         from . import dataframes_creation
+    #         from django.conf import settings
+
+    #         csv_path = os.path.join(settings.BASE_DIR, "data", "comparing_fundingsources.csv")
+    #         dataframes_creation.company_assoc.to_csv(csv_path, index=False)
+    #         print(f"Saved company assoc dataframe to {csv_path}")
+
+    #     except Exception as e:
+    #         print(f"Error creating company assoc dataframe: {e}")

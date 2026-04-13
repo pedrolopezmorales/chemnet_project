@@ -33,7 +33,7 @@ def create_main_dataframe():
     combined_df.to_csv(combined_path, index=False)
     print(f"Combined dataset created! Total rows: {len(combined_df)}")
 # create_main_dataframe()  # Only uncomment to create dataframe, if more years is addded to the dataframe
-'''
+
 comparing_companies['Matched Companies'] = match_items_against_master(comparing_companies,'Funding Sources', no_dup_comp)
 comparing_companies['Matched Chemicals'] = comparing_companies['Chemicals with InChIKey'].str.split(';').apply(lambda lst: [x.strip() for x in lst])
 comparing_companies['Matched Affiliations'] = match_items_against_master_aff(comparing_companies,'Affiliations', new_no_dup_aff)
@@ -55,7 +55,7 @@ match_chem_df = pd.DataFrame(match_chem)
 chemicals_per_company = (
     match_chem_df
     .groupby('Company')['Chemical']
-    .unique()
+    .agg(lambda x: list(dict.fromkeys(x)))
     .reset_index()
     .rename(columns={'Chemical': 'Chemicals'})
 )
@@ -70,7 +70,7 @@ matched_aff_df = pd.DataFrame(matched_aff)
 aff_per_company = (
     matched_aff_df
     .groupby('Company')['Affiliations']
-    .unique()
+    .agg(lambda x: list(dict.fromkeys(x)))
     .reset_index()
 )
 
@@ -135,7 +135,6 @@ company_assoc['Universities'] = company_assoc['Affiliations'].apply(lambda x: ex
 company_assoc['Countries'] = company_assoc['Affiliations'].apply(extract_country_list)
 
 company_assoc.to_csv(os.path.join(settings.BASE_DIR, 'data', 'comparing_fundingsources.csv'), index=False)
-'''
 # Having the affiliations per row
 '''
 cut_down = main.drop(['DOI', 'URL','Year','Title','Chemicals Mentioned','Abstract','Authors'], axis = 1)

@@ -572,7 +572,7 @@ def is_organic(name):
     except:
         return None  # Not found
 
-FUNDING_SOURCE_CSV_URL =  "https://ucsf.box.com/shared/static/8y6x1ay815151ut49srqnc7xmzctty7g"
+FUNDING_SOURCE_CSV_URL =  "https://ucsf.box.com/shared/static/hdbr1hbe2zuufeu1hjmp5zckq03gqeq6"
 company_assoc = pd.read_csv(FUNDING_SOURCE_CSV_URL)
 
 def _safe_parse_list_cell(value):
@@ -2372,7 +2372,7 @@ def show_uni_connections(university):
         if original_name not in unique_companies:
             studies = main[
                 (main['Affiliations'].str.contains(university, na=False, regex=False)) &
-                (main['Funding Sources'].str.contains(original_name, na=False, regex=False))
+                funding_source_match_mask(main["Funding Sources"], original_name)
             ]
             study_count = len(studies.drop_duplicates(subset=['DOI']))
             labeled_companies.append(f"{comp} ({study_count})")
@@ -2416,7 +2416,7 @@ def show_res_connections(researcher):
         if original_name not in unique_companies:
             studies = main[
                 (main['Authors'].str.contains(researcher, na=False, regex=False)) &
-                (main['Funding Sources'].str.contains(original_name, na=False, regex=False))
+                funding_source_match_mask(main["Funding Sources"], original_name)
             ]
             study_count = len(studies.drop_duplicates(subset=['DOI']))
             labeled_companies.append(f"{comp} ({study_count})")
@@ -2453,12 +2453,12 @@ def show_chem_connections(chemical=None, inchikey=None):
         if original_name not in unique_companies:
             if inchikey_val and inchikey_val != 'Not Found':
                 studies = main[
-                    (main['Funding Sources'].str.contains(original_name, na=False, regex=False)) &
+                    funding_source_match_mask(main["Funding Sources"], original_name) &
                     (main['Chemicals with InChIKey'].str.contains(inchikey_val, na=False, regex=False))
                 ]
             else:
                 studies = main[
-                    (main['Funding Sources'].str.contains(original_name, na=False, regex=False)) &
+                    funding_source_match_mask(main["Funding Sources"], original_name) &
                     (main['Chemicals with InChIKey'].str.contains(chemical, na=False, regex=False))
                 ]
             study_count = len(studies.drop_duplicates(subset=['DOI']))
@@ -2499,7 +2499,7 @@ def get_pubchem_image_url(chemical_name, inchikey=None):
 
 def get_top_chemicals_for_company(company_name, limit=5):
     try:
-        company_studies = main[main['Funding Sources'].str.contains(company_name, na=False, regex=False)]
+        company_studies = main[funding_source_match_mask(main["Funding Sources"], company_name)]
 
         if company_studies.empty:
             return []
