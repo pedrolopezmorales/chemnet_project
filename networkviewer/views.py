@@ -21,7 +21,8 @@ from .network_functions import (
     get_wikipedia_description_fundingsource,
     funding_source_table_df,
     get_funding_source_row,
-    parse_chemicals_list
+    parse_chemicals_list,
+    obtain_inchikey_from_pubchem
 )
 
 
@@ -83,11 +84,23 @@ def chemical_view(request):
                 iframe = f"/static/network_{safe_chemical}_no_inchikey.html"
         else:
             if chemical:
-                suggestions = get_close_matches_custom(chemical, all_chemical_names)
-                if suggestions:
-                    message = "Did you mean: " + ", ".join([f"<span style='color:red'>{s}</span>" for s in suggestions])
+                inchikey = obtain_inchikey_from_pubchem(chemical)
+                if inchikey:
+                    image_url = get_pubchem_image_url(chemical, inchikey)
+                    description = get_pubchem_description(chemical, inchikey)
+                    found = show_chemical_network(chemical, inch=inchikey)
+                    connections = show_chem_connections(inchikey=inchikey)
+                if found:
+                    if chemical and inchikey and inchikey != 'Error':
+                        safe_chemical = chemical.replace(' ', '_').replace('/', '_').replace('\\', '_').replace('.', '_')
+                        safe_inch = inchikey.replace('/', '_').replace('\\', '_').replace('-', '_')
+                        iframe = f"/static/network_{safe_chemical}_{safe_inch}.html"
                 else:
-                    message =  F"Chemical '{chemical}' not found"
+                    suggestions = get_close_matches_custom(chemical, all_chemical_names)
+                    if suggestions:
+                        message = "Did you mean: " + ", ".join([f"<span style='color:red'>{s}</span>" for s in suggestions])
+                    else:
+                        message =  F"Chemical '{chemical}' not found"
             else:
                 message = f"Chemical '{chemical}' or InChIKey '{inchikey}' not found"
 

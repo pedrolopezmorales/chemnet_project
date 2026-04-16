@@ -134,7 +134,19 @@ def check_wikipedia_api(entity_name):
     except Exception as e:
         print(f"Wikipedia API error for {entity_name}: {e}")
     return 'Unknown'
-
+def obtain_inchikey_from_pubchem(chemical_name):
+    if not chemical_name:
+        return None
+    try:
+        compounds = pcp.get_compounds(chemical_name, 'name')
+        if not compounds:
+            return None
+        inchikey = getattr(compounds[0], 'inchikey', None)
+        if inchikey and str(inchikey).strip():
+            return str(inchikey).strip()
+    except Exception as e:
+        return None
+        
 def check_government_databases(entity_name):
     entity_lower = entity_name.lower().strip()
 
