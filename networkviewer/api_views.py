@@ -25,7 +25,8 @@ from .network_functions import (
     get_wikipedia_description_fundingsource,
     funding_source_table_df,
     get_funding_source_row,
-    parse_chemicals_list
+    parse_chemicals_list,
+    obtain_inchikey_from_pubchem
 )
 import difflib
 import random
@@ -62,11 +63,22 @@ class ChemicalSearchAPI(APIView):
         data = serializer.validated_data
         chemical = data.get('chemical', '').strip()
         inchikey = data.get('inchikey', '').strip()
-        
+        chemical_inputted = bool(chemical)
+
+        if inchikey and not chemical:
+            chemical_inputted = False
+            row = chem_per_row[chem_per_row['inchikey'] == inchikey]
+            if not row.empty and isinstance(row.iloc[0]['chemical'], list) and row.iloc[0]['chemical']:
+                chemical = row.iloc[0]['chemical'][0]
+            elif not row.empty and row.iloc[0]['chemical']:
+                # defensive fallback if parsing changed
+                chem_value = row.iloc[0]['chemical']
+                chemical = chem_value[0] if isinstance(chem_value, list) and chem_value else str(chem_value)
+            else:
+                chemical = "inchikey_search"
         if not chemical and not inchikey:
             return Response({'error': 'Either chemical name or inchikey is required'}, 
                           status=status.HTTP_400_BAD_REQUEST)
-        
         # Process search
         if inchikey:
             found = show_chemical_network(chemical, inch=inchikey)
@@ -96,9 +108,33 @@ class ChemicalSearchAPI(APIView):
                 'description': description
             })
         else:
-            all_chemical_names = sorted((name for names in chem_per_row['chemical'] for name in names))
-            suggestions = get_close_matches_custom(chemical or inchikey, all_chemical_names)
-            
+            if chemical and chemical_inputted:
+                inchikey = obtain_inchikey_from_pubchem(chemical)
+                if inchikey:
+                    found = show_chemical_network(chemical, inch=inchikey)
+                    connections = show_chem_connections(inchikey=inchikey)
+                if found:
+                    if chemical and inchikey and inchikey != 'Error':
+                        safe_chemical = chemical.replace(' ', '_').replace('/', '_').replace('\\', '_').replace('.', '_')
+                        safe_inch = inchikey.replace('/', '_').replace('\\', '_').replace('-', '_')
+                        iframe_url = f"/static/network_{safe_chemical}_{safe_inch}.html"
+                    description = get_pubchem_description(chemical, inchikey if inchikey != 'Error' else None)
+
+                    return Response({
+                    'success': True,
+                    'chemical': chemical,
+                    'inchikey': inchikey,
+                    'iframe_url': iframe_url,
+                    'connections': connections,
+                    'description': description
+                    })
+                else:
+                    all_chemical_names = sorted((name for names in chem_per_row['chemical'] for name in names))
+                    suggestions = get_close_matches_custom(chemical or inchikey, all_chemical_names)
+            else:
+                all_chemical_names = sorted((name for names in chem_per_row['chemical'] for name in names))
+                suggestions = get_close_matches_custom(chemical or inchikey, all_chemical_names)
+    
             return Response({
                 'success': False,
                 'chemical': chemical,
