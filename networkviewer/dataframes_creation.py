@@ -1,21 +1,22 @@
+import re
+
 import pandas as pd
 from django.conf import settings
 import os
 from .network_functions import (
-    match_items_against_master,
-    match_items_against_master_aff,
-    split_researchers,
-    normalize_name,
-    create_researcher_affiliation_pairs_components,
-    normalize_comma_name,
-    extract_uni_affil,
-    extract_country_list,
-    comparing_companies,
-    no_dup_comp,
-    new_no_dup_aff,
-    university_keys,
-    main
-)
+        match_items_against_master,
+        match_items_against_master_aff,
+        split_researchers,
+        normalize_name,
+        create_researcher_affiliation_pairs_components,
+        normalize_comma_name,
+        extract_uni_affil,
+        extract_country_list,
+        no_dup_comp,
+        new_no_dup_aff,
+        university_keys,
+        main
+    )
 #creating the main dataframe
 def create_main_dataframe():
     data_years = range(2020, 2025)
@@ -33,108 +34,153 @@ def create_main_dataframe():
     combined_df.to_csv(combined_path, index=False)
     print(f"Combined dataset created! Total rows: {len(combined_df)}")
 # create_main_dataframe()  # Only uncomment to create dataframe, if more years is addded to the dataframe
+#cleansing main dataframe
 
-comparing_companies['Matched Companies'] = match_items_against_master(comparing_companies,'Funding Sources', no_dup_comp)
-comparing_companies['Matched Chemicals'] = comparing_companies['Chemicals with InChIKey'].str.split(';').apply(lambda lst: [x.strip() for x in lst])
-comparing_companies['Matched Affiliations'] = match_items_against_master_aff(comparing_companies,'Affiliations', new_no_dup_aff)
-comparing_companies['Researchers'] = comparing_companies['Authors'].apply(split_researchers)
-comparing_companies['Aff'] = comparing_companies['Affiliations'].apply(
-    lambda x: [item.strip() for item in x.split('|')] if isinstance(x, str) and x.strip() != '' else []
-)
-comparing_companies = comparing_companies.drop(['Affiliations','Funding Sources','Chemicals with InChIKey','Authors'],axis=1)
+PLACEHOLDER_CHEMICALS = {
+"graphical abstract",
+"no chemicals found",
+}
 
-# having one company per row, with a list of affiliations and chemicals associated alongside them 
+def clean_chemicals_cell(value):
+    if pd.isna(value) or value is None:
+        return ""
+    text = str(value).strip()
+    if not text:
+        return ""
 
-match_chem = []
-for idx, (companies, chemicals) in comparing_companies[['Matched Companies', 'Matched Chemicals']].iterrows():
-    for company in companies:
-        for chemical in chemicals:
-            match_chem.append({'Company': company, 'Chemical': chemical})
+    cleaned = []
+    for token in text.split(";"):
+        token_clean = token.strip()
+        if not token_clean:
+            continue
 
-match_chem_df = pd.DataFrame(match_chem)
-chemicals_per_company = (
-    match_chem_df
-    .groupby('Company')['Chemical']
-    .agg(lambda x: list(dict.fromkeys(x)))
-    .reset_index()
-    .rename(columns={'Chemical': 'Chemicals'})
-)
-matched_aff = []
-for idx, (companies, affiliations) in comparing_companies[['Matched Companies', 'Matched Affiliations']].iterrows():
-    for company in companies:
-        for affiliation in affiliations:
-            matched_aff.append({'Company': company, 'Affiliations': affiliation})
+    # Remove parenthetical metadata only for placeholder matching
+        token_for_match = re.sub(r"\([^)]*\)", "", token_clean).strip().lower()
+        if token_for_match in PLACEHOLDER_CHEMICALS:
+            continue
 
-matched_aff_df = pd.DataFrame(matched_aff)
+        cleaned.append(token_clean)
 
-aff_per_company = (
-    matched_aff_df
-    .groupby('Company')['Affiliations']
-    .agg(lambda x: list(dict.fromkeys(x)))
-    .reset_index()
-)
+    return "; ".join(cleaned)
 
-comparing_companies['Names'] = comparing_companies['Researchers'].apply(
-    lambda name_list: [normalize_name(name) for name in name_list]
-)
+def create_filtered_main_dataframe():
+    all_studies_csv_url = "https://ucsf.box.com/shared/static/n5tdu7t8hj5lkwvmqmi5cwqhmnuksjm8.csv" #change to whatever all_studies link is 
+    all_studies = pd.read_csv(all_studies_csv_url)
 
-comparing_companies['ResearcherAffPairs'] = comparing_companies.apply(create_researcher_affiliation_pairs_components, axis=1)
+    all_studies["Chemicals with InChIKey"] = all_studies["Chemicals with InChIKey"].apply(clean_chemicals_cell)
+    all_studies = all_studies[
+        all_studies["Chemicals with InChIKey"].str.strip() != ""
+    ].reset_index(drop=True)
 
-re_comp = comparing_companies.explode('ResearcherAffPairs')
+    main_path = os.path.join(settings.BASE_DIR, "data", "esandt_papers_main.csv")
+    all_studies.to_csv(main_path, index=False)
+    print(f"Filtered main dataframe saved to {main_path}")
+    print(f"Total rows: {len(all_studies)}")
 
-re_comp[['Researcher', 'Aff']] = pd.DataFrame(
-    re_comp['ResearcherAffPairs'].tolist(),
-    index=re_comp.index
-)
+    return all_studies
 
+def create_company_assoc_dataframe():
+    
+    comparing_companies = main.drop(['DOI', 'URL', 'Year', 'Title', 'Chemicals Mentioned', 'Abstract'], axis=1)
 
+    comparing_companies['Matched Companies'] = match_items_against_master(comparing_companies,'Funding Sources', no_dup_comp)
+    comparing_companies['Matched Chemicals'] = comparing_companies['Chemicals with InChIKey'].str.split(';').apply(lambda lst: [x.strip() for x in lst])
+    comparing_companies['Matched Affiliations'] = match_items_against_master_aff(comparing_companies,'Affiliations', new_no_dup_aff)
+    comparing_companies['Researchers'] = comparing_companies['Authors'].apply(split_researchers)
+    comparing_companies['Aff'] = comparing_companies['Affiliations'].apply(
+        lambda x: [item.strip() for item in x.split('|')] if isinstance(x, str) and x.strip() != '' else []
+    )
+    comparing_companies = comparing_companies.drop(['Affiliations','Funding Sources','Chemicals with InChIKey','Authors'],axis=1)
 
-re_comp = re_comp.explode('Matched Companies')
+    # having one company per row, with a list of affiliations and chemicals associated alongside them
 
+    match_chem = []
+    for idx, (companies, chemicals) in comparing_companies[['Matched Companies', 'Matched Chemicals']].iterrows():
+        for company in companies:
+            for chemical in chemicals:
+                match_chem.append({'Company': company, 'Chemical': chemical})
 
-re_comp = re_comp.rename(columns={'Matched Companies': 'Company'})
+    match_chem_df = pd.DataFrame(match_chem)
+    chemicals_per_company = (
+        match_chem_df
+        .groupby('Company')['Chemical']
+        .agg(lambda x: list(dict.fromkeys(x)))
+        .reset_index()
+        .rename(columns={'Chemical': 'Chemicals'})
+    )
+    matched_aff = []
+    for idx, (companies, affiliations) in comparing_companies[['Matched Companies', 'Matched Affiliations']].iterrows():
+        for company in companies:
+            for affiliation in affiliations:
+                matched_aff.append({'Company': company, 'Affiliations': affiliation})
 
-final_recomp = re_comp[['Company','Researcher', 'Aff']].reset_index(drop=True)
+    matched_aff_df = pd.DataFrame(matched_aff)
 
-res_per_comp = (
-    final_recomp.groupby('Company')
-      .agg({
-          'Researcher': list,
-          'Aff': list
-      })
-      .reset_index()
-      .rename(columns={
-          'Researcher': 'Researchers',
-          'Aff': 'Affs'
-      })
-)
+    aff_per_company = (
+        matched_aff_df
+        .groupby('Company')['Affiliations']
+        .agg(lambda x: list(dict.fromkeys(x)))
+        .reset_index()
+    )
 
-company_assoc = pd.merge(aff_per_company, chemicals_per_company, on ='Company')
-company_assoc = pd.merge(company_assoc , res_per_comp, on = 'Company')
+    comparing_companies['Names'] = comparing_companies['Researchers'].apply(
+        lambda name_list: [normalize_name(name) for name in name_list]
+    )
 
-final_recomp['Researcher'] = final_recomp['Researcher'].apply(normalize_comma_name)
+    comparing_companies['ResearcherAffPairs'] = comparing_companies.apply(create_researcher_affiliation_pairs_components, axis=1)
 
-res_per_comp = (
-    final_recomp.groupby('Company')
-      .agg({
-          'Researcher': list,
-          'Aff': list
-      })
-      .reset_index()
-      .rename(columns={
-          'Researcher': 'Researchers',
-          'Aff': 'Affs'
-      })
-)
+    re_comp = comparing_companies.explode('ResearcherAffPairs')
 
-company_assoc = pd.merge(aff_per_company, chemicals_per_company, on ='Company')
-company_assoc = pd.merge(company_assoc , res_per_comp, on = 'Company')
+    re_comp[['Researcher', 'Aff']] = pd.DataFrame(
+        re_comp['ResearcherAffPairs'].tolist(),
+        index=re_comp.index
+    )
 
-company_assoc['Universities'] = company_assoc['Affiliations'].apply(lambda x: extract_uni_affil(x, university_keys))
+    re_comp = re_comp.explode('Matched Companies')
+    re_comp = re_comp.rename(columns={'Matched Companies': 'Company'})
 
-company_assoc['Countries'] = company_assoc['Affiliations'].apply(extract_country_list)
+    final_recomp = re_comp[['Company','Researcher', 'Aff']].reset_index(drop=True)
 
-company_assoc.to_csv(os.path.join(settings.BASE_DIR, 'data', 'comparing_fundingsources.csv'), index=False)
+    res_per_comp = (
+        final_recomp.groupby('Company')
+          .agg({
+              'Researcher': list,
+              'Aff': list
+          })
+          .reset_index()
+          .rename(columns={
+              'Researcher': 'Researchers',
+              'Aff': 'Affs'
+          })
+    )
+
+    company_assoc = pd.merge(aff_per_company, chemicals_per_company, on='Company')
+    company_assoc = pd.merge(company_assoc, res_per_comp, on='Company')
+
+    final_recomp['Researcher'] = final_recomp['Researcher'].apply(normalize_comma_name)
+
+    res_per_comp = (
+        final_recomp.groupby('Company')
+          .agg({
+              'Researcher': list,
+              'Aff': list
+          })
+          .reset_index()
+          .rename(columns={
+              'Researcher': 'Researchers',
+              'Aff': 'Affs'
+          })
+    )
+
+    company_assoc = pd.merge(aff_per_company, chemicals_per_company, on='Company')
+    company_assoc = pd.merge(company_assoc, res_per_comp, on='Company')
+
+    company_assoc['Universities'] = company_assoc['Affiliations'].apply(lambda x: extract_uni_affil(x, university_keys))
+    company_assoc['Countries'] = company_assoc['Affiliations'].apply(extract_country_list)
+
+    csv_path = os.path.join(settings.BASE_DIR, 'data', 'comparing_fundingsources.csv')
+    company_assoc.to_csv(csv_path, index=False)
+    print(f"Saved comparing_fundingsources.csv ({len(company_assoc)} rows)")
 # Having the affiliations per row
 '''
 cut_down = main.drop(['DOI', 'URL','Year','Title','Chemicals Mentioned','Abstract','Authors'], axis = 1)

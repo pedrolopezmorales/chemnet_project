@@ -1,5 +1,3 @@
-from email.mime import text
-
 import pandas as pd
 from pyvis.network import Network
 import re
@@ -16,7 +14,7 @@ from functools import lru_cache
 
 
 #CSV_PATH = os.path.join(settings.BASE_DIR, 'data', 'esandt_papers_main.csv')
-MAIN_CSV_URL = "https://ucsf.box.com/shared/static/n5tdu7t8hj5lkwvmqmi5cwqhmnuksjm8.csv"
+MAIN_CSV_URL = "https://ucsf.box.com/shared/static/74m134aqexof6679og9mcz1qtr1rwbo9.csv"
 main = pd.read_csv(MAIN_CSV_URL)
 main = main.dropna(subset=['Authors'])
 
@@ -584,7 +582,7 @@ def is_organic(name):
     except:
         return None  # Not found
 
-FUNDING_SOURCE_CSV_URL =  "https://ucsf.box.com/shared/static/hdbr1hbe2zuufeu1hjmp5zckq03gqeq6"
+FUNDING_SOURCE_CSV_URL =  "https://ucsf.box.com/shared/static/ozfybilqau1dt9kjb4d1b2auxufs5tp7.csv"
 company_assoc = pd.read_csv(FUNDING_SOURCE_CSV_URL)
 
 def _safe_parse_list_cell(value):
@@ -2778,7 +2776,7 @@ def create_funding_source_dataframe(chem_limit=5, top_n=50):
     print(f"✓ Completed! Processed {len(rows)} companies")
     return pd.DataFrame(rows)
 
-FUNDING_SOURCE_TABLE_URL = "https://ucsf.box.com/shared/static/tgp0zuftdvbrdvcjice5f8n4pia2ust1"
+FUNDING_SOURCE_TABLE_URL = "https://ucsf.box.com/shared/static/9kal0v8pxf2ulq47pbbryozcd3cchpcc"
 funding_source_table_df = pd.read_csv(FUNDING_SOURCE_TABLE_URL)
 
 
