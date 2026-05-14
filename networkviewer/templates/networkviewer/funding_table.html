@@ -6,7 +6,28 @@
     <div class="container mt-4">
         <h1 class="text-center mb-4">Research Funding Sources</h1>
         <p class="text-center text-muted">Top 50 funding sources by number of studies funded</p>
-        
+        <div style="margin-bottom: 1em; display: flex; flex-wrap: wrap; gap: 1.5em; align-items: center;">
+            <span style="display: flex; align-items: center;">
+                <span style="display:inline-block;width:18px;height:18px;border-radius:4px;background:#ef4444;margin-right:8px;"></span>
+                <span style="font-size:15px;color:#333;">Government</span>
+            </span>
+            <span style="display: flex; align-items: center;">
+                <span style="display:inline-block;width:18px;height:18px;border-radius:4px;background:#4ade80;margin-right:8px;"></span>
+                <span style="font-size:15px;color:#333;">University</span>
+            </span>
+            <span style="display: flex; align-items: center;">
+                <span style="display:inline-block;width:18px;height:18px;border-radius:4px;background:#fde047;margin-right:8px;"></span>
+                <span style="font-size:15px;color:#333;">Company</span>
+            </span>
+            <span style="display: flex; align-items: center;">
+                <span style="display:inline-block;width:18px;height:18px;border-radius:4px;background:#14b8a6;margin-right:8px;"></span>
+                <span style="font-size:15px;color:#333;">Foundation</span>
+            </span>
+            <span style="display: flex; align-items: center;">
+                <span style="display:inline-block;width:18px;height:18px;border-radius:4px;background:#e9d5ff;margin-right:8px;"></span>
+                <span style="font-size:15px;color:#333;">Unknown</span>
+            </span>
+        </div>
         <div class="periodic-table-container">
             {% for item in periodic_data %}
                 <div class="funding-box funding-{{ item.classification|lower }}" 
