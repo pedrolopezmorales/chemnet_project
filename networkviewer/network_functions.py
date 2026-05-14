@@ -661,7 +661,8 @@ def inject_node_slider(html, center_node):
         <label style="font-size:13px;color:#555;font-weight:500;display:block;margin-bottom:4px;">
             Showing <strong id="slider-label">0 / 0</strong> nodes
             <span style="font-weight:normal;"> (sorted by connections)</span>
-        </label>
+            <div style="font-size:20px;color:#777;margin-top:4px;">Slide to show fewer nodes with more connections</div>
+                    </label>
         <input type="range" id="node-slider" min="1" max="1" value="1" step="1"
                style="width:100%;cursor:pointer;accent-color:#007bff;display:block;">
     </div>
