@@ -9,7 +9,7 @@
     {% include "networkviewer/tabs.html" %}
     <div style="background-color: #0b4e86; padding: 40px 10px; color: white;">
         <h1>University Network Viewer</h1>
-        <form method="post">
+        <form method="post" class="js-search-form">
             {% csrf_token %}
             <label for="university">Enter university Name:</label>
             <input type="text" name="university" id="university" list="university-suggestions" value="{{ university|default_if_none:'' }}">

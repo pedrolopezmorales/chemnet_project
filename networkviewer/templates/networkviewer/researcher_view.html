@@ -10,7 +10,7 @@
     <div style="background-color: #0b4e86; padding: 40px 10px; color: white;">
         <h1>Researcher Network Viewer</h1>
         <h2>This search only shows connections between the Researcher and Funding Sources</h2>
-        <form method="post">
+        <form method="post" class="js-search-form">
             {% csrf_token %}
             <label for="researcher">Enter Researcher Name:</label>
             <input type="text" name="researcher" id="researcher" list="researcher-suggestions" value="{{ researcher|default_if_none:'' }}">
@@ -29,13 +29,19 @@
         <script>
         function fillAndSubmit(researcher) {
             document.getElementById('researcher').value = researcher;
-            document.querySelector('form').submit();
+            var form = document.querySelector('form.js-search-form');
+            if (form.requestSubmit) {
+                form.requestSubmit();
+            } else {
+                if (window.showSearchLoader) window.showSearchLoader();
+                form.submit();
+            }
         }
         </script>
             <button type="submit">Search</button>
         </form>
         {% if matches and not iframe %}
-            <form method="post">
+            <form method="post" class="js-search-form">
                 {% csrf_token %}
                 <input type="hidden" name="researcher" value="{{ researcher }}">
                 <ul>

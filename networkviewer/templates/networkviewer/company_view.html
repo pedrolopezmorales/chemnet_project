@@ -8,7 +8,7 @@
     {% include "networkviewer/tabs.html" %}
     <div style="background-color: #0b4e86; padding: 40px 10px; color: white;">
         <h1>Funding Source Network Viewer</h1>
-        <form method="post">
+        <form method="post" class="js-search-form">
             {% csrf_token %}
             <label for="company">Enter Funding Source Name:</label>
             <input type="text" name="company" id="company" list="company-suggestions" value="{{ company|default_if_none:'' }}">

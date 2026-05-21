@@ -96,15 +96,16 @@
             overlay.setAttribute('aria-hidden', 'false');
         }
 
-        // Show for form submissions initiated by submit button, Enter key, or JS form.submit().
-        document.addEventListener('submit', function () {
-            showLoader();
-        }, true);
+        // Expose helper for pages that submit forms via JavaScript.
+        window.showSearchLoader = showLoader;
 
-        // Covers direct navigations and JS-triggered submits that bypass submit events.
-        window.addEventListener('beforeunload', function () {
-            showLoader();
-        });
+        // Show loader only for explicitly marked search forms.
+        document.addEventListener('submit', function (event) {
+            var form = event.target;
+            if (form && form.classList && form.classList.contains('js-search-form')) {
+                showLoader();
+            }
+        }, true);
 
         // Ensure loader is hidden on initial render or bfcache restore.
         window.addEventListener('pageshow', function () {

@@ -49,7 +49,7 @@
     <div style="background-color: #0b4e86; padding: 40px 10px; color: white">
         <h1>Chemical Network Viewer</h1>
         <h2> This search only shows connections between the Chemical and Funding Sources</h2>
-        <form method="post">
+        <form method="post" class="js-search-form">
         {% csrf_token %}
         <label for="chemical">Enter Chemical Name:</label>
         <input type="text" name="chemical" id="chemical" list="chemical-suggestions">
@@ -80,7 +80,13 @@
             if (inchikey !== undefined) {
                 document.getElementById('inchikey').value = inchikey;
             }
-            document.querySelector('form').submit();
+            var form = document.querySelector('form.js-search-form');
+            if (form.requestSubmit) {
+                form.requestSubmit();
+            } else {
+                if (window.showSearchLoader) window.showSearchLoader();
+                form.submit();
+            }
         }
         </script>
         <button type="submit">Show Network</button>
