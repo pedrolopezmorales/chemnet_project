@@ -714,6 +714,10 @@ def inject_node_slider(html, center_node):
     return html
 
 
+def _graph_output_exists(output_file):
+    return bool(output_file) and os.path.isfile(output_file) and os.path.getsize(output_file) > 0
+
+
 def show_company_network_pyvis(company_name, category='Affiliations', chemical_group='All', sep_country=False, output_file=None):
     if output_file is None:
         # Generate unique filename based on ALL parameters
@@ -733,6 +737,8 @@ def show_company_network_pyvis(company_name, category='Affiliations', chemical_g
         else:
             # For Universities, Researchers, etc.
             output_file = f"staticfiles/network_{safe_company}_{safe_category}.html"
+    if _graph_output_exists(output_file):
+        return True
     # Filter for the selected company
     row = company_assoc[company_assoc['Company'] == company_name]
     if row.empty:
@@ -1241,6 +1247,8 @@ def show_uni_network_pyvis(uni_name, category='Funding Sources', chemical_group=
         else:
             # For Companies, etc.
             output_file = f"staticfiles/network_{safe_uni}_{safe_category}.html"    # Filter for the selected company
+    if _graph_output_exists(output_file):
+        return True
     row = comparing_unis[comparing_unis['University'] == uni_name]
     if row.empty:
         print(f"University '{uni_name}' not found.")
@@ -1731,6 +1739,8 @@ def show_chemical_network(chemical, inch='Error', output_file=None):
             output_file = f"staticfiles/network_{safe_chemical}_{safe_inch}.html"
         else:
             output_file = f"staticfiles/network_{safe_chemical}_no_inchikey.html"
+    if _graph_output_exists(output_file):
+        return True
     # Filter for the selected company
     if inch == 'Error':
         row = chem_per_row[chem_per_row['chemical'].apply(lambda x: any(chemical.lower() == name.lower() for name in x))]
@@ -2000,6 +2010,8 @@ def show_researcher_network_pyvis_from_row(row, output_file=None):
         # Use first 20 chars of affiliation to make filename more unique
         safe_aff = str(row['Affiliation'])[:20].replace(' ', '_').replace('/', '_').replace('\\', '_').replace('.', '_')
         output_file = f"staticfiles/network_{safe_researcher}_{safe_aff}.html"
+    if _graph_output_exists(output_file):
+        return True
     data = row['Companies']
     aff = row['Affiliation']
     researcher = row['Researcher']
