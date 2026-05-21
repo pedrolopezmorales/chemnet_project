@@ -2375,19 +2375,20 @@ def show_uni_connections(university):
                 unique_no_inch_chemicals.append(name)
     labeled_chemicals = sorted(labeled_chemicals, key=count_key, reverse=True)
     # Companies
-    unique_companies = []
+    seen_company_keys = set()
     labeled_companies = []
     
     for comp in companies:
         original_name, _ = extract_name_and_class(comp)
-        if original_name not in unique_companies:
-            studies = main[
+        company_key = original_name.strip().lower()
+        if company_key not in seen_company_keys:
+            studies = main[ 
                 (main['Affiliations'].str.contains(university, na=False, regex=False)) &
                 funding_source_match_mask(main["Funding Sources"], original_name)
             ]
             study_count = len(studies.drop_duplicates(subset=['DOI']))
             labeled_companies.append(f"{comp} ({study_count})")
-            unique_companies.append(original_name)
+            seen_company_keys.add(company_key)
     labeled_companies = sorted(labeled_companies, key=count_key, reverse=True)
 
     return {
@@ -2419,19 +2420,20 @@ def show_res_connections(researcher):
         aff = 'Not Found'
 
     # Companies
-    unique_companies = []
+    seen_company_keys = set()
     labeled_companies = []
     
     for comp in data:
         original_name, _ = extract_name_and_class(comp)
-        if original_name not in unique_companies:
+        company_key = original_name.strip().lower()
+        if company_key not in seen_company_keys:
             studies = main[
                 (main['Authors'].str.contains(researcher, na=False, regex=False)) &
                 funding_source_match_mask(main["Funding Sources"], original_name)
             ]
             study_count = len(studies.drop_duplicates(subset=['DOI']))
             labeled_companies.append(f"{comp} ({study_count})")
-            unique_companies.append(comp)
+            seen_company_keys.add(company_key)
     labeled_companies = sorted(labeled_companies, key=count_key, reverse=True)
     return {
         "Affiliation(s)": aff,
@@ -2456,12 +2458,13 @@ def show_chem_connections(chemical=None, inchikey=None):
         inchikey_val = 'Not Found'
 
     # Companies
-    unique_companies = []
+    seen_company_keys = set()
     labeled_companies = []
     
     for comp in data:
         original_name, _ = extract_name_and_class(comp)
-        if original_name not in unique_companies:
+        company_key = original_name.strip().lower()
+        if company_key not in seen_company_keys:
             if inchikey_val and inchikey_val != 'Not Found':
                 studies = main[
                     funding_source_match_mask(main["Funding Sources"], original_name) &
@@ -2474,7 +2477,7 @@ def show_chem_connections(chemical=None, inchikey=None):
                 ]
             study_count = len(studies.drop_duplicates(subset=['DOI']))
             labeled_companies.append(f"{comp} ({study_count})")
-            unique_companies.append(comp)
+            seen_company_keys.add(company_key)
     labeled_companies = sorted(labeled_companies, key=count_key, reverse=True)
     return {
         "Inchikey": inchikey_val,

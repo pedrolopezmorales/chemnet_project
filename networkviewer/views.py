@@ -25,10 +25,42 @@ from .network_functions import (
     obtain_inchikey_from_pubchem
 )
 
+def resolve_case_insensitive_name(query, valid_names):
+    if query is None:
+        return query
+    query_str = str(query).strip()
+    if not query_str:
+        return query_str
+
+    lookup = {}
+    for name in valid_names:
+        name_str = str(name).strip()
+        if name_str and name_str.lower() not in lookup:
+            lookup[name_str.lower()] = name_str
+
+    return lookup.get(query_str.lower(), query_str)
 
 
-def get_close_matches_custom(query, valid_names, n = 3, cutoff=0.6):
-    return difflib.get_close_matches(query, valid_names, n=n, cutoff=cutoff)
+def get_close_matches_custom(query, valid_names, n=3, cutoff=0.6):
+    if query is None:
+        return []
+    query_str = str(query).strip()
+    if not query_str:
+        return []
+
+    normalized_map = {}
+    for name in valid_names:
+        name_str = str(name).strip()
+        if name_str and name_str.lower() not in normalized_map:
+            normalized_map[name_str.lower()] = name_str
+
+    matched_keys = difflib.get_close_matches(
+        query_str.lower(),
+        list(normalized_map.keys()),
+        n=n,
+        cutoff=cutoff,
+    )
+    return [normalized_map[key] for key in matched_keys]
 
 def home_view(request):
     return render(request, 'networkviewer/home.html', {'show_main_nav': False})
@@ -59,6 +91,10 @@ def chemical_view(request):
     if request.method == 'POST':
         chemical = request.POST.get('chemical', '').strip()
         inchikey = request.POST.get('inchikey', '').strip()
+        inchikey = inchikey.upper()
+
+        if chemical:
+            chemical = resolve_case_insensitive_name(chemical, all_chemical_names)
 
 
         if inchikey:  # If InChIKey is provided, use the new function
@@ -150,7 +186,8 @@ def company_view(request):
         company = request.GET.get('company_name', '')
 
     if request.method == 'POST':
-        company = request.POST.get('company')
+        company = request.POST.get('company', '').strip()
+        company = resolve_case_insensitive_name(company, all_company_names)
         category = request.POST.get('category', 'Affiliations')
         chemical_group = request.POST.get('chemical_group', 'All')
         sep_country = request.POST.get('sep_country', 'False')
@@ -179,7 +216,7 @@ def company_view(request):
                 message = "Did you mean: " + ", ".join([f"<span style='color:red'>{s}</span>" for s in suggestions])
             else:
                 message = f"Company '{company}' not found"
-    if company and company.strip():
+    if iframe and company and company.strip():
         description = get_wikipedia_description_fundingsource(company.strip())
     context = {
         'company': company,
@@ -227,7 +264,8 @@ def university_view(request):
     random_examples = random.sample(example_universities, 3)
 
     if request.method == 'POST':
-        university = request.POST.get('university')
+        university = request.POST.get('university', '').strip()
+        university = resolve_case_insensitive_name(university, all_university_names)
         category = request.POST.get('category', 'Funding Sources')
         chemical_group = request.POST.get('chemical_group', 'All')
         found = show_uni_network_pyvis(university, category=category, chemical_group=chemical_group)
@@ -289,7 +327,7 @@ def researcher_view(request):
     random_examples = random.sample(example_researchers, 3)
     
     if request.method == 'POST':
-        researcher = request.POST.get('researcher')
+        researcher = request.POST.get('researcher', '').strip()
         selected_index = request.POST.get('selected_index')
         combine = request.POST.get('combine', '') == 'on'
         # Find all matches
@@ -302,7 +340,10 @@ def researcher_view(request):
                 message = "Did you mean: " + ", ".join([f"<span style='color:red'>{s}</span>" for s in suggestions])
             else:
                 message = f"Researcher '{researcher}' not found"
-        elif len(matches) == 1:
+        else:
+            researcher = all_matches.iloc[0]['Researcher']
+
+        if matches and len(matches) == 1:
             # Only one match, generate graph immediately
             row = matches[0]
             found = show_researcher_network_pyvis_from_row(row)

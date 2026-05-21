@@ -31,8 +31,43 @@ from .network_functions import (
 import difflib
 import random
 
+
+def resolve_case_insensitive_name(query, valid_names):
+    if query is None:
+        return query
+    query_str = str(query).strip()
+    if not query_str:
+        return query_str
+
+    lookup = {}
+    for name in valid_names:
+        name_str = str(name).strip()
+        if name_str and name_str.lower() not in lookup:
+            lookup[name_str.lower()] = name_str
+
+    return lookup.get(query_str.lower(), query_str)
+
+
 def get_close_matches_custom(query, valid_names, n=3, cutoff=0.6):
-    return difflib.get_close_matches(query, valid_names, n=n, cutoff=cutoff)
+    if query is None:
+        return []
+    query_str = str(query).strip()
+    if not query_str:
+        return []
+
+    normalized_map = {}
+    for name in valid_names:
+        name_str = str(name).strip()
+        if name_str and name_str.lower() not in normalized_map:
+            normalized_map[name_str.lower()] = name_str
+
+    matched_keys = difflib.get_close_matches(
+        query_str.lower(),
+        list(normalized_map.keys()),
+        n=n,
+        cutoff=cutoff,
+    )
+    return [normalized_map[key] for key in matched_keys]
 
 class ChemicalSearchAPI(APIView):
     def get(self, request):
@@ -62,7 +97,10 @@ class ChemicalSearchAPI(APIView):
         
         data = serializer.validated_data
         chemical = data.get('chemical', '').strip()
-        inchikey = data.get('inchikey', '').strip()
+        inchikey = data.get('inchikey', '').strip().upper()
+        all_chemical_names = sorted((name for names in chem_per_row['chemical'] for name in names))
+        if chemical:
+            chemical = resolve_case_insensitive_name(chemical, all_chemical_names)
         chemical_inputted = bool(chemical)
 
         if inchikey and not chemical:
@@ -170,7 +208,8 @@ class CompanySearchAPI(APIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         
         data = serializer.validated_data
-        company = data['company']
+        all_company_names = sorted(set(no_dup_comp))
+        company = resolve_case_insensitive_name(data['company'], all_company_names)
         category = data['category']
         chemical_group = data['chemical_group']
         sep_country = data['sep_country']
@@ -249,7 +288,8 @@ class UniversitySearchAPI(APIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         
         data = serializer.validated_data
-        university = data['university']
+        all_university_names = sorted(comparing_unis['University'].dropna().unique())
+        university = resolve_case_insensitive_name(data['university'], all_university_names)
         category = data['category']
         chemical_group = data['chemical_group']
         
@@ -315,7 +355,7 @@ class ResearcherSearchAPI(APIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         
         data = serializer.validated_data
-        researcher = data['researcher']
+        researcher = data['researcher'].strip()
         selected_index = data.get('selected_index')
         combine = data.get('combine', False)
         
@@ -333,8 +373,10 @@ class ResearcherSearchAPI(APIView):
                 'suggestions': suggestions,
                 'message': f"Researcher '{researcher}' not found"
             })
+
+        researcher = all_matches.iloc[0]['Researcher']
         
-        elif len(matches) == 1:
+        if len(matches) == 1:
             # Only one match, generate graph immediately
             row = matches[0]
             found = show_researcher_network_pyvis_from_row(row)
@@ -393,6 +435,9 @@ class ResearcherSearchAPI(APIView):
 class FundingTableAPI(APIView):
     def get(self, request):
         company_name = request.GET.get('company_name')
+        if company_name:
+            known_names = funding_source_table_df['company'].dropna().astype(str).tolist()
+            company_name = resolve_case_insensitive_name(company_name, known_names)
         if company_name:
             try:
                 row_data = get_funding_source_row(company_name)

@@ -1,4 +1,68 @@
 {% load static %}
+<style>
+    #page-loading-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(11, 78, 134, 0.18);
+        backdrop-filter: blur(1px);
+        z-index: 9999;
+        display: none;
+        align-items: center;
+        justify-content: center;
+    }
+
+    #page-loading-overlay.active {
+        display: flex;
+    }
+
+    .loading-card {
+        width: min(420px, 88vw);
+        background: #ffffff;
+        border-radius: 10px;
+        padding: 16px 18px;
+        box-shadow: 0 8px 22px rgba(0, 0, 0, 0.2);
+        border: 1px solid #dbe3ea;
+    }
+
+    .loading-title {
+        margin: 0 0 10px 0;
+        font-size: 14px;
+        font-weight: 600;
+        color: #0b4e86;
+    }
+
+    .loading-track {
+        width: 100%;
+        height: 8px;
+        background: #e6edf5;
+        border-radius: 999px;
+        overflow: hidden;
+    }
+
+    .loading-bar {
+        width: 34%;
+        height: 100%;
+        background: linear-gradient(90deg, #0b4e86, #2f8dd8);
+        border-radius: inherit;
+        animation: loading-slide 1.05s ease-in-out infinite;
+    }
+
+    @keyframes loading-slide {
+        0% { transform: translateX(-130%); }
+        50% { transform: translateX(105%); }
+        100% { transform: translateX(260%); }
+    }
+</style>
+
+<div id="page-loading-overlay" aria-hidden="true">
+    <div class="loading-card" role="status" aria-live="polite">
+        <p class="loading-title">Searching Database...</p>
+        <div class="loading-track">
+            <div class="loading-bar"></div>
+        </div>
+    </div>
+</div>
+
 <div style="display: flex; align-items: center; justify-content: space-between;">
     <div style="display: flex; align-items: center;">
         <a href="{% url 'home' %}">
@@ -21,3 +85,31 @@
     {% endif %}
 </div>
 <hr>
+
+<script>
+    (function () {
+        var overlay = document.getElementById('page-loading-overlay');
+        if (!overlay) return;
+
+        function showLoader() {
+            overlay.classList.add('active');
+            overlay.setAttribute('aria-hidden', 'false');
+        }
+
+        // Show for form submissions initiated by submit button, Enter key, or JS form.submit().
+        document.addEventListener('submit', function () {
+            showLoader();
+        }, true);
+
+        // Covers direct navigations and JS-triggered submits that bypass submit events.
+        window.addEventListener('beforeunload', function () {
+            showLoader();
+        });
+
+        // Ensure loader is hidden on initial render or bfcache restore.
+        window.addEventListener('pageshow', function () {
+            overlay.classList.remove('active');
+            overlay.setAttribute('aria-hidden', 'true');
+        });
+    })();
+</script>
