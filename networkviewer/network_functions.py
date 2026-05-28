@@ -714,11 +714,37 @@ def inject_node_slider(html, center_node):
     return html
 
 
+def get_company_funding_rows(company_name):
+    return main[funding_source_match_mask(main['Funding Sources'], company_name)]
+
+
+def get_university_rows(university):
+    return main[main['Affiliations'].str.contains(university, na=False, regex=False)]
+
+
+def get_researcher_matches(researcher):
+    return comparing_researchers[comparing_researchers['Researcher'].str.lower() == researcher.lower()]
+
+
+def get_researcher_rows(researcher):
+    return main[author_match_mask(main['Authors'], researcher)]
+
+
+def get_chemical_row(chemical=None, inchikey=None):
+    if inchikey:
+        row = chem_per_row[chem_per_row['inchikey'] == inchikey]
+    elif chemical:
+        row = chem_per_row[chem_per_row['chemical'].apply(lambda x: any(chemical.lower() == name.lower() for name in x))]
+    else:
+        row = pd.DataFrame()
+    return row
+
+
 def _graph_output_exists(output_file):
     return bool(output_file) and os.path.isfile(output_file) and os.path.getsize(output_file) > 0
 
 
-def show_company_network_pyvis(company_name, category='Affiliations', chemical_group='All', sep_country=False, output_file=None):
+def show_company_network_pyvis(company_name, category='Affiliations', chemical_group='All', sep_country=False, output_file=None, company_funding_rows=None):
     if output_file is None:
         # Generate unique filename based on ALL parameters
         safe_company = company_name.replace(' ', '_').replace('/', '_').replace('\\', '_').replace('.', '_')
@@ -744,9 +770,8 @@ def show_company_network_pyvis(company_name, category='Affiliations', chemical_g
     if row.empty:
         print(f"Company '{company_name}' not found.")
         return False
-    company_funding_rows = main[
-        funding_source_match_mask(main['Funding Sources'], company_name)
-    ]
+    if company_funding_rows is None:
+        company_funding_rows = get_company_funding_rows(company_name)
     if category != 'Affiliations':
         data = row.iloc[0][category]
     else:
@@ -1233,7 +1258,7 @@ comparing_unis['Companies'] = comparing_unis['Companies'].apply(
 comparing_unis['Chemicals'] = comparing_unis['Chemicals'].apply(
     lambda x: ast.literal_eval(x) if isinstance(x, str) and x.startswith('[') else []
 )
-def show_uni_network_pyvis(uni_name, category='Funding Sources', chemical_group='All', output_file=None):
+def show_uni_network_pyvis(uni_name, category='Funding Sources', chemical_group='All', output_file=None, uni_rows=None):
     if output_file is None:
         # Generate unique filename based on ALL parameters
         safe_uni = uni_name.replace(' ', '_').replace('/', '_').replace('\\', '_').replace('.', '_')
@@ -1253,9 +1278,8 @@ def show_uni_network_pyvis(uni_name, category='Funding Sources', chemical_group=
     if row.empty:
         print(f"University '{uni_name}' not found.")
         return False
-    uni_rows = main[
-        main['Affiliations'].str.contains(uni_name, na=False, regex=False)
-    ]
+    if uni_rows is None:
+        uni_rows = get_university_rows(uni_name)
     if category == 'Funding Sources':
         data = row.iloc[0]['Companies']
     else:
@@ -1731,7 +1755,7 @@ chem_per_row['chemical'] = chem_per_row['chemical'].apply(
     lambda x: ast.literal_eval(x) if isinstance(x, str) and x.startswith('[') else []
 )
 
-def show_chemical_network(chemical, inch='Error', output_file=None):
+def show_chemical_network(chemical, inch='Error', output_file=None, row=None):
     if output_file is None:
         safe_chemical = chemical.replace(' ', '_').replace('/', '_').replace('\\', '_').replace('.', '_')
         if inch != 'Error':
@@ -1742,8 +1766,9 @@ def show_chemical_network(chemical, inch='Error', output_file=None):
     if _graph_output_exists(output_file):
         return True
     # Filter for the selected company
+    if row is None:
+        row = get_chemical_row(chemical=chemical, inchikey=inch if inch != 'Error' else None)
     if inch == 'Error':
-        row = chem_per_row[chem_per_row['chemical'].apply(lambda x: any(chemical.lower() == name.lower() for name in x))]
         if row.empty:
             print(f"Chemical '{chemical}' not found.")
             return False
@@ -1752,7 +1777,6 @@ def show_chemical_network(chemical, inch='Error', output_file=None):
             inch = inchikey
             chemical = row.iloc[0]['chemical'][0]
     else:
-        row = chem_per_row[chem_per_row['inchikey'] == inch]
         if row.empty:
             print(f"InChIKey '{inch}' not found.")
             return False
@@ -2003,7 +2027,7 @@ def show_chemical_network(chemical, inch='Error', output_file=None):
         f.write(html)
     return True
 
-def show_researcher_network_pyvis_from_row(row, output_file=None):
+def show_researcher_network_pyvis_from_row(row, output_file=None, researcher_rows=None):
     if output_file is None:
         researcher = row['Researcher']
         safe_researcher = researcher.replace(' ', '_').replace(',', '').replace('/', '_').replace('\\', '_').replace('.', '_')
@@ -2017,6 +2041,8 @@ def show_researcher_network_pyvis_from_row(row, output_file=None):
     researcher = row['Researcher']
     if aff == '':
         aff = 'Not Found'
+    if researcher_rows is None:
+        researcher_rows = get_researcher_rows(researcher)
     # Initialize PyVis network
     net = Network(height="600px", width="100%", bgcolor="#ffffff", font_color="black",notebook=True)
     net.barnes_hut()  # for better layout dynamics
@@ -2047,9 +2073,8 @@ def show_researcher_network_pyvis_from_row(row, output_file=None):
             company = node.get('id')  # Company name is the label
             if company:
                 # Count studies mentioning this researcher with this company
-                studies = main[
-                    (main['Funding Sources'].str.contains(company, na=False, regex=False)) &
-                    (main['Authors'].str.contains(researcher, na=False, regex=False))
+                studies = researcher_rows[
+                    researcher_rows['Funding Sources'].str.contains(company, na=False, regex=False)
                 ]
                 study_count = len(studies.drop_duplicates(subset=['DOI']))
                 
@@ -2248,14 +2273,13 @@ def show_researcher_network_pyvis_from_row(row, output_file=None):
 def count_key(number):
     num = re.match(r'^.+\((\d+)\)$', number.strip())
     return int(num.group(1)) if num else 0
-def show_company_connections(company_name):
+def show_company_connections(company_name, company_funding_rows=None):
     row = company_assoc[company_assoc['Company'] == company_name]
     if row.empty:
         print(f"Company '{company_name}' not found.")
         return False
-    company_funding_rows = main[
-        funding_source_match_mask(main['Funding Sources'], company_name)
-    ]
+    if company_funding_rows is None:
+        company_funding_rows = get_company_funding_rows(company_name)
     affiliations = row.iloc[0]['Affs']
     countries = row.iloc[0]['Countries']
     parsed_chems = list(parse_chemical_entry(c) for c in row.iloc[0]['Chemicals'])
@@ -2351,11 +2375,13 @@ def show_company_connections(company_name):
         "Chemicals": labeled_chemicals
     }
 
-def show_uni_connections(university):
+def show_uni_connections(university, uni_rows=None):
     row = comparing_unis[comparing_unis['University'] == university]
     if row.empty:
         print(f"University '{university}' not found.")
         return False
+    if uni_rows is None:
+        uni_rows = get_university_rows(university)
 
     parsed_chems = list(parse_chemical_entry(c) for c in row.iloc[0]['Chemicals'])
     companies = row.iloc[0]['Companies']
@@ -2408,11 +2434,14 @@ def show_uni_connections(university):
         "Chemicals": labeled_chemicals
     }
 
-def show_res_connections(researcher):
-    matches = comparing_researchers[comparing_researchers['Researcher'].str.lower() == researcher.lower()]
+def show_res_connections(researcher, matches=None, researcher_rows=None):
+    if matches is None:
+        matches = get_researcher_matches(researcher)
     if matches.empty:
         print(f"Researcher: '{researcher}' not found.")
         return False
+    if researcher_rows is None:
+        researcher_rows = get_researcher_rows(researcher)
     
     if len(matches) > 1:
         all_companies = sum(matches['Companies'], [])
@@ -2439,9 +2468,8 @@ def show_res_connections(researcher):
         original_name, _ = extract_name_and_class(comp)
         company_key = original_name.strip().lower()
         if company_key not in seen_company_keys:
-            studies = main[
-                (main['Authors'].str.contains(researcher, na=False, regex=False)) &
-                funding_source_match_mask(main["Funding Sources"], original_name)
+            studies = researcher_rows[
+                funding_source_match_mask(researcher_rows["Funding Sources"], original_name)
             ]
             study_count = len(studies.drop_duplicates(subset=['DOI']))
             labeled_companies.append(f"{comp} ({study_count})")
@@ -2452,12 +2480,10 @@ def show_res_connections(researcher):
         "Funding Sources": labeled_companies
     }
 
-def show_chem_connections(chemical=None, inchikey=None):
-    if inchikey:
-        row = chem_per_row[chem_per_row['inchikey'] == inchikey]
-    elif chemical:
-        row = chem_per_row[chem_per_row['chemical'].apply(lambda x: any(chemical.lower() == name.lower() for name in x))]
-    else:
+def show_chem_connections(chemical=None, inchikey=None, row=None):
+    if row is None:
+        row = get_chemical_row(chemical=chemical, inchikey=inchikey)
+    if row.empty:
         return False
     
     if row.empty:
