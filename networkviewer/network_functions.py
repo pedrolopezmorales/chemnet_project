@@ -14,7 +14,7 @@ from functools import lru_cache
 
 
 #CSV_PATH = os.path.join(settings.BASE_DIR, 'data', 'esandt_papers_main.csv')
-MAIN_CSV_URL = "https://ucsf.box.com/shared/static/74m134aqexof6679og9mcz1qtr1rwbo9.csv"
+MAIN_CSV_URL = "https://ucsf.box.com/shared/static/78r8bip7rb85t55a5u2d6wx922bacozy.csv"
 main = pd.read_csv(MAIN_CSV_URL)
 main = main.dropna(subset=['Authors'])
 
@@ -582,7 +582,7 @@ def is_organic(name):
     except:
         return None  # Not found
 
-FUNDING_SOURCE_CSV_URL =  "https://ucsf.box.com/shared/static/ozfybilqau1dt9kjb4d1b2auxufs5tp7.csv"
+FUNDING_SOURCE_CSV_URL =  "https://ucsf.box.com/shared/static/3jdhj6t3qqon3poo8rg964xwg2cmm8ad.csv"
 company_assoc = pd.read_csv(FUNDING_SOURCE_CSV_URL)
 
 def _safe_parse_list_cell(value):
@@ -1250,7 +1250,7 @@ def show_company_network_pyvis(company_name, category='Affiliations', chemical_g
 
 
 #CSV_PATH_unis = os.path.join(settings.BASE_DIR, 'data', 'comparing_unis.csv')
-UNI_CSV_URL = 'https://ucsf.box.com/shared/static/4fn56emqmz756klkq98f9c6pj9fvcv2l.csv' 
+UNI_CSV_URL = 'https://ucsf.box.com/shared/static/tcdhuv5vhbly2tyqt8gmuz9zt1gjb7w5.csv' 
 comparing_unis = pd.read_csv(UNI_CSV_URL)
 comparing_unis['Companies'] = comparing_unis['Companies'].apply(
     lambda x: ast.literal_eval(x) if isinstance(x, str) and x.startswith('[') else []
@@ -1643,7 +1643,7 @@ def show_uni_network_pyvis(uni_name, category='Funding Sources', chemical_group=
 
 
 #CSV_PATH_researchers = os.path.join(settings.BASE_DIR, 'data', 'comparing_researchers.csv')
-RESEARCHER_CSV_URL = 'https://ucsf.box.com/shared/static/qjdx3ixp6kndvm1flvte5pc3uuwztrll.csv'
+RESEARCHER_CSV_URL = 'https://ucsf.box.com/shared/static/hvfdo8pm7lyoog1m8bw3s38coeyyek3y.csv'
 comparing_researchers = pd.read_csv(RESEARCHER_CSV_URL)
 comparing_researchers['Companies'] = comparing_researchers['Companies'].apply(
     lambda x: ast.literal_eval(x) if isinstance(x, str) and x.startswith('[') else []
@@ -1746,7 +1746,7 @@ def show_researcher_network_pyvis(researcher, output_file = "staticfiles/company
 
 
 #CSV_PATH_chem = os.path.join(settings.BASE_DIR, 'data', 'chem_per_row.csv')
-CHEM_CSV_URL = 'https://ucsf.box.com/shared/static/0d08l21cx0cv9og1hn1df6ud3jgbptjd.csv'
+CHEM_CSV_URL = 'https://ucsf.box.com/shared/static/7hp4hfdn8p29peinwkkolsql9gzudi6l.csv'
 chem_per_row = pd.read_csv(CHEM_CSV_URL)
 chem_per_row['company'] = chem_per_row['company'].apply(
     lambda x: ast.literal_eval(x) if isinstance(x, str) and x.startswith('[') else []
@@ -2818,7 +2818,7 @@ def create_funding_source_dataframe(chem_limit=5, top_n=50):
     print(f"✓ Completed! Processed {len(rows)} companies")
     return pd.DataFrame(rows)
 
-FUNDING_SOURCE_TABLE_URL = "https://ucsf.box.com/shared/static/9kal0v8pxf2ulq47pbbryozcd3cchpcc"
+FUNDING_SOURCE_TABLE_URL = "https://ucsf.box.com/shared/static/9kal0v8pxf2ulq47pbbryozcd3cchpcc.csv"
 funding_source_table_df = pd.read_csv(FUNDING_SOURCE_TABLE_URL)
 
 

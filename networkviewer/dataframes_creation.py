@@ -15,11 +15,12 @@ from .network_functions import (
         no_dup_comp,
         new_no_dup_aff,
         university_keys,
-        main
+        main,
+        classify_companies_series
     )
 #creating the main dataframe
 def create_main_dataframe():
-    data_years = range(2020, 2025)
+    data_years = range(2015, 2025)
     dataframes_list = []
 
     for year in data_years:
@@ -30,10 +31,9 @@ def create_main_dataframe():
 
     combined_df = pd.concat(dataframes_list, ignore_index=True)
 
-    combined_path = os.path.join(settings.BASE_DIR, 'data', "esandt_papers_main.csv")
+    combined_path = os.path.join(settings.BASE_DIR, 'data', "esandt_papers_all.csv")
     combined_df.to_csv(combined_path, index=False)
     print(f"Combined dataset created! Total rows: {len(combined_df)}")
-# create_main_dataframe()  # Only uncomment to create dataframe, if more years is addded to the dataframe
 #cleansing main dataframe
 
 PLACEHOLDER_CHEMICALS = {
@@ -64,15 +64,22 @@ def clean_chemicals_cell(value):
     return "; ".join(cleaned)
 
 def create_filtered_main_dataframe():
-    all_studies_csv_url = "https://ucsf.box.com/shared/static/n5tdu7t8hj5lkwvmqmi5cwqhmnuksjm8.csv" #change to whatever all_studies link is 
+    all_studies_csv_url = "https://ucsf.box.com/shared/static/5igzqwyaiztqhnuj744pi4almbxns9au" #change to whatever all_studies link is 
     all_studies = pd.read_csv(all_studies_csv_url)
+
+    if "DOI" not in all_studies.columns:
+        raise KeyError("Input dataframe does not contain a 'DOI' column")
+
+    all_studies = all_studies[
+        all_studies["DOI"].astype(str).str.contains("acs.est.", case=False, na=False, regex=False)
+    ].reset_index(drop=True)
 
     all_studies["Chemicals with InChIKey"] = all_studies["Chemicals with InChIKey"].apply(clean_chemicals_cell)
     all_studies = all_studies[
         all_studies["Chemicals with InChIKey"].str.strip() != ""
     ].reset_index(drop=True)
 
-    main_path = os.path.join(settings.BASE_DIR, "data", "esandt_papers_main.csv")
+    main_path = os.path.join(settings.BASE_DIR, "data", "esandt_papers_filtered_main.csv")
     all_studies.to_csv(main_path, index=False)
     print(f"Filtered main dataframe saved to {main_path}")
     print(f"Total rows: {len(all_studies)}")
@@ -182,7 +189,7 @@ def create_company_assoc_dataframe():
     company_assoc.to_csv(csv_path, index=False)
     print(f"Saved comparing_fundingsources.csv ({len(company_assoc)} rows)")
 # Having the affiliations per row
-'''
+
 cut_down = main.drop(['DOI', 'URL','Year','Title','Chemicals Mentioned','Abstract','Authors'], axis = 1)
 
 cut_down['Affiliation'] = match_items_against_master_aff(cut_down, 'Affiliations', new_no_dup_aff)
@@ -226,13 +233,13 @@ comparing_unis.reset_index(inplace = True)
 comparing_unis['Companies'] = comparing_unis['Companies'].apply(classify_companies_series)
 
 comparing_unis.to_csv(os.path.join(settings.BASE_DIR, 'data', 'comparing_unis.csv'), index=False)
-'''
+
 
 # showing researchers and their company funding
-'''
+
 reduced = main.drop(['DOI', 'URL','Year','Title','Chemicals Mentioned','Abstract','Chemicals with InChIKey'], axis = 1)
 
-hwreduced['Researchers'] = reduced['Authors'].apply(split_researchers)
+reduced['Researchers'] = reduced['Authors'].apply(split_researchers)
 reduced['Aff'] = reduced['Affiliations'].apply(
     lambda x: [item.strip() for item in x.split('|')] if isinstance(x, str) and x.strip() != '' else []
 )
@@ -274,10 +281,10 @@ comparing_researchers = final_reduced.groupby('GroupKey').agg({
 comparing_researchers['Companies'] = comparing_researchers['Companies'].apply(classify_companies_series)
 
 comparing_researchers.to_csv(os.path.join(settings.BASE_DIR, 'data', 'comparing_researchers.csv'), index=False)
-'''
+
 
 # Creating a dataframe that has chemicals per row
-'''
+
 red_chem = main.drop(['DOI', 'URL','Year','Title','Chemicals Mentioned','Abstract','Authors','Affiliations'], axis = 1)
 def parse_chemicals(chem_string):
     chemicals = []
@@ -324,6 +331,3 @@ chem_per_row = (
 )
 chem_per_row['company'] = chem_per_row['company'].apply(classify_companies_series)
 chem_per_row.to_csv(os.path.join(settings.BASE_DIR, 'data', 'comparing_chemicals.csv'), index=False)
-'''
-
-
