@@ -2818,7 +2818,7 @@ def create_funding_source_dataframe(chem_limit=5, top_n=50):
     print(f"✓ Completed! Processed {len(rows)} companies")
     return pd.DataFrame(rows)
 
-FUNDING_SOURCE_TABLE_URL = "https://ucsf.box.com/shared/static/9kal0v8pxf2ulq47pbbryozcd3cchpcc.csv"
+FUNDING_SOURCE_TABLE_URL = "https://ucsf.box.com/shared/static/5oxff2mh4jsr03a2hhh3onypltn3dpby.csv"
 funding_source_table_df = pd.read_csv(FUNDING_SOURCE_TABLE_URL)
 
 
