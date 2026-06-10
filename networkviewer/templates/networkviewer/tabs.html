@@ -102,7 +102,12 @@
         // Show loader only for explicitly marked search forms.
         document.addEventListener('submit', function (event) {
             var form = event.target;
-            if (form && form.classList && form.classList.contains('js-search-form')) {
+            if (
+                form &&
+                form.classList &&
+                form.classList.contains('js-search-form') &&
+                form.getAttribute('data-async-search') !== 'true'
+            ) {
                 showLoader();
             }
         }, true);

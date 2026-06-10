@@ -8,7 +8,7 @@
     {% include "networkviewer/tabs.html" %}
     <div style="background-color: #0b4e86; padding: 40px 10px; color: white;">
         <h1>Funding Source Network Viewer</h1>
-        <form method="post" class="js-search-form">
+        <form method="post" class="js-search-form" data-async-search="true">
             {% csrf_token %}
             <label for="company">Enter Funding Source Name:</label>
             <input type="text" name="company" id="company" list="company-suggestions" value="{{ company|default_if_none:'' }}">
@@ -28,6 +28,13 @@
         <script>
         function fillAndSubmit(company) {
             document.getElementById('company').value = company;
+            var form = document.querySelector('form.js-search-form');
+            if (form && form.requestSubmit) {
+                form.requestSubmit();
+            } else if (form) {
+                if (window.showSearchLoader) window.showSearchLoader();
+                form.submit();
+            }
         }
         </script>
             <label for="category">Category (Required):</label>
@@ -53,9 +60,13 @@
             <br><br>
             <button type="submit">Show Network</button>
         </form>
+        <p id="company-async-message" style="display:none; color: red; background-color: white; padding: 5px 5px;"></p>
+
         {% if message %}
             <p style="color: red; background-color: white; padding: 5px 5px;">{{ message| safe }}</p>
         {% endif %}
+
+        <div id="company-async-description" style="display:none;"></div>
 
         {% if description %}
             <div style="margin: 20px 0; padding: 20px; background: #e8f5e8; border-radius: 8px; border-left: 4px solid #28a745;">                <h3 style="color: #0b4e86; margin-top: 0;">About {{ description.title }}</h3>
@@ -65,10 +76,22 @@
                 {% endif %}
             </div>
         {% endif %}
+        <div id="company-graph-status" style="display:none; margin-top: 12px; color: #ffd700; font-weight: 700;">
+            Loading graph and connections...
+        </div>
+
+        <div id="company-async-graph" style="display:none;">
+            <h2 id="company-graph-title"></h2>
+            <iframe id="company-graph-iframe" src="" width="100%" height="600px" frameborder="0" loading="lazy"></iframe>
+        </div>
+
         {% if iframe %}
             <h2>Network for: {{ company }}</h2>
             <iframe src="{{ iframe }}" width="100%" height="600px" frameborder="0"></iframe>
         {% endif %}
+
+        <div id="company-async-connections" style="display:none; margin-top: 40px; background: #0b4e86; padding: 20px; border-radius: 8px;"></div>
+
         {% if connections %}
         <div style="margin-top: 40px; background: #0b4e86; padding: 20px; border-radius: 8px;">
             <h3> Connections</h3>
@@ -89,5 +112,114 @@
         </div>
     {% endif %}
     </div>
+
+    <script>
+    (function () {
+        var form = document.querySelector('form.js-search-form');
+        if (!form) return;
+
+        var statusEl = document.getElementById('company-graph-status');
+        var msgEl = document.getElementById('company-async-message');
+        var descEl = document.getElementById('company-async-description');
+        var graphWrap = document.getElementById('company-async-graph');
+        var graphTitle = document.getElementById('company-graph-title');
+        var graphIframe = document.getElementById('company-graph-iframe');
+        var connWrap = document.getElementById('company-async-connections');
+
+        function esc(text) {
+            return String(text || '').replace(/[&<>\"']/g, function (ch) {
+                return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '\"': '&quot;', "'": '&#39;' })[ch];
+            });
+        }
+
+        function renderConnections(connections) {
+            if (!connections) {
+                connWrap.style.display = 'none';
+                connWrap.innerHTML = '';
+                return;
+            }
+
+            var html = '<h3> Connections</h3>';
+            Object.keys(connections).forEach(function (key) {
+                var items = connections[key];
+                var list = '';
+                if (Array.isArray(items)) {
+                    list = items.map(function (item) { return '<li>' + esc(item) + '</li>'; }).join('');
+                } else {
+                    list = '<li>' + esc(items) + '</li>';
+                }
+                html += '' +
+                    '<details style="margin-bottom: 12px; background: #ffffff; border-radius: 6px; padding: 8px 12px; color: #0b4e86;">' +
+                    '<summary style="cursor: pointer; font-weight: 700;">' + esc(key) + '</summary>' +
+                    '<ul style="margin: 10px 0 4px 18px; color: #1f2937;">' + list + '</ul>' +
+                    '</details>';
+            });
+            connWrap.innerHTML = html;
+            connWrap.style.display = 'block';
+        }
+
+        form.addEventListener('submit', async function (event) {
+            event.preventDefault();
+
+            msgEl.style.display = 'none';
+            msgEl.textContent = '';
+            descEl.style.display = 'none';
+            descEl.innerHTML = '';
+            graphWrap.style.display = 'none';
+            graphIframe.src = '';
+            connWrap.style.display = 'none';
+            connWrap.innerHTML = '';
+            statusEl.style.display = 'block';
+
+            var formData = new FormData(form);
+            var csrfToken = formData.get('csrfmiddlewaretoken');
+
+            try {
+                var response = await fetch('/api/companies/', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': csrfToken
+                    },
+                    body: formData
+                });
+                var data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data && data.detail ? data.detail : 'Request failed');
+                }
+
+                if (data.success) {
+                    graphTitle.textContent = 'Network for: ' + (data.company || '');
+                    graphIframe.src = data.iframe_url || '';
+                    graphWrap.style.display = 'block';
+
+                    if (data.description && data.description.description) {
+                        var descHtml = '' +
+                            '<div style="margin: 20px 0; padding: 20px; background: #e8f5e8; border-radius: 8px; border-left: 4px solid #28a745;">' +
+                            '<h3 style="color: #0b4e86; margin-top: 0;">About ' + esc(data.description.title || data.company || '') + '</h3>' +
+                            '<p style="color: #155724; margin: 0; line-height: 1.5;">' + esc(data.description.description || '') + '</p>';
+                        if (data.description.url) {
+                            descHtml += '<a href="' + esc(data.description.url) + '" target="_blank" style="color: #0b4e86;">Read more on Wikipedia</a>';
+                        }
+                        descHtml += '</div>';
+                        descEl.innerHTML = descHtml;
+                        descEl.style.display = 'block';
+                    }
+
+                    renderConnections(data.connections || null);
+                } else {
+                    var details = data.suggestions && data.suggestions.length ? (' Did you mean: ' + data.suggestions.join(', ')) : '';
+                    msgEl.textContent = (data.message || 'No results found.') + details;
+                    msgEl.style.display = 'block';
+                }
+            } catch (error) {
+                msgEl.textContent = 'Search failed: ' + error.message;
+                msgEl.style.display = 'block';
+            } finally {
+                statusEl.style.display = 'none';
+            }
+        });
+    })();
+    </script>
 </body>
 </html>

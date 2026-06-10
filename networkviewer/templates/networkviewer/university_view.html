@@ -9,7 +9,7 @@
     {% include "networkviewer/tabs.html" %}
     <div style="background-color: #0b4e86; padding: 40px 10px; color: white;">
         <h1>University Network Viewer</h1>
-        <form method="post" class="js-search-form">
+        <form method="post" class="js-search-form" data-async-search="true">
             {% csrf_token %}
             <label for="university">Enter university Name:</label>
             <input type="text" name="university" id="university" list="university-suggestions" value="{{ university|default_if_none:'' }}">
@@ -29,6 +29,13 @@
         <script>
         function fillAndSubmit(university) {
             document.getElementById('university').value = university;
+            var form = document.querySelector('form.js-search-form');
+            if (form && form.requestSubmit) {
+                form.requestSubmit();
+            } else if (form) {
+                if (window.showSearchLoader) window.showSearchLoader();
+                form.submit();
+            }
         }
         </script>
             <label for="category">Category:</label>
@@ -51,6 +58,18 @@
         {% if message %}
             <p style="color: red; background-color: white; padding: 5px 5px">{{ message|safe }}</p>
         {% endif %}
+
+        <p id="university-async-message" style="display:none; color: red; background-color: white; padding: 5px 5px;"></p>
+        <div id="university-graph-status" style="display:none; margin-top: 12px; color: #ffd700; font-weight: 700;">
+            Loading graph and connections...
+        </div>
+
+        <div id="university-async-graph" style="display:none;">
+            <h2 id="university-graph-title"></h2>
+            <iframe id="university-graph-iframe" src="" width="100%" height="600px" frameborder="0" loading="lazy"></iframe>
+        </div>
+        <div id="university-async-connections" style="display:none; margin-top: 40px; background: #0b4e86; padding: 20px; border-radius: 8px;"></div>
+
         {% if iframe %}
             <h2>Network for: {{ university }}</h2>
             <iframe src="{{ iframe }}" width="100%" height="600px" frameborder="0"></iframe>
@@ -75,5 +94,97 @@
         </div>
     {% endif %}
     </div>
+
+    <script>
+    (function () {
+        var form = document.querySelector('form.js-search-form');
+        if (!form) return;
+
+        var msgEl = document.getElementById('university-async-message');
+        var statusEl = document.getElementById('university-graph-status');
+        var graphWrap = document.getElementById('university-async-graph');
+        var graphTitle = document.getElementById('university-graph-title');
+        var graphIframe = document.getElementById('university-graph-iframe');
+        var connWrap = document.getElementById('university-async-connections');
+
+        function esc(text) {
+            return String(text || '').replace(/[&<>\"']/g, function (ch) {
+                return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '\"': '&quot;', "'": '&#39;' })[ch];
+            });
+        }
+
+        function renderConnections(connections) {
+            if (!connections) {
+                connWrap.style.display = 'none';
+                connWrap.innerHTML = '';
+                return;
+            }
+
+            var html = '<h3> Connections</h3>';
+            Object.keys(connections).forEach(function (key) {
+                var items = connections[key];
+                var list = '';
+                if (Array.isArray(items)) {
+                    list = items.map(function (item) { return '<li>' + esc(item) + '</li>'; }).join('');
+                } else {
+                    list = '<li>' + esc(items) + '</li>';
+                }
+                html += '<details style="margin-bottom: 12px; background: #ffffff; border-radius: 6px; padding: 8px 12px; color: #0b4e86;">' +
+                        '<summary style="cursor: pointer; font-weight: 700;">' + esc(key) + '</summary>' +
+                        '<ul style="margin: 10px 0 4px 18px; color: #1f2937;">' + list + '</ul>' +
+                        '</details>';
+            });
+
+            connWrap.innerHTML = html;
+            connWrap.style.display = 'block';
+        }
+
+        form.addEventListener('submit', async function (event) {
+            event.preventDefault();
+
+            msgEl.style.display = 'none';
+            msgEl.textContent = '';
+            graphWrap.style.display = 'none';
+            graphIframe.src = '';
+            connWrap.style.display = 'none';
+            connWrap.innerHTML = '';
+            statusEl.style.display = 'block';
+
+            var formData = new FormData(form);
+            var csrfToken = formData.get('csrfmiddlewaretoken');
+
+            try {
+                var response = await fetch('/api/universities/', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': csrfToken
+                    },
+                    body: formData
+                });
+
+                var data = await response.json();
+                if (!response.ok) {
+                    throw new Error(data && data.detail ? data.detail : 'Request failed');
+                }
+
+                if (data.success) {
+                    graphTitle.textContent = 'Network for: ' + (data.university || '');
+                    graphIframe.src = data.iframe_url || '';
+                    graphWrap.style.display = 'block';
+                    renderConnections(data.connections || null);
+                } else {
+                    var details = data.suggestions && data.suggestions.length ? (' Did you mean: ' + data.suggestions.join(', ')) : '';
+                    msgEl.textContent = (data.message || 'No results found.') + details;
+                    msgEl.style.display = 'block';
+                }
+            } catch (error) {
+                msgEl.textContent = 'Search failed: ' + error.message;
+                msgEl.style.display = 'block';
+            } finally {
+                statusEl.style.display = 'none';
+            }
+        });
+    })();
+    </script>
 </body>
 </html>
