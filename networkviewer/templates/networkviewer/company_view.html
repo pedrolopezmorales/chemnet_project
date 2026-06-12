@@ -173,44 +173,58 @@
 
             var formData = new FormData(form);
             var csrfToken = formData.get('csrfmiddlewaretoken');
+            var requestOptions = {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrfToken
+                },
+                body: formData
+            };
 
             try {
-                var response = await fetch('/api/companies/', {
-                    method: 'POST',
-                    headers: {
-                        'X-CSRFToken': csrfToken
-                    },
-                    body: formData
-                });
-                var data = await response.json();
+                var connectionsPromise = fetch('/api/companies/?mode=connections', requestOptions);
+                var graphPromise = fetch('/api/companies/?mode=graph', requestOptions);
 
-                if (!response.ok) {
-                    throw new Error(data && data.detail ? data.detail : 'Request failed');
+                var connectionsResponse = await connectionsPromise;
+                var connectionsData = await connectionsResponse.json();
+
+                if (!connectionsResponse.ok) {
+                    throw new Error(connectionsData && connectionsData.detail ? connectionsData.detail : 'Request failed');
                 }
 
-                if (data.success) {
-                    graphTitle.textContent = 'Network for: ' + (data.company || '');
-                    graphIframe.src = data.iframe_url || '';
-                    graphWrap.style.display = 'block';
-
-                    if (data.description && data.description.description) {
+                if (connectionsData.success) {
+                    if (connectionsData.description && connectionsData.description.description) {
                         var descHtml = '' +
                             '<div style="margin: 20px 0; padding: 20px; background: #e8f5e8; border-radius: 8px; border-left: 4px solid #28a745;">' +
-                            '<h3 style="color: #0b4e86; margin-top: 0;">About ' + esc(data.description.title || data.company || '') + '</h3>' +
-                            '<p style="color: #155724; margin: 0; line-height: 1.5;">' + esc(data.description.description || '') + '</p>';
-                        if (data.description.url) {
-                            descHtml += '<a href="' + esc(data.description.url) + '" target="_blank" style="color: #0b4e86;">Read more on Wikipedia</a>';
+                            '<h3 style="color: #0b4e86; margin-top: 0;">About ' + esc(connectionsData.description.title || connectionsData.company || '') + '</h3>' +
+                            '<p style="color: #155724; margin: 0; line-height: 1.5;">' + esc(connectionsData.description.description || '') + '</p>';
+                        if (connectionsData.description.url) {
+                            descHtml += '<a href="' + esc(connectionsData.description.url) + '" target="_blank" style="color: #0b4e86;">Read more on Wikipedia</a>';
                         }
                         descHtml += '</div>';
                         descEl.innerHTML = descHtml;
                         descEl.style.display = 'block';
                     }
 
-                    renderConnections(data.connections || null);
+                    renderConnections(connectionsData.connections || null);
                 } else {
-                    var details = data.suggestions && data.suggestions.length ? (' Did you mean: ' + data.suggestions.join(', ')) : '';
-                    msgEl.textContent = (data.message || 'No results found.') + details;
+                    var connDetails = connectionsData.suggestions && connectionsData.suggestions.length ? (' Did you mean: ' + connectionsData.suggestions.join(', ')) : '';
+                    msgEl.textContent = (connectionsData.message || 'No results found.') + connDetails;
                     msgEl.style.display = 'block';
+                    statusEl.style.display = 'none';
+                    return;
+                }
+
+                var graphResponse = await graphPromise;
+                var graphData = await graphResponse.json();
+                if (!graphResponse.ok) {
+                    throw new Error(graphData && graphData.detail ? graphData.detail : 'Graph request failed');
+                }
+
+                if (graphData.success) {
+                    graphTitle.textContent = 'Network for: ' + (graphData.company || '');
+                    graphIframe.src = graphData.iframe_url || '';
+                    graphWrap.style.display = 'block';
                 }
             } catch (error) {
                 msgEl.textContent = 'Search failed: ' + error.message;

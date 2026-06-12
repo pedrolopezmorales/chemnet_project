@@ -26,7 +26,11 @@ from .network_functions import (
     funding_source_table_df,
     get_funding_source_row,
     parse_chemicals_list,
-    obtain_inchikey_from_pubchem
+    obtain_inchikey_from_pubchem,
+    get_company_funding_rows,
+    get_university_rows,
+    get_chemical_row,
+    get_pubchem_image_url,
 )
 import difflib
 import random
@@ -69,6 +73,11 @@ def get_close_matches_custom(query, valid_names, n=3, cutoff=0.6):
     )
     return [normalized_map[key] for key in matched_keys]
 
+
+def get_request_mode(request):
+    mode = request.query_params.get('mode', 'full')
+    return mode if mode in {'full', 'connections', 'graph'} else 'full'
+
 class ChemicalSearchAPI(APIView):
     def get(self, request):
         # Return example chemicals and all chemical names for autocomplete
@@ -94,6 +103,8 @@ class ChemicalSearchAPI(APIView):
         serializer = ChemicalSearchSerializer(data=request.data)
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        mode = get_request_mode(request)
         
         data = serializer.validated_data
         chemical = data.get('chemical', '').strip()
@@ -117,6 +128,36 @@ class ChemicalSearchAPI(APIView):
         if not chemical and not inchikey:
             return Response({'error': 'Either chemical name or inchikey is required'}, 
                           status=status.HTTP_400_BAD_REQUEST)
+
+        if mode == 'connections':
+            if inchikey:
+                connections = show_chem_connections(inchikey=inchikey)
+                image_url = get_pubchem_image_url(chemical, inchikey)
+                description = get_pubchem_description(chemical, inchikey if inchikey != 'Error' else None)
+            else:
+                row = get_chemical_row(chemical=chemical)
+                if row is None:
+                    suggestions = get_close_matches_custom(chemical or inchikey, all_chemical_names)
+                    return Response({
+                        'success': False,
+                        'chemical': chemical,
+                        'inchikey': inchikey,
+                        'suggestions': suggestions,
+                        'message': f"Chemical '{chemical or inchikey}' not found"
+                    })
+                connections = show_chem_connections(chemical, row=row)
+                image_url = get_pubchem_image_url(chemical, inchikey)
+                description = get_pubchem_description(chemical)
+
+            return Response({
+                'success': True,
+                'chemical': chemical,
+                'inchikey': inchikey,
+                'connections': connections,
+                'image_url': image_url,
+                'description': description,
+            })
+
         # Process search
         if inchikey:
             found = show_chemical_network(chemical, inch=inchikey)
@@ -137,14 +178,18 @@ class ChemicalSearchAPI(APIView):
             # Get PubChem description
             description = get_pubchem_description(chemical, inchikey if inchikey != 'Error' else None)
             
-            return Response({
+            payload = {
                 'success': True,
                 'chemical': chemical,
                 'inchikey': inchikey,
                 'iframe_url': iframe_url,
                 'connections': connections,
                 'description': description
-            })
+            }
+            if mode == 'graph':
+                payload.pop('connections', None)
+                payload.pop('description', None)
+            return Response(payload)
         else:
             if chemical and chemical_inputted:
                 inchikey = obtain_inchikey_from_pubchem(chemical)
@@ -158,14 +203,18 @@ class ChemicalSearchAPI(APIView):
                         iframe_url = f"/static/network_{safe_chemical}_{safe_inch}.html"
                     description = get_pubchem_description(chemical, inchikey if inchikey != 'Error' else None)
 
-                    return Response({
-                    'success': True,
-                    'chemical': chemical,
-                    'inchikey': inchikey,
-                    'iframe_url': iframe_url,
-                    'connections': connections,
-                    'description': description
-                    })
+                    payload = {
+                        'success': True,
+                        'chemical': chemical,
+                        'inchikey': inchikey,
+                        'iframe_url': iframe_url,
+                        'connections': connections,
+                        'description': description
+                    }
+                    if mode == 'graph':
+                        payload.pop('connections', None)
+                        payload.pop('description', None)
+                    return Response(payload)
                 else:
                     all_chemical_names = sorted((name for names in chem_per_row['chemical'] for name in names))
                     suggestions = get_close_matches_custom(chemical or inchikey, all_chemical_names)
@@ -206,6 +255,8 @@ class CompanySearchAPI(APIView):
         serializer = CompanySearchSerializer(data=request.data)
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        mode = get_request_mode(request)
         
         data = serializer.validated_data
         all_company_names = sorted(set(no_dup_comp))
@@ -213,10 +264,31 @@ class CompanySearchAPI(APIView):
         category = data['category']
         chemical_group = data['chemical_group']
         sep_country = data['sep_country']
+        company_funding_rows = get_company_funding_rows(company)
+
+        if mode == 'connections':
+            if company_funding_rows is None or company_funding_rows.empty:
+                suggestions = get_close_matches_custom(company, all_company_names)
+                return Response({
+                    'success': False,
+                    'company': company,
+                    'suggestions': suggestions,
+                    'message': f"Company '{company}' not found"
+                })
+
+            connections = show_company_connections(company, company_funding_rows=company_funding_rows)
+            description = get_wikipedia_description_fundingsource(company)
+            return Response({
+                'success': True,
+                'company': company,
+                'connections': connections,
+                'description': description,
+            })
         
         found = show_company_network_pyvis(company, category=category, 
                                          chemical_group=chemical_group, 
-                                         sep_country=sep_country)
+                                         sep_country=sep_country,
+                                         company_funding_rows=company_funding_rows)
         
         if found:
             safe_company = company.replace(' ', '_').replace('/', '_').replace('\\', '_').replace('.', '_')
@@ -235,17 +307,21 @@ class CompanySearchAPI(APIView):
             else:
                 iframe_url = f"/static/network_{safe_company}_{safe_category}.html"
             
-            connections = show_company_connections(company)
+            connections = show_company_connections(company, company_funding_rows=company_funding_rows)
             
             description = get_wikipedia_description_fundingsource(company)
 
-            return Response({
+            payload = {
                 'success': True,
                 'company': company,
                 'iframe_url': iframe_url,
                 'connections': connections,
                 'description': description
-            })
+            }
+            if mode == 'graph':
+                payload.pop('connections', None)
+                payload.pop('description', None)
+            return Response(payload)
         else:
             all_company_names = sorted(set(no_dup_comp))
             suggestions = get_close_matches_custom(company, all_company_names)
@@ -286,15 +362,36 @@ class UniversitySearchAPI(APIView):
         serializer = UniversitySearchSerializer(data=request.data)
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        mode = get_request_mode(request)
         
         data = serializer.validated_data
         all_university_names = sorted(comparing_unis['University'].dropna().unique())
         university = resolve_case_insensitive_name(data['university'], all_university_names)
         category = data['category']
         chemical_group = data['chemical_group']
+        uni_rows = get_university_rows(university)
+
+        if mode == 'connections':
+            if uni_rows is None or uni_rows.empty:
+                suggestions = get_close_matches_custom(university, all_university_names)
+                return Response({
+                    'success': False,
+                    'university': university,
+                    'suggestions': suggestions,
+                    'message': f"University '{university}' not found"
+                })
+
+            connections = show_uni_connections(university, uni_rows=uni_rows)
+            return Response({
+                'success': True,
+                'university': university,
+                'connections': connections,
+            })
         
         found = show_uni_network_pyvis(university, category=category, 
-                                     chemical_group=chemical_group)
+                                     chemical_group=chemical_group,
+                                     uni_rows=uni_rows)
         
         if found:
             safe_uni = university.replace(' ', '_').replace('/', '_').replace('\\', '_').replace('.', '_')
@@ -308,14 +405,17 @@ class UniversitySearchAPI(APIView):
             else:
                 iframe_url = f"/static/network_{safe_uni}_{safe_category}.html"
             
-            connections = show_uni_connections(university)
-            
-            return Response({
+            connections = show_uni_connections(university, uni_rows=uni_rows)
+
+            payload = {
                 'success': True,
                 'university': university,
                 'iframe_url': iframe_url,
                 'connections': connections
-            })
+            }
+            if mode == 'graph':
+                payload.pop('connections', None)
+            return Response(payload)
         else:
             all_university_names = sorted(comparing_unis['University'].dropna().unique())
             suggestions = get_close_matches_custom(university, all_university_names)

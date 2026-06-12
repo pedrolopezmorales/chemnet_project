@@ -152,30 +152,44 @@
 
             var formData = new FormData(form);
             var csrfToken = formData.get('csrfmiddlewaretoken');
+            var requestOptions = {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrfToken
+                },
+                body: formData
+            };
 
             try {
-                var response = await fetch('/api/universities/', {
-                    method: 'POST',
-                    headers: {
-                        'X-CSRFToken': csrfToken
-                    },
-                    body: formData
-                });
+                var connectionsPromise = fetch('/api/universities/?mode=connections', requestOptions);
+                var graphPromise = fetch('/api/universities/?mode=graph', requestOptions);
 
-                var data = await response.json();
-                if (!response.ok) {
-                    throw new Error(data && data.detail ? data.detail : 'Request failed');
+                var connectionsResponse = await connectionsPromise;
+                var connectionsData = await connectionsResponse.json();
+                if (!connectionsResponse.ok) {
+                    throw new Error(connectionsData && connectionsData.detail ? connectionsData.detail : 'Request failed');
                 }
 
-                if (data.success) {
-                    graphTitle.textContent = 'Network for: ' + (data.university || '');
-                    graphIframe.src = data.iframe_url || '';
-                    graphWrap.style.display = 'block';
-                    renderConnections(data.connections || null);
+                if (connectionsData.success) {
+                    renderConnections(connectionsData.connections || null);
                 } else {
-                    var details = data.suggestions && data.suggestions.length ? (' Did you mean: ' + data.suggestions.join(', ')) : '';
-                    msgEl.textContent = (data.message || 'No results found.') + details;
+                    var connDetails = connectionsData.suggestions && connectionsData.suggestions.length ? (' Did you mean: ' + connectionsData.suggestions.join(', ')) : '';
+                    msgEl.textContent = (connectionsData.message || 'No results found.') + connDetails;
                     msgEl.style.display = 'block';
+                    statusEl.style.display = 'none';
+                    return;
+                }
+
+                var graphResponse = await graphPromise;
+                var graphData = await graphResponse.json();
+                if (!graphResponse.ok) {
+                    throw new Error(graphData && graphData.detail ? graphData.detail : 'Graph request failed');
+                }
+
+                if (graphData.success) {
+                    graphTitle.textContent = 'Network for: ' + (graphData.university || '');
+                    graphIframe.src = graphData.iframe_url || '';
+                    graphWrap.style.display = 'block';
                 }
             } catch (error) {
                 msgEl.textContent = 'Search failed: ' + error.message;
