@@ -1,4 +1,5 @@
 import re
+import json
 
 import pandas as pd
 from django.conf import settings
@@ -16,8 +17,50 @@ from .network_functions import (
         new_no_dup_aff,
         university_keys,
         main,
-        classify_companies_series
+        classify_companies_series,
+        categorize_funding_source,
     )
+
+
+def create_company_classifications(force_reclassify=False):
+    """Build or update company classifications and persist them to data/company_classifications.json."""
+    classification_file_path = os.path.join(settings.BASE_DIR, 'data', 'company_classifications.json')
+
+    company_classification_dict = {}
+    if os.path.exists(classification_file_path):
+        try:
+            with open(classification_file_path, 'r', encoding='utf-8') as f:
+                company_classification_dict = json.load(f)
+            print(f"Loaded {len(company_classification_dict)} existing classifications")
+        except Exception as e:
+            print(f"Error loading classifications from {classification_file_path}: {e}")
+            company_classification_dict = {}
+
+    companies = sorted({comp.strip() for comp in no_dup_comp if isinstance(comp, str) and comp.strip()})
+    if force_reclassify:
+        companies_to_classify = companies
+    else:
+        companies_to_classify = [comp for comp in companies if comp not in company_classification_dict]
+
+    if not companies_to_classify:
+        print("All companies already classified")
+        return company_classification_dict
+
+    print(f"Classifying {len(companies_to_classify)} companies...")
+    for idx, company in enumerate(companies_to_classify, start=1):
+        category = categorize_funding_source(company)
+        company_classification_dict[company] = category
+
+        if idx % 50 == 0 or idx == len(companies_to_classify):
+            progress = (idx / len(companies_to_classify)) * 100
+            print(f"Classified {idx}/{len(companies_to_classify)} companies ({progress:.1f}%)")
+
+    with open(classification_file_path, 'w', encoding='utf-8') as f:
+        json.dump(company_classification_dict, f, indent=2, ensure_ascii=False)
+
+    print(f"Saved {len(company_classification_dict)} classifications to {classification_file_path}")
+    return company_classification_dict
+
 #creating the main dataframe
 def create_main_dataframe():
     data_years = range(2015, 2025)

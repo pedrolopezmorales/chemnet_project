@@ -372,11 +372,14 @@ class Command(BaseCommand):
 
     def _load_manual_approvals(self, path: str) -> pd.DataFrame:
         manual_df = pd.read_csv(path)
-        required = {"original", "apply"}
-        missing = required - set(manual_df.columns)
-        if missing:
+        has_apply = "apply" in manual_df.columns
+        has_auto_apply = "auto_apply" in manual_df.columns
+
+        if "original" not in manual_df.columns or (not has_apply and not has_auto_apply):
+            expected = ["original", "apply"]
             raise CommandError(
-                f"Manual approvals CSV must contain columns {sorted(required)}. Missing: {sorted(missing)}"
+                "Manual approvals CSV must contain 'original' and one of 'apply' or 'auto_apply'. "
+                f"Expected at least: {expected}"
             )
 
         def to_bool(value: object) -> bool:
@@ -389,7 +392,8 @@ class Command(BaseCommand):
 
         manual_df = manual_df.copy()
         manual_df["original"] = manual_df["original"].astype(str).str.strip()
-        manual_df["manual_apply"] = manual_df["apply"].apply(to_bool)
+        apply_col = "apply" if has_apply else "auto_apply"
+        manual_df["manual_apply"] = manual_df[apply_col].apply(to_bool)
         if "chosen" not in manual_df.columns:
             manual_df["chosen"] = ""
         return manual_df[["original", "manual_apply", "chosen"]]
