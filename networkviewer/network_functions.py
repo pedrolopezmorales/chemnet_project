@@ -744,7 +744,40 @@ def _graph_output_exists(output_file):
     return bool(output_file) and os.path.isfile(output_file) and os.path.getsize(output_file) > 0
 
 
-def show_company_network_pyvis(company_name, category='Affiliations', chemical_group='All', sep_country=False, output_file=None, company_funding_rows=None):
+def _with_singleton_suffix(output_file, exclude_singletons=False):
+    if not exclude_singletons:
+        return output_file
+    if output_file.endswith('.html'):
+        return output_file[:-5] + '_no_singletons.html'
+    return output_file + '_no_singletons'
+
+
+def _apply_singleton_filter(net, central_node_id):
+    filtered_edges = []
+    connected_nodes = {central_node_id}
+
+    for edge in net.edges:
+        width = edge.get('width', 1)
+        try:
+            edge_weight = float(width)
+        except (TypeError, ValueError):
+            edge_weight = 1.0
+
+        if edge_weight <= 1.0:
+            continue
+
+        filtered_edges.append(edge)
+        connected_nodes.add(edge.get('from'))
+        connected_nodes.add(edge.get('to'))
+
+    net.edges = filtered_edges
+    net.nodes = [
+        node for node in net.nodes
+        if node.get('id') == central_node_id or node.get('id') in connected_nodes
+    ]
+
+
+def show_company_network_pyvis(company_name, category='Affiliations', chemical_group='All', sep_country=False, output_file=None, company_funding_rows=None, exclude_singletons=False):
     if output_file is None:
         # Generate unique filename based on ALL parameters
         safe_company = company_name.replace(' ', '_').replace('/', '_').replace('\\', '_').replace('.', '_')
@@ -763,6 +796,7 @@ def show_company_network_pyvis(company_name, category='Affiliations', chemical_g
         else:
             # For Universities, Researchers, etc.
             output_file = f"staticfiles/network_{safe_company}_{safe_category}.html"
+    output_file = _with_singleton_suffix(output_file, exclude_singletons=exclude_singletons)
     if _graph_output_exists(output_file):
         return True
     # Filter for the selected company
@@ -1043,6 +1077,9 @@ def show_company_network_pyvis(company_name, category='Affiliations', chemical_g
                         width=max(1, study_count), 
                         title=f"Studies: {study_count}"
                     )
+    if exclude_singletons:
+        _apply_singleton_filter(net, company_name)
+
     num_nodes = len(net.nodes)
 
     net.options.interaction = {
@@ -1258,7 +1295,7 @@ comparing_unis['Companies'] = comparing_unis['Companies'].apply(
 comparing_unis['Chemicals'] = comparing_unis['Chemicals'].apply(
     lambda x: ast.literal_eval(x) if isinstance(x, str) and x.startswith('[') else []
 )
-def show_uni_network_pyvis(uni_name, category='Funding Sources', chemical_group='All', output_file=None, uni_rows=None):
+def show_uni_network_pyvis(uni_name, category='Funding Sources', chemical_group='All', output_file=None, uni_rows=None, exclude_singletons=False):
     if output_file is None:
         # Generate unique filename based on ALL parameters
         safe_uni = uni_name.replace(' ', '_').replace('/', '_').replace('\\', '_').replace('.', '_')
@@ -1272,6 +1309,7 @@ def show_uni_network_pyvis(uni_name, category='Funding Sources', chemical_group=
         else:
             # For Companies, etc.
             output_file = f"staticfiles/network_{safe_uni}_{safe_category}.html"    # Filter for the selected company
+    output_file = _with_singleton_suffix(output_file, exclude_singletons=exclude_singletons)
     if _graph_output_exists(output_file):
         return True
     row = comparing_unis[comparing_unis['University'] == uni_name]
@@ -1437,6 +1475,9 @@ def show_uni_network_pyvis(uni_name, category='Funding Sources', chemical_group=
                         width=max(1, study_count), 
                         title=f"Studies: {study_count}"
                     )
+    if exclude_singletons:
+        _apply_singleton_filter(net, uni_name)
+
     num_nodes = len(net.nodes)
 
     net.options.interaction = {
@@ -1755,7 +1796,7 @@ chem_per_row['chemical'] = chem_per_row['chemical'].apply(
     lambda x: ast.literal_eval(x) if isinstance(x, str) and x.startswith('[') else []
 )
 
-def show_chemical_network(chemical, inch='Error', output_file=None, row=None):
+def show_chemical_network(chemical, inch='Error', output_file=None, row=None, exclude_singletons=False):
     if output_file is None:
         safe_chemical = chemical.replace(' ', '_').replace('/', '_').replace('\\', '_').replace('.', '_')
         if inch != 'Error':
@@ -1763,6 +1804,7 @@ def show_chemical_network(chemical, inch='Error', output_file=None, row=None):
             output_file = f"staticfiles/network_{safe_chemical}_{safe_inch}.html"
         else:
             output_file = f"staticfiles/network_{safe_chemical}_no_inchikey.html"
+    output_file = _with_singleton_suffix(output_file, exclude_singletons=exclude_singletons)
     if _graph_output_exists(output_file):
         return True
     # Filter for the selected company
@@ -1837,6 +1879,9 @@ def show_chemical_network(chemical, inch='Error', output_file=None, row=None):
                     title=f"Studies: {study_count}",
                     color='red'
                 )
+    if exclude_singletons:
+        _apply_singleton_filter(net, chemical)
+
     num_nodes = len(net.nodes)
 
     net.options.interaction = {

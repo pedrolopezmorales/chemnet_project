@@ -200,6 +200,28 @@
             connWrap.style.display = 'block';
         }
 
+        function extractCount(item) {
+            var text = String(item || '');
+            var match = text.match(/\((\d+)\)\s*$/);
+            return match ? parseInt(match[1], 10) : null;
+        }
+        function showSingletonModal(count, singletonCount) {
+            return new Promise(function (resolve) {
+                var modal = document.getElementById('singleton-modal');
+                document.getElementById('singleton-modal-msg').textContent =
+                    'This graph has ' + count + ' possible connections, and ' + singletonCount +
+                    ' appear only once. Remove one-time connections for a faster, cleaner graph?';
+                modal.style.display = 'flex';
+                document.getElementById('singleton-modal-yes').onclick = function () {
+                    modal.style.display = 'none';
+                    resolve(true);
+                };
+                document.getElementById('singleton-modal-no').onclick = function () {
+                    modal.style.display = 'none';
+                    resolve(false);
+                };
+            });
+        }
         form.addEventListener('submit', async function (event) {
             event.preventDefault();
 
@@ -227,7 +249,6 @@
 
             try {
                 var connectionsPromise = fetch('/api/chemicals/?mode=connections', requestOptions);
-                var graphPromise = fetch('/api/chemicals/?mode=graph', requestOptions);
 
                 var connectionsResponse = await connectionsPromise;
                 var connectionsData = await connectionsResponse.json();
@@ -258,7 +279,25 @@
                     return;
                 }
 
-                var graphResponse = await graphPromise;
+                var candidates = Array.isArray((connectionsData.connections || {})['Funding Sources'])
+                    ? (connectionsData.connections || {})['Funding Sources']
+                    : [];
+                var singletonCount = candidates.filter(function (item) { return extractCount(item) === 1; }).length;
+
+                var dropSingletons = false;
+                if (candidates.length > 100 && singletonCount > 0) {
+                    dropSingletons = await showSingletonModal(candidates.length, singletonCount);
+                }
+
+                var graphUrl = '/api/chemicals/?mode=graph';
+                if (dropSingletons) {
+                    graphUrl += '&drop_singletons=1';
+                    statusEl.textContent = 'Loading filtered graph (one-time connections removed)...';
+                } else {
+                    statusEl.textContent = 'Loading graph and chemical details...';
+                }
+
+                var graphResponse = await fetch(graphUrl, requestOptions);
                 var graphData = await graphResponse.json();
                 if (!graphResponse.ok) {
                     throw new Error(graphData && graphData.detail ? graphData.detail : 'Graph request failed');
@@ -274,9 +313,21 @@
                 msgEl.style.display = 'block';
             } finally {
                 statusEl.style.display = 'none';
+                statusEl.textContent = 'Loading graph and chemical details...';
             }
         });
     })();
     </script>
+
+    <div id="singleton-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.55); z-index:9999; align-items:center; justify-content:center;">
+        <div style="background:white; border-radius:12px; padding:28px 32px; max-width:440px; width:90%; box-shadow:0 20px 60px rgba(0,0,0,0.35);">
+            <h3 style="margin:0 0 10px; font-size:17px; color:#1f2937; font-weight:700;">Large Network Detected</h3>
+            <p id="singleton-modal-msg" style="margin:0 0 22px; color:#4b5563; line-height:1.6; font-size:14px;"></p>
+            <div style="display:flex; gap:10px; justify-content:flex-end;">
+                <button id="singleton-modal-no" style="padding:8px 20px; border:1px solid #d1d5db; border-radius:7px; background:white; color:#374151; cursor:pointer; font-size:14px; font-family:inherit;">Keep All</button>
+                <button id="singleton-modal-yes" style="padding:8px 20px; border:none; border-radius:7px; background:#0b4e86; color:white; cursor:pointer; font-size:14px; font-weight:600; font-family:inherit;">Yes, Filter</button>
+            </div>
+        </div>
+    </div>
 </body>
 </html>

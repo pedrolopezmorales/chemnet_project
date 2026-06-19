@@ -78,6 +78,11 @@ def get_request_mode(request):
     mode = request.query_params.get('mode', 'full')
     return mode if mode in {'full', 'connections', 'graph'} else 'full'
 
+
+def get_drop_singletons(request):
+    value = str(request.query_params.get('drop_singletons', '')).strip().lower()
+    return value in {'1', 'true', 'yes', 'y'}
+
 class ChemicalSearchAPI(APIView):
     def get(self, request):
         # Return example chemicals and all chemical names for autocomplete
@@ -105,6 +110,7 @@ class ChemicalSearchAPI(APIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         mode = get_request_mode(request)
+        drop_singletons = get_drop_singletons(request)
         
         data = serializer.validated_data
         chemical = data.get('chemical', '').strip()
@@ -160,20 +166,21 @@ class ChemicalSearchAPI(APIView):
 
         # Process search
         if inchikey:
-            found = show_chemical_network(chemical, inch=inchikey)
+            found = show_chemical_network(chemical, inch=inchikey, exclude_singletons=drop_singletons)
             connections = show_chem_connections(inchikey=inchikey)
         elif chemical:
-            found = show_chemical_network(chemical, inch='Error')
+            found = show_chemical_network(chemical, inch='Error', exclude_singletons=drop_singletons)
             connections = show_chem_connections(chemical)
         
         if found:
+            singleton_suffix = '_no_singletons' if drop_singletons else ''
             if chemical and inchikey and inchikey != 'Error':
                 safe_chemical = chemical.replace(' ', '_').replace('/', '_').replace('\\', '_').replace('.', '_')
                 safe_inch = inchikey.replace('/', '_').replace('\\', '_').replace('-', '_')
-                iframe_url = f"/static/network_{safe_chemical}_{safe_inch}.html"
+                iframe_url = f"/static/network_{safe_chemical}_{safe_inch}{singleton_suffix}.html"
             else:
                 safe_chemical = chemical.replace(' ', '_').replace('/', '_').replace('\\', '_').replace('.', '_')
-                iframe_url = f"/static/network_{safe_chemical}_no_inchikey.html"
+                iframe_url = f"/static/network_{safe_chemical}_no_inchikey{singleton_suffix}.html"
             
             # Get PubChem description
             description = get_pubchem_description(chemical, inchikey if inchikey != 'Error' else None)
@@ -194,13 +201,14 @@ class ChemicalSearchAPI(APIView):
             if chemical and chemical_inputted:
                 inchikey = obtain_inchikey_from_pubchem(chemical)
                 if inchikey:
-                    found = show_chemical_network(chemical, inch=inchikey)
+                    found = show_chemical_network(chemical, inch=inchikey, exclude_singletons=drop_singletons)
                     connections = show_chem_connections(inchikey=inchikey)
                 if found:
+                    singleton_suffix = '_no_singletons' if drop_singletons else ''
                     if chemical and inchikey and inchikey != 'Error':
                         safe_chemical = chemical.replace(' ', '_').replace('/', '_').replace('\\', '_').replace('.', '_')
                         safe_inch = inchikey.replace('/', '_').replace('\\', '_').replace('-', '_')
-                        iframe_url = f"/static/network_{safe_chemical}_{safe_inch}.html"
+                        iframe_url = f"/static/network_{safe_chemical}_{safe_inch}{singleton_suffix}.html"
                     description = get_pubchem_description(chemical, inchikey if inchikey != 'Error' else None)
 
                     payload = {
@@ -257,6 +265,7 @@ class CompanySearchAPI(APIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         mode = get_request_mode(request)
+        drop_singletons = get_drop_singletons(request)
         
         data = serializer.validated_data
         all_company_names = sorted(set(no_dup_comp))
@@ -288,24 +297,26 @@ class CompanySearchAPI(APIView):
         found = show_company_network_pyvis(company, category=category, 
                                          chemical_group=chemical_group, 
                                          sep_country=sep_country,
-                                         company_funding_rows=company_funding_rows)
+                                         company_funding_rows=company_funding_rows,
+                                         exclude_singletons=drop_singletons)
         
         if found:
+            singleton_suffix = '_no_singletons' if drop_singletons else ''
             safe_company = company.replace(' ', '_').replace('/', '_').replace('\\', '_').replace('.', '_')
             safe_category = category.replace(' ', '_')
             
             if category == 'Chemicals':
                 if chemical_group == 'All':
-                    iframe_url = f"/static/network_{safe_company}_{safe_category}_all.html"
+                    iframe_url = f"/static/network_{safe_company}_{safe_category}_all{singleton_suffix}.html"
                 elif chemical_group == 'Organic':
-                    iframe_url = f"/static/network_{safe_company}_{safe_category}_organic.html"
+                    iframe_url = f"/static/network_{safe_company}_{safe_category}_organic{singleton_suffix}.html"
             elif category == 'Affiliations':
                 if sep_country:
-                    iframe_url = f"/static/network_{safe_company}_{safe_category}_by_country.html"
+                    iframe_url = f"/static/network_{safe_company}_{safe_category}_by_country{singleton_suffix}.html"
                 else:
-                    iframe_url = f"/static/network_{safe_company}_{safe_category}_combined.html"
+                    iframe_url = f"/static/network_{safe_company}_{safe_category}_combined{singleton_suffix}.html"
             else:
-                iframe_url = f"/static/network_{safe_company}_{safe_category}.html"
+                iframe_url = f"/static/network_{safe_company}_{safe_category}{singleton_suffix}.html"
             
             connections = show_company_connections(company, company_funding_rows=company_funding_rows)
             
@@ -364,6 +375,7 @@ class UniversitySearchAPI(APIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         mode = get_request_mode(request)
+        drop_singletons = get_drop_singletons(request)
         
         data = serializer.validated_data
         all_university_names = sorted(comparing_unis['University'].dropna().unique())
@@ -391,19 +403,21 @@ class UniversitySearchAPI(APIView):
         
         found = show_uni_network_pyvis(university, category=category, 
                                      chemical_group=chemical_group,
-                                     uni_rows=uni_rows)
+                                     uni_rows=uni_rows,
+                                     exclude_singletons=drop_singletons)
         
         if found:
+            singleton_suffix = '_no_singletons' if drop_singletons else ''
             safe_uni = university.replace(' ', '_').replace('/', '_').replace('\\', '_').replace('.', '_')
             safe_category = category.replace(' ', '_')
             
             if category == 'Chemicals':
                 if chemical_group == 'All':
-                    iframe_url = f"/static/network_{safe_uni}_{safe_category}_all.html"
+                    iframe_url = f"/static/network_{safe_uni}_{safe_category}_all{singleton_suffix}.html"
                 elif chemical_group == 'Organic':
-                    iframe_url = f"/static/network_{safe_uni}_{safe_category}_organic.html"
+                    iframe_url = f"/static/network_{safe_uni}_{safe_category}_organic{singleton_suffix}.html"
             else:
-                iframe_url = f"/static/network_{safe_uni}_{safe_category}.html"
+                iframe_url = f"/static/network_{safe_uni}_{safe_category}{singleton_suffix}.html"
             
             connections = show_uni_connections(university, uni_rows=uni_rows)
 
