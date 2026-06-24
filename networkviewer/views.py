@@ -1,7 +1,10 @@
 from django.shortcuts import render
 import random
-import difflib 
-from django.http import JsonResponse
+import difflib
+import os
+from django.conf import settings
+from django.http import JsonResponse, FileResponse, Http404
+from django.views.decorators.clickjacking import xframe_options_sameorigin
 from .network_functions import (
     show_chemical_network,
     show_company_network_pyvis,
@@ -29,6 +32,33 @@ from .network_functions import (
     get_researcher_rows,
     get_chemical_row
 )
+
+# Directory where network_functions writes the generated pyvis graphs.
+_GRAPH_DIR = os.path.join(settings.BASE_DIR, 'staticfiles')
+
+
+@xframe_options_sameorigin
+def serve_network_graph(request, filename):
+    """Serve a generated network graph HTML file.
+
+    The graphs are written at runtime into the staticfiles directory. Django's
+    development server serves /static/ via finders (source dirs only), so those
+    runtime files are not reachable that way. Serving them through this view
+    works identically in development and production.
+
+    The xframe_options_sameorigin decorator overrides Django's default
+    X-Frame-Options: DENY for this response, so the graph can be embedded in
+    the same-origin <iframe> on the chemical/company/etc. pages.
+    """
+    # Only allow plain generated graph filenames; reject any path traversal.
+    if (not filename.endswith('.html')
+            or '/' in filename or '\\' in filename or '..' in filename):
+        raise Http404('Not found')
+    filepath = os.path.join(_GRAPH_DIR, filename)
+    if not os.path.isfile(filepath):
+        raise Http404('Graph not found')
+    return FileResponse(open(filepath, 'rb'), content_type='text/html')
+
 
 def resolve_case_insensitive_name(query, valid_names):
     if query is None:
@@ -121,10 +151,10 @@ def chemical_view(request):
             if chemical and inchikey and inchikey != 'Error':
                 safe_chemical = chemical.replace(' ', '_').replace('/', '_').replace('\\', '_').replace('.', '_')
                 safe_inch = inchikey.replace('/', '_').replace('\\', '_').replace('-', '_')
-                iframe = f"/static/network_{safe_chemical}_{safe_inch}.html"
+                iframe = f"/networks/network_{safe_chemical}_{safe_inch}.html"
             else:
                 safe_chemical = chemical.replace(' ', '_').replace('/', '_').replace('\\', '_').replace('.', '_')
-                iframe = f"/static/network_{safe_chemical}_no_inchikey.html"
+                iframe = f"/networks/network_{safe_chemical}_no_inchikey.html"
         else:
             if chemical:
                 inchikey = obtain_inchikey_from_pubchem(chemical)
@@ -138,7 +168,7 @@ def chemical_view(request):
                     if chemical and inchikey and inchikey != 'Error':
                         safe_chemical = chemical.replace(' ', '_').replace('/', '_').replace('\\', '_').replace('.', '_')
                         safe_inch = inchikey.replace('/', '_').replace('\\', '_').replace('-', '_')
-                        iframe = f"/static/network_{safe_chemical}_{safe_inch}.html"
+                        iframe = f"/networks/network_{safe_chemical}_{safe_inch}.html"
                 else:
                     suggestions = get_close_matches_custom(chemical, all_chemical_names)
                     if suggestions:
@@ -208,16 +238,16 @@ def company_view(request):
             
             if category == 'Chemicals':
                 if chemical_group == 'All':
-                    iframe = f"/static/network_{safe_company}_{safe_category}_all.html"
+                    iframe = f"/networks/network_{safe_company}_{safe_category}_all.html"
                 elif chemical_group == 'Organic':
-                    iframe = f"/static/network_{safe_company}_{safe_category}_organic.html"
+                    iframe = f"/networks/network_{safe_company}_{safe_category}_organic.html"
             elif category == 'Affiliations':
                 if sep_country:
-                    iframe = f"/static/network_{safe_company}_{safe_category}_by_country.html"
+                    iframe = f"/networks/network_{safe_company}_{safe_category}_by_country.html"
                 else:
-                    iframe = f"/static/network_{safe_company}_{safe_category}_combined.html"
+                    iframe = f"/networks/network_{safe_company}_{safe_category}_combined.html"
             else:
-                iframe = f"/static/network_{safe_company}_{safe_category}.html"
+                iframe = f"/networks/network_{safe_company}_{safe_category}.html"
             connections = show_company_connections(company, company_funding_rows=company_funding_rows)
         else:
             suggestions = get_close_matches_custom(company, all_company_names)
@@ -285,11 +315,11 @@ def university_view(request):
             
             if category == 'Chemicals':
                 if chemical_group == 'All':
-                    iframe = f"/static/network_{safe_uni}_{safe_category}_all.html"
+                    iframe = f"/networks/network_{safe_uni}_{safe_category}_all.html"
                 elif chemical_group == 'Organic':
-                    iframe = f"/static/network_{safe_uni}_{safe_category}_organic.html"
+                    iframe = f"/networks/network_{safe_uni}_{safe_category}_organic.html"
             else:
-                iframe = f"/static/network_{safe_uni}_{safe_category}.html"
+                iframe = f"/networks/network_{safe_uni}_{safe_category}.html"
             connections = show_uni_connections(university, uni_rows=uni_rows)
         else:
             suggestions = get_close_matches_custom(university, all_university_names)
@@ -361,7 +391,7 @@ def researcher_view(request):
             if found:
                 safe_researcher = researcher.replace(' ', '_').replace(',', '').replace('/', '_').replace('\\', '_').replace('.', '_')
                 safe_aff = str(row['Affiliation'])[:20].replace(' ', '_').replace('/', '_').replace('\\', '_').replace('.', '_')
-                iframe = f"/static/network_{safe_researcher}_{safe_aff}.html"
+                iframe = f"/networks/network_{safe_researcher}_{safe_aff}.html"
             connections = show_res_connections(researcher=researcher, matches=all_matches, researcher_rows=researcher_rows)
         elif selected_index is not None or combine:
             if combine:
@@ -380,7 +410,7 @@ def researcher_view(request):
             if found:
                 safe_researcher = researcher.replace(' ', '_').replace(',', '').replace('/', '_').replace('\\', '_').replace('.', '_')
                 safe_aff = str(row['Affiliation'])[:20].replace(' ', '_').replace('/', '_').replace('\\', '_').replace('.', '_')
-                iframe = f"/static/network_{safe_researcher}_{safe_aff}.html"
+                iframe = f"/networks/network_{safe_researcher}_{safe_aff}.html"
         # If multiple matches and no selection yet, just show the options
             connections = show_res_connections(researcher, matches=all_matches, researcher_rows=researcher_rows)
     context = {

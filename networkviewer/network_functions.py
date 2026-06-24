@@ -11,11 +11,54 @@ from collections import Counter
 import requests
 import time
 from functools import lru_cache
+import logging
+
+logger = logging.getLogger(__name__)
+
+# Directory for locally cached copies of the remote datasets. These act as a
+# fallback so the app can still start (with slightly stale data) if the remote
+# host is temporarily unavailable, instead of failing to import entirely.
+_DATA_CACHE_DIR = os.path.join(settings.BASE_DIR, 'data', 'cache')
+
+# Absolute directory where generated network graphs are written. Anchoring to
+# STATIC_ROOT (not a relative "staticfiles/" path) ensures the files land in the
+# exact location Django serves /static/ from, regardless of the current working
+# directory the server was launched from.
+_GRAPH_DIR = os.path.join(settings.BASE_DIR, 'staticfiles')
+
+
+def load_remote_csv(url, cache_name, **read_csv_kwargs):
+    """Load a CSV from a remote URL, with a local cache as a fallback.
+
+    Tries the remote URL first. On success, refreshes the on-disk cache so a
+    good copy is always available. If the download fails (network error, host
+    down, timeout), falls back to the cached copy when one exists. Raises only
+    if the remote fetch fails AND no cache is available.
+    """
+    os.makedirs(_DATA_CACHE_DIR, exist_ok=True)
+    cache_path = os.path.join(_DATA_CACHE_DIR, cache_name)
+    try:
+        df = pd.read_csv(url, **read_csv_kwargs)
+        try:
+            df.to_csv(cache_path, index=False)
+        except Exception as exc:  # caching is best-effort, never fatal
+            logger.warning("Could not write cache file %s: %s", cache_path, exc)
+        return df
+    except Exception as exc:
+        logger.warning(
+            "Failed to fetch %s (%s). Falling back to local cache.", url, exc
+        )
+        if os.path.exists(cache_path):
+            return pd.read_csv(cache_path, **read_csv_kwargs)
+        raise RuntimeError(
+            f"Could not load '{cache_name}' from {url} and no cached copy "
+            f"exists at {cache_path}."
+        ) from exc
 
 
 
 MAIN_CSV_URL = "https://ucsf.box.com/shared/static/fqlnjad1am16x33o0yy6yntm462ws7rk.csv"
-main = pd.read_csv(MAIN_CSV_URL)
+main = load_remote_csv(MAIN_CSV_URL, 'main.csv')
 main = main.dropna(subset=['Authors'])
 
 countries = dict(countries_for_language('en'))
@@ -583,7 +626,7 @@ def is_organic(name):
         return None  # Not found
 
 FUNDING_SOURCE_CSV_URL =  "https://ucsf.box.com/shared/static/resl286vjwjdpjx3rl4ahtyg8ejy0ikb.csv"
-company_assoc = pd.read_csv(FUNDING_SOURCE_CSV_URL)
+company_assoc = load_remote_csv(FUNDING_SOURCE_CSV_URL, 'company_assoc.csv')
 
 def _safe_parse_list_cell(value):
     if isinstance(value, list):
@@ -785,17 +828,17 @@ def show_company_network_pyvis(company_name, category='Affiliations', chemical_g
         
         if category == 'Chemicals':
             if chemical_group == 'All':
-                output_file = f"staticfiles/network_{safe_company}_{safe_category}_all.html"
+                output_file = os.path.join(_GRAPH_DIR, f"network_{safe_company}_{safe_category}_all.html")
             elif chemical_group == 'Organic':
-                output_file = f"staticfiles/network_{safe_company}_{safe_category}_organic.html"
+                output_file = os.path.join(_GRAPH_DIR, f"network_{safe_company}_{safe_category}_organic.html")
         elif category == 'Affiliations':
             if sep_country:
-                output_file = f"staticfiles/network_{safe_company}_{safe_category}_by_country.html"
+                output_file = os.path.join(_GRAPH_DIR, f"network_{safe_company}_{safe_category}_by_country.html")
             else:
-                output_file = f"staticfiles/network_{safe_company}_{safe_category}_combined.html"
+                output_file = os.path.join(_GRAPH_DIR, f"network_{safe_company}_{safe_category}_combined.html")
         else:
             # For Universities, Researchers, etc.
-            output_file = f"staticfiles/network_{safe_company}_{safe_category}.html"
+            output_file = os.path.join(_GRAPH_DIR, f"network_{safe_company}_{safe_category}.html")
     output_file = _with_singleton_suffix(output_file, exclude_singletons=exclude_singletons)
     if _graph_output_exists(output_file):
         return True
@@ -1288,7 +1331,7 @@ def show_company_network_pyvis(company_name, category='Affiliations', chemical_g
 
 #CSV_PATH_unis = os.path.join(settings.BASE_DIR, 'data', 'comparing_unis.csv')
 UNI_CSV_URL = 'https://ucsf.box.com/shared/static/m07bjches1crtfkrhgzqrkmkw6ob20n3.csv' 
-comparing_unis = pd.read_csv(UNI_CSV_URL)
+comparing_unis = load_remote_csv(UNI_CSV_URL, 'comparing_unis.csv')
 comparing_unis['Companies'] = comparing_unis['Companies'].apply(
     lambda x: ast.literal_eval(x) if isinstance(x, str) and x.startswith('[') else []
 )
@@ -1303,12 +1346,12 @@ def show_uni_network_pyvis(uni_name, category='Funding Sources', chemical_group=
         
         if category == 'Chemicals':
             if chemical_group == 'All':
-                output_file = f"staticfiles/network_{safe_uni}_{safe_category}_all.html"
+                output_file = os.path.join(_GRAPH_DIR, f"network_{safe_uni}_{safe_category}_all.html")
             elif chemical_group == 'Organic':
-                output_file = f"staticfiles/network_{safe_uni}_{safe_category}_organic.html"
+                output_file = os.path.join(_GRAPH_DIR, f"network_{safe_uni}_{safe_category}_organic.html")
         else:
             # For Companies, etc.
-            output_file = f"staticfiles/network_{safe_uni}_{safe_category}.html"    # Filter for the selected company
+            output_file = os.path.join(_GRAPH_DIR, f"network_{safe_uni}_{safe_category}.html")    # Filter for the selected company
     output_file = _with_singleton_suffix(output_file, exclude_singletons=exclude_singletons)
     if _graph_output_exists(output_file):
         return True
@@ -1685,12 +1728,12 @@ def show_uni_network_pyvis(uni_name, category='Funding Sources', chemical_group=
 
 #CSV_PATH_researchers = os.path.join(settings.BASE_DIR, 'data', 'comparing_researchers.csv')
 RESEARCHER_CSV_URL = 'https://ucsf.box.com/shared/static/z3z2oy2z0dkcitxhrjy2j2h7selibiby.csv'
-comparing_researchers = pd.read_csv(RESEARCHER_CSV_URL)
+comparing_researchers = load_remote_csv(RESEARCHER_CSV_URL, 'comparing_researchers.csv')
 comparing_researchers['Companies'] = comparing_researchers['Companies'].apply(
     lambda x: ast.literal_eval(x) if isinstance(x, str) and x.startswith('[') else []
 )
 
-def show_researcher_network_pyvis(researcher, output_file = "staticfiles/company_network.html"):    # Filter for the selected company
+def show_researcher_network_pyvis(researcher, output_file = os.path.join(_GRAPH_DIR, "company_network.html")):    # Filter for the selected company
     # Filter for the selected company
     matches = comparing_researchers[comparing_researchers['Researcher'].str.lower() == researcher.lower()]
     
@@ -1745,17 +1788,20 @@ def show_researcher_network_pyvis(researcher, output_file = "staticfiles/company
         else:
             total_comp.append(affil)
     study_counts = {}
+    # Pre-filter to this researcher's rows once instead of scanning all of
+    # `main` for every company node.
+    researcher_rows = main[
+        main['Authors'].str.contains(researcher, na=False, regex=False)
+    ]
     for node in net.nodes:
         if node['id'] != researcher:  # Skip the researcher node itself
             company = node.get('label', '')  # Company name is the label
             if company:
-                # Count studies mentioning this researcher with this company
-                studies = main[
-                    (main['Funding Sources'].str.contains(company, na=False, regex=False)) &
-                    (main['Authors'].str.contains(researcher, na=False, regex=False))
+                studies = researcher_rows[
+                    researcher_rows['Funding Sources'].str.contains(company, na=False, regex=False)
                 ]
                 study_count = len(studies.drop_duplicates(subset=['DOI']))
-                
+
                 study_counts[node['id']] = study_count
                 net.add_edge(
                     researcher,
@@ -1788,7 +1834,7 @@ def show_researcher_network_pyvis(researcher, output_file = "staticfiles/company
 
 #CSV_PATH_chem = os.path.join(settings.BASE_DIR, 'data', 'chem_per_row.csv')
 CHEM_CSV_URL = 'https://ucsf.box.com/shared/static/5ax55ikfnnkska88j370ths2dcow24e0.csv'
-chem_per_row = pd.read_csv(CHEM_CSV_URL)
+chem_per_row = load_remote_csv(CHEM_CSV_URL, 'chem_per_row.csv')
 chem_per_row['company'] = chem_per_row['company'].apply(
     lambda x: ast.literal_eval(x) if isinstance(x, str) and x.startswith('[') else []
 )
@@ -1801,9 +1847,9 @@ def show_chemical_network(chemical, inch='Error', output_file=None, row=None, ex
         safe_chemical = chemical.replace(' ', '_').replace('/', '_').replace('\\', '_').replace('.', '_')
         if inch != 'Error':
             safe_inch = inch.replace('/', '_').replace('\\', '_').replace('-', '_')
-            output_file = f"staticfiles/network_{safe_chemical}_{safe_inch}.html"
+            output_file = os.path.join(_GRAPH_DIR, f"network_{safe_chemical}_{safe_inch}.html")
         else:
-            output_file = f"staticfiles/network_{safe_chemical}_no_inchikey.html"
+            output_file = os.path.join(_GRAPH_DIR, f"network_{safe_chemical}_no_inchikey.html")
     output_file = _with_singleton_suffix(output_file, exclude_singletons=exclude_singletons)
     if _graph_output_exists(output_file):
         return True
@@ -1852,25 +1898,22 @@ def show_chemical_network(chemical, inch='Error', output_file=None, row=None, ex
         else:
             total_comp.append(comp)
     study_counts = {}
+    # Pre-filter to this chemical's rows once, then reuse for both the edge
+    # counts here and the study tooltips below, instead of scanning all of
+    # `main` for every company node.
+    chem_key = inch if (inch and inch != 'Error' and inch != 'Not Found') else chemical
+    chem_rows = main[
+        main['Chemicals with InChIKey'].str.contains(chem_key, na=False, regex=False)
+    ]
     for node in net.nodes:
         if node['id'] != chemical:  # Skip the chemical node itself
             company = node.get('id')  # Company name is the id
             if company:
-                # Count studies mentioning this chemical with this company
-                if inch and inch != 'Error' and inch != 'Not Found':
-                    # Use InChIKey for search
-                    studies = main[
-                        (main['Funding Sources'].str.contains(company, na=False, regex=False)) &
-                        (main['Chemicals with InChIKey'].str.contains(inch, na=False, regex=False))
-                    ]
-                else:
-                    # Fallback to chemical name
-                    studies = main[
-                        (main['Funding Sources'].str.contains(company, na=False, regex=False)) &
-                        (main['Chemicals with InChIKey'].str.contains(chemical, na=False, regex=False))
-                    ]
+                studies = chem_rows[
+                    chem_rows['Funding Sources'].str.contains(company, na=False, regex=False)
+                ]
                 study_count = len(studies.drop_duplicates(subset=['DOI']))
-                
+
                 study_counts[node['id']] = study_count
                 net.add_edge(
                     chemical,
@@ -1915,19 +1958,15 @@ def show_chemical_network(chemical, inch='Error', output_file=None, row=None, ex
     net.options.physics.minVelocity = 0.75
     os.makedirs(os.path.dirname(output_file), exist_ok=True)
     company_study_map = {}
+    # Reuse the chem_rows subset computed above; skip duplicate funding sources
+    # since their study list would be identical.
     for comp in data:
         original_name, entity_category = extract_name_and_class(comp)
-        if inch and inch != 'Error' and inch != 'Not Found':
-            studies = main[
-                (main['Funding Sources'].str.contains(original_name, na=False, regex=False)) &
-                (main['Chemicals with InChIKey'].str.contains(inch, na=False, regex=False))
-            ]
-        else:
-            # fallback, but this should rarely happen
-            studies = main[
-                (main['Funding Sources'].str.contains(original_name, na=False, regex=False)) &
-                (main['Chemicals with InChIKey'].str.contains(chemical, na=False, regex=False))
-            ]
+        if original_name in company_study_map:
+            continue
+        studies = chem_rows[
+            chem_rows['Funding Sources'].str.contains(original_name, na=False, regex=False)
+        ]
         study_info = "<br>".join(
             f"{row['Title']} (DOI: {row['DOI']})" for _, row in studies.iterrows()
         ) or "No studies found for this connection."
@@ -2078,7 +2117,7 @@ def show_researcher_network_pyvis_from_row(row, output_file=None, researcher_row
         safe_researcher = researcher.replace(' ', '_').replace(',', '').replace('/', '_').replace('\\', '_').replace('.', '_')
         # Use first 20 chars of affiliation to make filename more unique
         safe_aff = str(row['Affiliation'])[:20].replace(' ', '_').replace('/', '_').replace('\\', '_').replace('.', '_')
-        output_file = f"staticfiles/network_{safe_researcher}_{safe_aff}.html"
+        output_file = os.path.join(_GRAPH_DIR, f"network_{safe_researcher}_{safe_aff}.html")
     if _graph_output_exists(output_file):
         return True
     data = row['Companies']
@@ -2163,11 +2202,15 @@ def show_researcher_network_pyvis_from_row(row, output_file=None, researcher_row
     net.options.physics.minVelocity = 0.75
     os.makedirs(os.path.dirname(output_file), exist_ok=True)
     company_study_map = {}
+    # Pre-filter once with the same predicate the original loop used
+    # (substring match on Authors), instead of scanning all of `main` per company.
+    researcher_main = main[
+        main['Authors'].str.contains(researcher, na=False, regex=False)
+    ]
     for comp in data:
         original_name, _ = extract_name_and_class(comp)
-        studies = main[
-            (main['Funding Sources'].str.contains(original_name, na=False, regex=False)) &
-            (main['Authors'].str.contains(researcher, na=False, regex=False))
+        studies = researcher_main[
+            researcher_main['Funding Sources'].str.contains(original_name, na=False, regex=False)
         ]
         study_info = "<br>".join(
             f"{row['Title']} (DOI: {row['DOI']})" for _, row in studies.drop_duplicates(subset=['DOI']).iterrows()
@@ -2435,13 +2478,17 @@ def show_uni_connections(university, uni_rows=None):
     labeled_chemicals = []
     processed_inchikeys = set()
     unique_no_inch_chemicals = []
+    # Pre-filter to this university's rows once instead of scanning all of
+    # `main` for every chemical.
+    uni_main = main[
+        main['Affiliations'].str.contains(university, na=False, regex=False)
+    ]
     for name, inchikey in parsed_chems:
         if inchikey and inchikey != 'Not Found':
             if inchikey not in processed_inchikeys:
                 # Chemicals with InChIKey
-                studies = main[
-                    (main['Affiliations'].str.contains(university, na=False, regex=False)) &
-                    (main['Chemicals with InChIKey'].str.contains(inchikey, na=False, regex=False))
+                studies = uni_main[
+                    uni_main['Chemicals with InChIKey'].str.contains(inchikey, na=False, regex=False)
                 ]
                 study_count = len(studies.drop_duplicates(subset=['DOI']))
                 labeled_chemicals.append(f"{name} ({study_count})")
@@ -2449,9 +2496,8 @@ def show_uni_connections(university, uni_rows=None):
         else:
             # Chemicals without InChIKey
             if name not in unique_no_inch_chemicals:
-                studies = main[
-                    (main['Affiliations'].str.contains(university, na=False, regex=False)) &
-                    (main['Chemicals with InChIKey'].str.contains(name, na=False, regex=False))
+                studies = uni_main[
+                    uni_main['Chemicals with InChIKey'].str.contains(name, na=False, regex=False)
                 ]
                 study_count = len(studies.drop_duplicates(subset=['DOI']))
                 labeled_chemicals.append(f"{name} ({study_count})")
@@ -2465,9 +2511,8 @@ def show_uni_connections(university, uni_rows=None):
         original_name, _ = extract_name_and_class(comp)
         company_key = original_name.strip().lower()
         if company_key not in seen_company_keys:
-            studies = main[ 
-                (main['Affiliations'].str.contains(university, na=False, regex=False)) &
-                funding_source_match_mask(main["Funding Sources"], original_name)
+            studies = uni_main[
+                funding_source_match_mask(uni_main["Funding Sources"], original_name)
             ]
             study_count = len(studies.drop_duplicates(subset=['DOI']))
             labeled_companies.append(f"{comp} ({study_count})")
@@ -2543,21 +2588,19 @@ def show_chem_connections(chemical=None, inchikey=None, row=None):
     # Companies
     seen_company_keys = set()
     labeled_companies = []
-    
+    # Pre-filter to this chemical's rows once instead of scanning all of `main`
+    # for every company.
+    chem_key = inchikey_val if (inchikey_val and inchikey_val != 'Not Found') else chemical
+    chem_main = main[
+        main['Chemicals with InChIKey'].str.contains(chem_key, na=False, regex=False)
+    ]
     for comp in data:
         original_name, _ = extract_name_and_class(comp)
         company_key = original_name.strip().lower()
         if company_key not in seen_company_keys:
-            if inchikey_val and inchikey_val != 'Not Found':
-                studies = main[
-                    funding_source_match_mask(main["Funding Sources"], original_name) &
-                    (main['Chemicals with InChIKey'].str.contains(inchikey_val, na=False, regex=False))
-                ]
-            else:
-                studies = main[
-                    funding_source_match_mask(main["Funding Sources"], original_name) &
-                    (main['Chemicals with InChIKey'].str.contains(chemical, na=False, regex=False))
-                ]
+            studies = chem_main[
+                funding_source_match_mask(chem_main["Funding Sources"], original_name)
+            ]
             study_count = len(studies.drop_duplicates(subset=['DOI']))
             labeled_companies.append(f"{comp} ({study_count})")
             seen_company_keys.add(company_key)
@@ -2871,7 +2914,7 @@ def create_funding_source_dataframe(chem_limit=5, top_n=50):
     return pd.DataFrame(rows)
 
 FUNDING_SOURCE_TABLE_URL = "https://ucsf.box.com/shared/static/ghk9hv5p7fuzoquqa54xjyaiwyp0za8g.csv"
-funding_source_table_df = pd.read_csv(FUNDING_SOURCE_TABLE_URL)
+funding_source_table_df = load_remote_csv(FUNDING_SOURCE_TABLE_URL, 'funding_source_table.csv')
 
 
 def parse_list_cell(value):

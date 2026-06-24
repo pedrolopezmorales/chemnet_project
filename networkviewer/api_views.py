@@ -177,10 +177,10 @@ class ChemicalSearchAPI(APIView):
             if chemical and inchikey and inchikey != 'Error':
                 safe_chemical = chemical.replace(' ', '_').replace('/', '_').replace('\\', '_').replace('.', '_')
                 safe_inch = inchikey.replace('/', '_').replace('\\', '_').replace('-', '_')
-                iframe_url = f"/static/network_{safe_chemical}_{safe_inch}{singleton_suffix}.html"
+                iframe_url = f"/networks/network_{safe_chemical}_{safe_inch}{singleton_suffix}.html"
             else:
                 safe_chemical = chemical.replace(' ', '_').replace('/', '_').replace('\\', '_').replace('.', '_')
-                iframe_url = f"/static/network_{safe_chemical}_no_inchikey{singleton_suffix}.html"
+                iframe_url = f"/networks/network_{safe_chemical}_no_inchikey{singleton_suffix}.html"
             
             # Get PubChem description
             description = get_pubchem_description(chemical, inchikey if inchikey != 'Error' else None)
@@ -208,7 +208,7 @@ class ChemicalSearchAPI(APIView):
                     if chemical and inchikey and inchikey != 'Error':
                         safe_chemical = chemical.replace(' ', '_').replace('/', '_').replace('\\', '_').replace('.', '_')
                         safe_inch = inchikey.replace('/', '_').replace('\\', '_').replace('-', '_')
-                        iframe_url = f"/static/network_{safe_chemical}_{safe_inch}{singleton_suffix}.html"
+                        iframe_url = f"/networks/network_{safe_chemical}_{safe_inch}{singleton_suffix}.html"
                     description = get_pubchem_description(chemical, inchikey if inchikey != 'Error' else None)
 
                     payload = {
@@ -307,16 +307,16 @@ class CompanySearchAPI(APIView):
             
             if category == 'Chemicals':
                 if chemical_group == 'All':
-                    iframe_url = f"/static/network_{safe_company}_{safe_category}_all{singleton_suffix}.html"
+                    iframe_url = f"/networks/network_{safe_company}_{safe_category}_all{singleton_suffix}.html"
                 elif chemical_group == 'Organic':
-                    iframe_url = f"/static/network_{safe_company}_{safe_category}_organic{singleton_suffix}.html"
+                    iframe_url = f"/networks/network_{safe_company}_{safe_category}_organic{singleton_suffix}.html"
             elif category == 'Affiliations':
                 if sep_country:
-                    iframe_url = f"/static/network_{safe_company}_{safe_category}_by_country{singleton_suffix}.html"
+                    iframe_url = f"/networks/network_{safe_company}_{safe_category}_by_country{singleton_suffix}.html"
                 else:
-                    iframe_url = f"/static/network_{safe_company}_{safe_category}_combined{singleton_suffix}.html"
+                    iframe_url = f"/networks/network_{safe_company}_{safe_category}_combined{singleton_suffix}.html"
             else:
-                iframe_url = f"/static/network_{safe_company}_{safe_category}{singleton_suffix}.html"
+                iframe_url = f"/networks/network_{safe_company}_{safe_category}{singleton_suffix}.html"
             
             connections = show_company_connections(company, company_funding_rows=company_funding_rows)
             
@@ -413,11 +413,11 @@ class UniversitySearchAPI(APIView):
             
             if category == 'Chemicals':
                 if chemical_group == 'All':
-                    iframe_url = f"/static/network_{safe_uni}_{safe_category}_all{singleton_suffix}.html"
+                    iframe_url = f"/networks/network_{safe_uni}_{safe_category}_all{singleton_suffix}.html"
                 elif chemical_group == 'Organic':
-                    iframe_url = f"/static/network_{safe_uni}_{safe_category}_organic{singleton_suffix}.html"
+                    iframe_url = f"/networks/network_{safe_uni}_{safe_category}_organic{singleton_suffix}.html"
             else:
-                iframe_url = f"/static/network_{safe_uni}_{safe_category}{singleton_suffix}.html"
+                iframe_url = f"/networks/network_{safe_uni}_{safe_category}{singleton_suffix}.html"
             
             connections = show_uni_connections(university, uni_rows=uni_rows)
 
@@ -497,7 +497,7 @@ class ResearcherSearchAPI(APIView):
             if found:
                 safe_researcher = researcher.replace(' ', '_').replace(',', '').replace('/', '_').replace('\\', '_').replace('.', '_')
                 safe_aff = str(row['Affiliation'])[:20].replace(' ', '_').replace('/', '_').replace('\\', '_').replace('.', '_')
-                iframe_url = f"/static/network_{safe_researcher}_{safe_aff}.html"
+                iframe_url = f"/networks/network_{safe_researcher}_{safe_aff}.html"
                 connections = show_res_connections(researcher=researcher)
                 
                 return Response({
@@ -526,7 +526,7 @@ class ResearcherSearchAPI(APIView):
             if found:
                 safe_researcher = researcher.replace(' ', '_').replace(',', '').replace('/', '_').replace('\\', '_').replace('.', '_')
                 safe_aff = str(row['Affiliation'])[:20].replace(' ', '_').replace('/', '_').replace('\\', '_').replace('.', '_')
-                iframe_url = f"/static/network_{safe_researcher}_{safe_aff}.html"
+                iframe_url = f"/networks/network_{safe_researcher}_{safe_aff}.html"
                 connections = show_res_connections(researcher)
                 
                 return Response({
