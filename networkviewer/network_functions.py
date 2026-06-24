@@ -1788,17 +1788,20 @@ def show_researcher_network_pyvis(researcher, output_file = os.path.join(_GRAPH_
         else:
             total_comp.append(affil)
     study_counts = {}
+    # Pre-filter to this researcher's rows once instead of scanning all of
+    # `main` for every company node.
+    researcher_rows = main[
+        main['Authors'].str.contains(researcher, na=False, regex=False)
+    ]
     for node in net.nodes:
         if node['id'] != researcher:  # Skip the researcher node itself
             company = node.get('label', '')  # Company name is the label
             if company:
-                # Count studies mentioning this researcher with this company
-                studies = main[
-                    (main['Funding Sources'].str.contains(company, na=False, regex=False)) &
-                    (main['Authors'].str.contains(researcher, na=False, regex=False))
+                studies = researcher_rows[
+                    researcher_rows['Funding Sources'].str.contains(company, na=False, regex=False)
                 ]
                 study_count = len(studies.drop_duplicates(subset=['DOI']))
-                
+
                 study_counts[node['id']] = study_count
                 net.add_edge(
                     researcher,
@@ -2199,11 +2202,15 @@ def show_researcher_network_pyvis_from_row(row, output_file=None, researcher_row
     net.options.physics.minVelocity = 0.75
     os.makedirs(os.path.dirname(output_file), exist_ok=True)
     company_study_map = {}
+    # Pre-filter once with the same predicate the original loop used
+    # (substring match on Authors), instead of scanning all of `main` per company.
+    researcher_main = main[
+        main['Authors'].str.contains(researcher, na=False, regex=False)
+    ]
     for comp in data:
         original_name, _ = extract_name_and_class(comp)
-        studies = main[
-            (main['Funding Sources'].str.contains(original_name, na=False, regex=False)) &
-            (main['Authors'].str.contains(researcher, na=False, regex=False))
+        studies = researcher_main[
+            researcher_main['Funding Sources'].str.contains(original_name, na=False, regex=False)
         ]
         study_info = "<br>".join(
             f"{row['Title']} (DOI: {row['DOI']})" for _, row in studies.drop_duplicates(subset=['DOI']).iterrows()
@@ -2471,13 +2478,17 @@ def show_uni_connections(university, uni_rows=None):
     labeled_chemicals = []
     processed_inchikeys = set()
     unique_no_inch_chemicals = []
+    # Pre-filter to this university's rows once instead of scanning all of
+    # `main` for every chemical.
+    uni_main = main[
+        main['Affiliations'].str.contains(university, na=False, regex=False)
+    ]
     for name, inchikey in parsed_chems:
         if inchikey and inchikey != 'Not Found':
             if inchikey not in processed_inchikeys:
                 # Chemicals with InChIKey
-                studies = main[
-                    (main['Affiliations'].str.contains(university, na=False, regex=False)) &
-                    (main['Chemicals with InChIKey'].str.contains(inchikey, na=False, regex=False))
+                studies = uni_main[
+                    uni_main['Chemicals with InChIKey'].str.contains(inchikey, na=False, regex=False)
                 ]
                 study_count = len(studies.drop_duplicates(subset=['DOI']))
                 labeled_chemicals.append(f"{name} ({study_count})")
@@ -2485,9 +2496,8 @@ def show_uni_connections(university, uni_rows=None):
         else:
             # Chemicals without InChIKey
             if name not in unique_no_inch_chemicals:
-                studies = main[
-                    (main['Affiliations'].str.contains(university, na=False, regex=False)) &
-                    (main['Chemicals with InChIKey'].str.contains(name, na=False, regex=False))
+                studies = uni_main[
+                    uni_main['Chemicals with InChIKey'].str.contains(name, na=False, regex=False)
                 ]
                 study_count = len(studies.drop_duplicates(subset=['DOI']))
                 labeled_chemicals.append(f"{name} ({study_count})")
@@ -2501,9 +2511,8 @@ def show_uni_connections(university, uni_rows=None):
         original_name, _ = extract_name_and_class(comp)
         company_key = original_name.strip().lower()
         if company_key not in seen_company_keys:
-            studies = main[ 
-                (main['Affiliations'].str.contains(university, na=False, regex=False)) &
-                funding_source_match_mask(main["Funding Sources"], original_name)
+            studies = uni_main[
+                funding_source_match_mask(uni_main["Funding Sources"], original_name)
             ]
             study_count = len(studies.drop_duplicates(subset=['DOI']))
             labeled_companies.append(f"{comp} ({study_count})")
@@ -2579,21 +2588,19 @@ def show_chem_connections(chemical=None, inchikey=None, row=None):
     # Companies
     seen_company_keys = set()
     labeled_companies = []
-    
+    # Pre-filter to this chemical's rows once instead of scanning all of `main`
+    # for every company.
+    chem_key = inchikey_val if (inchikey_val and inchikey_val != 'Not Found') else chemical
+    chem_main = main[
+        main['Chemicals with InChIKey'].str.contains(chem_key, na=False, regex=False)
+    ]
     for comp in data:
         original_name, _ = extract_name_and_class(comp)
         company_key = original_name.strip().lower()
         if company_key not in seen_company_keys:
-            if inchikey_val and inchikey_val != 'Not Found':
-                studies = main[
-                    funding_source_match_mask(main["Funding Sources"], original_name) &
-                    (main['Chemicals with InChIKey'].str.contains(inchikey_val, na=False, regex=False))
-                ]
-            else:
-                studies = main[
-                    funding_source_match_mask(main["Funding Sources"], original_name) &
-                    (main['Chemicals with InChIKey'].str.contains(chemical, na=False, regex=False))
-                ]
+            studies = chem_main[
+                funding_source_match_mask(chem_main["Funding Sources"], original_name)
+            ]
             study_count = len(studies.drop_duplicates(subset=['DOI']))
             labeled_companies.append(f"{comp} ({study_count})")
             seen_company_keys.add(company_key)
