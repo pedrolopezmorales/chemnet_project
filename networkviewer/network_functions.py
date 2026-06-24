@@ -1895,25 +1895,22 @@ def show_chemical_network(chemical, inch='Error', output_file=None, row=None, ex
         else:
             total_comp.append(comp)
     study_counts = {}
+    # Pre-filter to this chemical's rows once, then reuse for both the edge
+    # counts here and the study tooltips below, instead of scanning all of
+    # `main` for every company node.
+    chem_key = inch if (inch and inch != 'Error' and inch != 'Not Found') else chemical
+    chem_rows = main[
+        main['Chemicals with InChIKey'].str.contains(chem_key, na=False, regex=False)
+    ]
     for node in net.nodes:
         if node['id'] != chemical:  # Skip the chemical node itself
             company = node.get('id')  # Company name is the id
             if company:
-                # Count studies mentioning this chemical with this company
-                if inch and inch != 'Error' and inch != 'Not Found':
-                    # Use InChIKey for search
-                    studies = main[
-                        (main['Funding Sources'].str.contains(company, na=False, regex=False)) &
-                        (main['Chemicals with InChIKey'].str.contains(inch, na=False, regex=False))
-                    ]
-                else:
-                    # Fallback to chemical name
-                    studies = main[
-                        (main['Funding Sources'].str.contains(company, na=False, regex=False)) &
-                        (main['Chemicals with InChIKey'].str.contains(chemical, na=False, regex=False))
-                    ]
+                studies = chem_rows[
+                    chem_rows['Funding Sources'].str.contains(company, na=False, regex=False)
+                ]
                 study_count = len(studies.drop_duplicates(subset=['DOI']))
-                
+
                 study_counts[node['id']] = study_count
                 net.add_edge(
                     chemical,
@@ -1958,19 +1955,15 @@ def show_chemical_network(chemical, inch='Error', output_file=None, row=None, ex
     net.options.physics.minVelocity = 0.75
     os.makedirs(os.path.dirname(output_file), exist_ok=True)
     company_study_map = {}
+    # Reuse the chem_rows subset computed above; skip duplicate funding sources
+    # since their study list would be identical.
     for comp in data:
         original_name, entity_category = extract_name_and_class(comp)
-        if inch and inch != 'Error' and inch != 'Not Found':
-            studies = main[
-                (main['Funding Sources'].str.contains(original_name, na=False, regex=False)) &
-                (main['Chemicals with InChIKey'].str.contains(inch, na=False, regex=False))
-            ]
-        else:
-            # fallback, but this should rarely happen
-            studies = main[
-                (main['Funding Sources'].str.contains(original_name, na=False, regex=False)) &
-                (main['Chemicals with InChIKey'].str.contains(chemical, na=False, regex=False))
-            ]
+        if original_name in company_study_map:
+            continue
+        studies = chem_rows[
+            chem_rows['Funding Sources'].str.contains(original_name, na=False, regex=False)
+        ]
         study_info = "<br>".join(
             f"{row['Title']} (DOI: {row['DOI']})" for _, row in studies.iterrows()
         ) or "No studies found for this connection."
