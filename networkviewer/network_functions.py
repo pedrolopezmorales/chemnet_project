@@ -11,11 +11,48 @@ from collections import Counter
 import requests
 import time
 from functools import lru_cache
+import logging
+
+logger = logging.getLogger(__name__)
+
+# Directory for locally cached copies of the remote datasets. These act as a
+# fallback so the app can still start (with slightly stale data) if the remote
+# host is temporarily unavailable, instead of failing to import entirely.
+_DATA_CACHE_DIR = os.path.join(settings.BASE_DIR, 'data', 'cache')
+
+
+def load_remote_csv(url, cache_name, **read_csv_kwargs):
+    """Load a CSV from a remote URL, with a local cache as a fallback.
+
+    Tries the remote URL first. On success, refreshes the on-disk cache so a
+    good copy is always available. If the download fails (network error, host
+    down, timeout), falls back to the cached copy when one exists. Raises only
+    if the remote fetch fails AND no cache is available.
+    """
+    os.makedirs(_DATA_CACHE_DIR, exist_ok=True)
+    cache_path = os.path.join(_DATA_CACHE_DIR, cache_name)
+    try:
+        df = pd.read_csv(url, **read_csv_kwargs)
+        try:
+            df.to_csv(cache_path, index=False)
+        except Exception as exc:  # caching is best-effort, never fatal
+            logger.warning("Could not write cache file %s: %s", cache_path, exc)
+        return df
+    except Exception as exc:
+        logger.warning(
+            "Failed to fetch %s (%s). Falling back to local cache.", url, exc
+        )
+        if os.path.exists(cache_path):
+            return pd.read_csv(cache_path, **read_csv_kwargs)
+        raise RuntimeError(
+            f"Could not load '{cache_name}' from {url} and no cached copy "
+            f"exists at {cache_path}."
+        ) from exc
 
 
 
 MAIN_CSV_URL = "https://ucsf.box.com/shared/static/fqlnjad1am16x33o0yy6yntm462ws7rk.csv"
-main = pd.read_csv(MAIN_CSV_URL)
+main = load_remote_csv(MAIN_CSV_URL, 'main.csv')
 main = main.dropna(subset=['Authors'])
 
 countries = dict(countries_for_language('en'))
@@ -583,7 +620,7 @@ def is_organic(name):
         return None  # Not found
 
 FUNDING_SOURCE_CSV_URL =  "https://ucsf.box.com/shared/static/resl286vjwjdpjx3rl4ahtyg8ejy0ikb.csv"
-company_assoc = pd.read_csv(FUNDING_SOURCE_CSV_URL)
+company_assoc = load_remote_csv(FUNDING_SOURCE_CSV_URL, 'company_assoc.csv')
 
 def _safe_parse_list_cell(value):
     if isinstance(value, list):
@@ -1288,7 +1325,7 @@ def show_company_network_pyvis(company_name, category='Affiliations', chemical_g
 
 #CSV_PATH_unis = os.path.join(settings.BASE_DIR, 'data', 'comparing_unis.csv')
 UNI_CSV_URL = 'https://ucsf.box.com/shared/static/m07bjches1crtfkrhgzqrkmkw6ob20n3.csv' 
-comparing_unis = pd.read_csv(UNI_CSV_URL)
+comparing_unis = load_remote_csv(UNI_CSV_URL, 'comparing_unis.csv')
 comparing_unis['Companies'] = comparing_unis['Companies'].apply(
     lambda x: ast.literal_eval(x) if isinstance(x, str) and x.startswith('[') else []
 )
@@ -1685,7 +1722,7 @@ def show_uni_network_pyvis(uni_name, category='Funding Sources', chemical_group=
 
 #CSV_PATH_researchers = os.path.join(settings.BASE_DIR, 'data', 'comparing_researchers.csv')
 RESEARCHER_CSV_URL = 'https://ucsf.box.com/shared/static/z3z2oy2z0dkcitxhrjy2j2h7selibiby.csv'
-comparing_researchers = pd.read_csv(RESEARCHER_CSV_URL)
+comparing_researchers = load_remote_csv(RESEARCHER_CSV_URL, 'comparing_researchers.csv')
 comparing_researchers['Companies'] = comparing_researchers['Companies'].apply(
     lambda x: ast.literal_eval(x) if isinstance(x, str) and x.startswith('[') else []
 )
@@ -1788,7 +1825,7 @@ def show_researcher_network_pyvis(researcher, output_file = "staticfiles/company
 
 #CSV_PATH_chem = os.path.join(settings.BASE_DIR, 'data', 'chem_per_row.csv')
 CHEM_CSV_URL = 'https://ucsf.box.com/shared/static/5ax55ikfnnkska88j370ths2dcow24e0.csv'
-chem_per_row = pd.read_csv(CHEM_CSV_URL)
+chem_per_row = load_remote_csv(CHEM_CSV_URL, 'chem_per_row.csv')
 chem_per_row['company'] = chem_per_row['company'].apply(
     lambda x: ast.literal_eval(x) if isinstance(x, str) and x.startswith('[') else []
 )
@@ -2871,7 +2908,7 @@ def create_funding_source_dataframe(chem_limit=5, top_n=50):
     return pd.DataFrame(rows)
 
 FUNDING_SOURCE_TABLE_URL = "https://ucsf.box.com/shared/static/ghk9hv5p7fuzoquqa54xjyaiwyp0za8g.csv"
-funding_source_table_df = pd.read_csv(FUNDING_SOURCE_TABLE_URL)
+funding_source_table_df = load_remote_csv(FUNDING_SOURCE_TABLE_URL, 'funding_source_table.csv')
 
 
 def parse_list_cell(value):
