@@ -4,6 +4,7 @@ import difflib
 import os
 from django.conf import settings
 from django.http import JsonResponse, FileResponse, Http404
+from django.views.decorators.clickjacking import xframe_options_sameorigin
 from .network_functions import (
     show_chemical_network,
     show_company_network_pyvis,
@@ -36,6 +37,7 @@ from .network_functions import (
 _GRAPH_DIR = os.path.join(settings.BASE_DIR, 'staticfiles')
 
 
+@xframe_options_sameorigin
 def serve_network_graph(request, filename):
     """Serve a generated network graph HTML file.
 
@@ -43,6 +45,10 @@ def serve_network_graph(request, filename):
     development server serves /static/ via finders (source dirs only), so those
     runtime files are not reachable that way. Serving them through this view
     works identically in development and production.
+
+    The xframe_options_sameorigin decorator overrides Django's default
+    X-Frame-Options: DENY for this response, so the graph can be embedded in
+    the same-origin <iframe> on the chemical/company/etc. pages.
     """
     # Only allow plain generated graph filenames; reject any path traversal.
     if (not filename.endswith('.html')
