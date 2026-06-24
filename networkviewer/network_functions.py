@@ -20,6 +20,12 @@ logger = logging.getLogger(__name__)
 # host is temporarily unavailable, instead of failing to import entirely.
 _DATA_CACHE_DIR = os.path.join(settings.BASE_DIR, 'data', 'cache')
 
+# Absolute directory where generated network graphs are written. Anchoring to
+# STATIC_ROOT (not a relative "staticfiles/" path) ensures the files land in the
+# exact location Django serves /static/ from, regardless of the current working
+# directory the server was launched from.
+_GRAPH_DIR = os.path.join(settings.BASE_DIR, 'staticfiles')
+
 
 def load_remote_csv(url, cache_name, **read_csv_kwargs):
     """Load a CSV from a remote URL, with a local cache as a fallback.
@@ -822,17 +828,17 @@ def show_company_network_pyvis(company_name, category='Affiliations', chemical_g
         
         if category == 'Chemicals':
             if chemical_group == 'All':
-                output_file = f"staticfiles/network_{safe_company}_{safe_category}_all.html"
+                output_file = os.path.join(_GRAPH_DIR, f"network_{safe_company}_{safe_category}_all.html")
             elif chemical_group == 'Organic':
-                output_file = f"staticfiles/network_{safe_company}_{safe_category}_organic.html"
+                output_file = os.path.join(_GRAPH_DIR, f"network_{safe_company}_{safe_category}_organic.html")
         elif category == 'Affiliations':
             if sep_country:
-                output_file = f"staticfiles/network_{safe_company}_{safe_category}_by_country.html"
+                output_file = os.path.join(_GRAPH_DIR, f"network_{safe_company}_{safe_category}_by_country.html")
             else:
-                output_file = f"staticfiles/network_{safe_company}_{safe_category}_combined.html"
+                output_file = os.path.join(_GRAPH_DIR, f"network_{safe_company}_{safe_category}_combined.html")
         else:
             # For Universities, Researchers, etc.
-            output_file = f"staticfiles/network_{safe_company}_{safe_category}.html"
+            output_file = os.path.join(_GRAPH_DIR, f"network_{safe_company}_{safe_category}.html")
     output_file = _with_singleton_suffix(output_file, exclude_singletons=exclude_singletons)
     if _graph_output_exists(output_file):
         return True
@@ -1340,12 +1346,12 @@ def show_uni_network_pyvis(uni_name, category='Funding Sources', chemical_group=
         
         if category == 'Chemicals':
             if chemical_group == 'All':
-                output_file = f"staticfiles/network_{safe_uni}_{safe_category}_all.html"
+                output_file = os.path.join(_GRAPH_DIR, f"network_{safe_uni}_{safe_category}_all.html")
             elif chemical_group == 'Organic':
-                output_file = f"staticfiles/network_{safe_uni}_{safe_category}_organic.html"
+                output_file = os.path.join(_GRAPH_DIR, f"network_{safe_uni}_{safe_category}_organic.html")
         else:
             # For Companies, etc.
-            output_file = f"staticfiles/network_{safe_uni}_{safe_category}.html"    # Filter for the selected company
+            output_file = os.path.join(_GRAPH_DIR, f"network_{safe_uni}_{safe_category}.html")    # Filter for the selected company
     output_file = _with_singleton_suffix(output_file, exclude_singletons=exclude_singletons)
     if _graph_output_exists(output_file):
         return True
@@ -1727,7 +1733,7 @@ comparing_researchers['Companies'] = comparing_researchers['Companies'].apply(
     lambda x: ast.literal_eval(x) if isinstance(x, str) and x.startswith('[') else []
 )
 
-def show_researcher_network_pyvis(researcher, output_file = "staticfiles/company_network.html"):    # Filter for the selected company
+def show_researcher_network_pyvis(researcher, output_file = os.path.join(_GRAPH_DIR, "company_network.html")):    # Filter for the selected company
     # Filter for the selected company
     matches = comparing_researchers[comparing_researchers['Researcher'].str.lower() == researcher.lower()]
     
@@ -1838,9 +1844,9 @@ def show_chemical_network(chemical, inch='Error', output_file=None, row=None, ex
         safe_chemical = chemical.replace(' ', '_').replace('/', '_').replace('\\', '_').replace('.', '_')
         if inch != 'Error':
             safe_inch = inch.replace('/', '_').replace('\\', '_').replace('-', '_')
-            output_file = f"staticfiles/network_{safe_chemical}_{safe_inch}.html"
+            output_file = os.path.join(_GRAPH_DIR, f"network_{safe_chemical}_{safe_inch}.html")
         else:
-            output_file = f"staticfiles/network_{safe_chemical}_no_inchikey.html"
+            output_file = os.path.join(_GRAPH_DIR, f"network_{safe_chemical}_no_inchikey.html")
     output_file = _with_singleton_suffix(output_file, exclude_singletons=exclude_singletons)
     if _graph_output_exists(output_file):
         return True
@@ -2115,7 +2121,7 @@ def show_researcher_network_pyvis_from_row(row, output_file=None, researcher_row
         safe_researcher = researcher.replace(' ', '_').replace(',', '').replace('/', '_').replace('\\', '_').replace('.', '_')
         # Use first 20 chars of affiliation to make filename more unique
         safe_aff = str(row['Affiliation'])[:20].replace(' ', '_').replace('/', '_').replace('\\', '_').replace('.', '_')
-        output_file = f"staticfiles/network_{safe_researcher}_{safe_aff}.html"
+        output_file = os.path.join(_GRAPH_DIR, f"network_{safe_researcher}_{safe_aff}.html")
     if _graph_output_exists(output_file):
         return True
     data = row['Companies']
