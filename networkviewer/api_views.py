@@ -1,6 +1,7 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
+from pathlib import Path
 from .serializers import (
     ChemicalSearchSerializer,
     CompanySearchSerializer, 
@@ -91,6 +92,19 @@ def get_connection_threshold(request):
         threshold = 1 if legacy_value in {'1', 'true', 'yes', 'y'} else 0
 
     return threshold if threshold in {0, 1, 2, 3} else 0
+
+
+def load_graph_html(iframe_url):
+    if not iframe_url:
+        return None
+    filename = iframe_url.rsplit('/', 1)[-1]
+    graph_path = Path(__file__).resolve().parent.parent / 'staticfiles' / filename
+    if not graph_path.is_file():
+        return None
+    try:
+        return graph_path.read_text(encoding='utf-8')
+    except Exception:
+        return None
 
 class ChemicalSearchAPI(APIView):
     def get(self, request):
@@ -203,6 +217,7 @@ class ChemicalSearchAPI(APIView):
                 'chemical': chemical,
                 'inchikey': inchikey,
                 'iframe_url': iframe_url,
+                'graph_html': load_graph_html(iframe_url) if mode == 'graph' else None,
                 'connections': connections,
                 'description': description
             }
@@ -233,6 +248,7 @@ class ChemicalSearchAPI(APIView):
                         'chemical': chemical,
                         'inchikey': inchikey,
                         'iframe_url': iframe_url,
+                        'graph_html': load_graph_html(iframe_url) if mode == 'graph' else None,
                         'connections': connections,
                         'description': description
                     }
@@ -347,6 +363,7 @@ class CompanySearchAPI(APIView):
                 'success': True,
                 'company': company,
                 'iframe_url': iframe_url,
+                'graph_html': load_graph_html(iframe_url) if mode == 'graph' else None,
                 'connections': connections,
                 'description': description
             }
@@ -450,6 +467,7 @@ class UniversitySearchAPI(APIView):
                 'success': True,
                 'university': university,
                 'iframe_url': iframe_url,
+                'graph_html': load_graph_html(iframe_url) if mode == 'graph' else None,
                 'connections': connections
             }
             if mode == 'graph':
