@@ -787,15 +787,16 @@ def _graph_output_exists(output_file):
     return bool(output_file) and os.path.isfile(output_file) and os.path.getsize(output_file) > 0
 
 
-def _with_singleton_suffix(output_file, exclude_singletons=False):
-    if not exclude_singletons:
+def _with_connection_filter_suffix(output_file, max_connection_count=0):
+    if not max_connection_count:
         return output_file
+    suffix = '_no_singletons' if max_connection_count == 1 else f'_le{max_connection_count}'
     if output_file.endswith('.html'):
-        return output_file[:-5] + '_no_singletons.html'
-    return output_file + '_no_singletons'
+        return output_file[:-5] + suffix + '.html'
+    return output_file + suffix
 
 
-def _apply_singleton_filter(net, central_node_id):
+def _apply_connection_filter(net, central_node_id, max_connection_count):
     filtered_edges = []
     connected_nodes = {central_node_id}
 
@@ -806,7 +807,7 @@ def _apply_singleton_filter(net, central_node_id):
         except (TypeError, ValueError):
             edge_weight = 1.0
 
-        if edge_weight <= 1.0:
+        if edge_weight <= float(max_connection_count):
             continue
 
         filtered_edges.append(edge)
@@ -820,7 +821,7 @@ def _apply_singleton_filter(net, central_node_id):
     ]
 
 
-def show_company_network_pyvis(company_name, category='Affiliations', chemical_group='All', sep_country=False, output_file=None, company_funding_rows=None, exclude_singletons=False):
+def show_company_network_pyvis(company_name, category='Affiliations', chemical_group='All', sep_country=False, output_file=None, company_funding_rows=None, max_connection_count=0):
     if output_file is None:
         # Generate unique filename based on ALL parameters
         safe_company = company_name.replace(' ', '_').replace('/', '_').replace('\\', '_').replace('.', '_')
@@ -839,7 +840,7 @@ def show_company_network_pyvis(company_name, category='Affiliations', chemical_g
         else:
             # For Universities, Researchers, etc.
             output_file = os.path.join(_GRAPH_DIR, f"network_{safe_company}_{safe_category}.html")
-    output_file = _with_singleton_suffix(output_file, exclude_singletons=exclude_singletons)
+    output_file = _with_connection_filter_suffix(output_file, max_connection_count=max_connection_count)
     if _graph_output_exists(output_file):
         return True
     # Filter for the selected company
@@ -1120,8 +1121,8 @@ def show_company_network_pyvis(company_name, category='Affiliations', chemical_g
                         width=max(1, study_count), 
                         title=f"Studies: {study_count}"
                     )
-    if exclude_singletons:
-        _apply_singleton_filter(net, company_name)
+    if max_connection_count:
+        _apply_connection_filter(net, company_name, max_connection_count)
 
     num_nodes = len(net.nodes)
 
@@ -1338,7 +1339,7 @@ comparing_unis['Companies'] = comparing_unis['Companies'].apply(
 comparing_unis['Chemicals'] = comparing_unis['Chemicals'].apply(
     lambda x: ast.literal_eval(x) if isinstance(x, str) and x.startswith('[') else []
 )
-def show_uni_network_pyvis(uni_name, category='Funding Sources', chemical_group='All', output_file=None, uni_rows=None, exclude_singletons=False):
+def show_uni_network_pyvis(uni_name, category='Funding Sources', chemical_group='All', output_file=None, uni_rows=None, max_connection_count=0):
     if output_file is None:
         # Generate unique filename based on ALL parameters
         safe_uni = uni_name.replace(' ', '_').replace('/', '_').replace('\\', '_').replace('.', '_')
@@ -1352,7 +1353,7 @@ def show_uni_network_pyvis(uni_name, category='Funding Sources', chemical_group=
         else:
             # For Companies, etc.
             output_file = os.path.join(_GRAPH_DIR, f"network_{safe_uni}_{safe_category}.html")    # Filter for the selected company
-    output_file = _with_singleton_suffix(output_file, exclude_singletons=exclude_singletons)
+    output_file = _with_connection_filter_suffix(output_file, max_connection_count=max_connection_count)
     if _graph_output_exists(output_file):
         return True
     row = comparing_unis[comparing_unis['University'] == uni_name]
@@ -1518,8 +1519,8 @@ def show_uni_network_pyvis(uni_name, category='Funding Sources', chemical_group=
                         width=max(1, study_count), 
                         title=f"Studies: {study_count}"
                     )
-    if exclude_singletons:
-        _apply_singleton_filter(net, uni_name)
+    if max_connection_count:
+        _apply_connection_filter(net, uni_name, max_connection_count)
 
     num_nodes = len(net.nodes)
 
@@ -1842,7 +1843,7 @@ chem_per_row['chemical'] = chem_per_row['chemical'].apply(
     lambda x: ast.literal_eval(x) if isinstance(x, str) and x.startswith('[') else []
 )
 
-def show_chemical_network(chemical, inch='Error', output_file=None, row=None, exclude_singletons=False):
+def show_chemical_network(chemical, inch='Error', output_file=None, row=None, max_connection_count=0):
     if output_file is None:
         safe_chemical = chemical.replace(' ', '_').replace('/', '_').replace('\\', '_').replace('.', '_')
         if inch != 'Error':
@@ -1850,7 +1851,7 @@ def show_chemical_network(chemical, inch='Error', output_file=None, row=None, ex
             output_file = os.path.join(_GRAPH_DIR, f"network_{safe_chemical}_{safe_inch}.html")
         else:
             output_file = os.path.join(_GRAPH_DIR, f"network_{safe_chemical}_no_inchikey.html")
-    output_file = _with_singleton_suffix(output_file, exclude_singletons=exclude_singletons)
+    output_file = _with_connection_filter_suffix(output_file, max_connection_count=max_connection_count)
     if _graph_output_exists(output_file):
         return True
     # Filter for the selected company
@@ -1922,8 +1923,8 @@ def show_chemical_network(chemical, inch='Error', output_file=None, row=None, ex
                     title=f"Studies: {study_count}",
                     color='red'
                 )
-    if exclude_singletons:
-        _apply_singleton_filter(net, chemical)
+    if max_connection_count:
+        _apply_connection_filter(net, chemical, max_connection_count)
 
     num_nodes = len(net.nodes)
 

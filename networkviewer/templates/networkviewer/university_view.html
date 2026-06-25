@@ -144,20 +144,28 @@
             var match = text.match(/\((\d+)\)\s*$/);
             return match ? parseInt(match[1], 10) : null;
         }
-        function showSingletonModal(count, singletonCount) {
+        function showConnectionThresholdModal(count, eligibleCount) {
             return new Promise(function (resolve) {
                 var modal = document.getElementById('singleton-modal');
                 document.getElementById('singleton-modal-msg').textContent =
-                    'This graph has ' + count + ' possible connections, and ' + singletonCount +
-                    ' appear only once. Remove one-time connections for a faster, cleaner graph?';
+                    'This graph has ' + count + ' possible connections. ' + eligibleCount +
+                    ' of them appear 3 times or fewer and can be filtered out for a faster, cleaner graph.';
                 modal.style.display = 'flex';
-                document.getElementById('singleton-modal-yes').onclick = function () {
+                document.getElementById('singleton-modal-keep').onclick = function () {
                     modal.style.display = 'none';
-                    resolve(true);
+                    resolve(0);
                 };
-                document.getElementById('singleton-modal-no').onclick = function () {
+                document.getElementById('singleton-modal-1').onclick = function () {
                     modal.style.display = 'none';
-                    resolve(false);
+                    resolve(1);
+                };
+                document.getElementById('singleton-modal-2').onclick = function () {
+                    modal.style.display = 'none';
+                    resolve(2);
+                };
+                document.getElementById('singleton-modal-3').onclick = function () {
+                    modal.style.display = 'none';
+                    resolve(3);
                 };
             });
         }
@@ -205,17 +213,20 @@
                 var candidates = Array.isArray((connectionsData.connections || {})[selectedCategory])
                     ? (connectionsData.connections || {})[selectedCategory]
                     : [];
-                var singletonCount = candidates.filter(function (item) { return extractCount(item) === 1; }).length;
+                var eligibleCount = candidates.filter(function (item) {
+                    var count = extractCount(item);
+                    return count !== null && count <= 3;
+                }).length;
 
-                var dropSingletons = false;
-                if (candidates.length > 100 && singletonCount > 0) {
-                    dropSingletons = await showSingletonModal(candidates.length, singletonCount);
+                var connectionThreshold = 0;
+                if (candidates.length > 100 && eligibleCount > 0) {
+                    connectionThreshold = await showConnectionThresholdModal(candidates.length, eligibleCount);
                 }
 
                 var graphUrl = '/api/universities/?mode=graph';
-                if (dropSingletons) {
-                    graphUrl += '&drop_singletons=1';
-                    statusEl.textContent = 'Loading filtered graph (one-time connections removed)...';
+                if (connectionThreshold > 0) {
+                    graphUrl += '&connection_threshold=' + connectionThreshold;
+                    statusEl.textContent = 'Loading filtered graph (connections up to ' + connectionThreshold + ' removed)...';
                 } else {
                     statusEl.textContent = 'Loading graph and connections...';
                 }
@@ -246,9 +257,11 @@
         <div style="background:white; border-radius:12px; padding:28px 32px; max-width:440px; width:90%; box-shadow:0 20px 60px rgba(0,0,0,0.35);">
             <h3 style="margin:0 0 10px; font-size:17px; color:#1f2937; font-weight:700;">Large Network Detected</h3>
             <p id="singleton-modal-msg" style="margin:0 0 22px; color:#4b5563; line-height:1.6; font-size:14px;"></p>
-            <div style="display:flex; gap:10px; justify-content:flex-end;">
-                <button id="singleton-modal-no" style="padding:8px 20px; border:1px solid #d1d5db; border-radius:7px; background:white; color:#374151; cursor:pointer; font-size:14px; font-family:inherit;">Keep All</button>
-                <button id="singleton-modal-yes" style="padding:8px 20px; border:none; border-radius:7px; background:#0b4e86; color:white; cursor:pointer; font-size:14px; font-weight:600; font-family:inherit;">Yes, Filter</button>
+            <div style="display:flex; flex-wrap:wrap; gap:10px; justify-content:flex-end;">
+                <button id="singleton-modal-keep" style="padding:8px 18px; border:1px solid #d1d5db; border-radius:7px; background:white; color:#374151; cursor:pointer; font-size:14px; font-family:inherit;">Keep All</button>
+                <button id="singleton-modal-1" style="padding:8px 18px; border:none; border-radius:7px; background:#0b4e86; color:white; cursor:pointer; font-size:14px; font-weight:600; font-family:inherit;">Remove 1 or fewer</button>
+                <button id="singleton-modal-2" style="padding:8px 18px; border:none; border-radius:7px; background:#0b4e86; color:white; cursor:pointer; font-size:14px; font-weight:600; font-family:inherit;">Remove 2 or fewer</button>
+                <button id="singleton-modal-3" style="padding:8px 18px; border:none; border-radius:7px; background:#0b4e86; color:white; cursor:pointer; font-size:14px; font-weight:600; font-family:inherit;">Remove 3 or fewer</button>
             </div>
         </div>
     </div>

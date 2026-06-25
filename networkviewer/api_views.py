@@ -79,9 +79,18 @@ def get_request_mode(request):
     return mode if mode in {'full', 'connections', 'graph'} else 'full'
 
 
-def get_drop_singletons(request):
-    value = str(request.query_params.get('drop_singletons', '')).strip().lower()
-    return value in {'1', 'true', 'yes', 'y'}
+def get_connection_threshold(request):
+    raw_value = request.query_params.get('connection_threshold')
+    if raw_value is not None:
+        try:
+            threshold = int(raw_value)
+        except (TypeError, ValueError):
+            threshold = 0
+    else:
+        legacy_value = str(request.query_params.get('drop_singletons', '')).strip().lower()
+        threshold = 1 if legacy_value in {'1', 'true', 'yes', 'y'} else 0
+
+    return threshold if threshold in {0, 1, 2, 3} else 0
 
 class ChemicalSearchAPI(APIView):
     def get(self, request):
@@ -110,7 +119,7 @@ class ChemicalSearchAPI(APIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         mode = get_request_mode(request)
-        drop_singletons = get_drop_singletons(request)
+        connection_threshold = get_connection_threshold(request)
         
         data = serializer.validated_data
         chemical = data.get('chemical', '').strip()
@@ -166,14 +175,18 @@ class ChemicalSearchAPI(APIView):
 
         # Process search
         if inchikey:
-            found = show_chemical_network(chemical, inch=inchikey, exclude_singletons=drop_singletons)
+            found = show_chemical_network(chemical, inch=inchikey, max_connection_count=connection_threshold)
             connections = show_chem_connections(inchikey=inchikey)
         elif chemical:
-            found = show_chemical_network(chemical, inch='Error', exclude_singletons=drop_singletons)
+            found = show_chemical_network(chemical, inch='Error', max_connection_count=connection_threshold)
             connections = show_chem_connections(chemical)
         
         if found:
-            singleton_suffix = '_no_singletons' if drop_singletons else ''
+            singleton_suffix = ''
+            if connection_threshold == 1:
+                singleton_suffix = '_no_singletons'
+            elif connection_threshold > 1:
+                singleton_suffix = f'_le{connection_threshold}'
             if chemical and inchikey and inchikey != 'Error':
                 safe_chemical = chemical.replace(' ', '_').replace('/', '_').replace('\\', '_').replace('.', '_')
                 safe_inch = inchikey.replace('/', '_').replace('\\', '_').replace('-', '_')
@@ -201,10 +214,14 @@ class ChemicalSearchAPI(APIView):
             if chemical and chemical_inputted:
                 inchikey = obtain_inchikey_from_pubchem(chemical)
                 if inchikey:
-                    found = show_chemical_network(chemical, inch=inchikey, exclude_singletons=drop_singletons)
+                    found = show_chemical_network(chemical, inch=inchikey, max_connection_count=connection_threshold)
                     connections = show_chem_connections(inchikey=inchikey)
                 if found:
-                    singleton_suffix = '_no_singletons' if drop_singletons else ''
+                    singleton_suffix = ''
+                    if connection_threshold == 1:
+                        singleton_suffix = '_no_singletons'
+                    elif connection_threshold > 1:
+                        singleton_suffix = f'_le{connection_threshold}'
                     if chemical and inchikey and inchikey != 'Error':
                         safe_chemical = chemical.replace(' ', '_').replace('/', '_').replace('\\', '_').replace('.', '_')
                         safe_inch = inchikey.replace('/', '_').replace('\\', '_').replace('-', '_')
@@ -265,7 +282,7 @@ class CompanySearchAPI(APIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         mode = get_request_mode(request)
-        drop_singletons = get_drop_singletons(request)
+        connection_threshold = get_connection_threshold(request)
         
         data = serializer.validated_data
         all_company_names = sorted(set(no_dup_comp))
@@ -298,10 +315,14 @@ class CompanySearchAPI(APIView):
                                          chemical_group=chemical_group, 
                                          sep_country=sep_country,
                                          company_funding_rows=company_funding_rows,
-                                         exclude_singletons=drop_singletons)
+                                         max_connection_count=connection_threshold)
         
         if found:
-            singleton_suffix = '_no_singletons' if drop_singletons else ''
+            singleton_suffix = ''
+            if connection_threshold == 1:
+                singleton_suffix = '_no_singletons'
+            elif connection_threshold > 1:
+                singleton_suffix = f'_le{connection_threshold}'
             safe_company = company.replace(' ', '_').replace('/', '_').replace('\\', '_').replace('.', '_')
             safe_category = category.replace(' ', '_')
             
@@ -375,7 +396,7 @@ class UniversitySearchAPI(APIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         mode = get_request_mode(request)
-        drop_singletons = get_drop_singletons(request)
+        connection_threshold = get_connection_threshold(request)
         
         data = serializer.validated_data
         all_university_names = sorted(comparing_unis['University'].dropna().unique())
@@ -404,10 +425,14 @@ class UniversitySearchAPI(APIView):
         found = show_uni_network_pyvis(university, category=category, 
                                      chemical_group=chemical_group,
                                      uni_rows=uni_rows,
-                                     exclude_singletons=drop_singletons)
+                                     max_connection_count=connection_threshold)
         
         if found:
-            singleton_suffix = '_no_singletons' if drop_singletons else ''
+            singleton_suffix = ''
+            if connection_threshold == 1:
+                singleton_suffix = '_no_singletons'
+            elif connection_threshold > 1:
+                singleton_suffix = f'_le{connection_threshold}'
             safe_uni = university.replace(' ', '_').replace('/', '_').replace('\\', '_').replace('.', '_')
             safe_category = category.replace(' ', '_')
             
