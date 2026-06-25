@@ -12,7 +12,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 
 from pathlib import Path
 import os
-from django.core.exceptions import ImproperlyConfigured
+import secrets
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -25,16 +25,17 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 DEBUG = os.environ.get('DEBUG', 'False').lower() == 'true'
 
 # SECURITY WARNING: keep the secret key used in production secret!
-# Read from the environment. A throwaway key is only used for local development;
-# in production (DEBUG=False) a real SECRET_KEY must be provided or startup fails.
+# Read from the environment first, then fall back to a persisted local file so
+# management commands can still run in hosted shells that do not export it.
+_secret_key_file = BASE_DIR / '.secret_key'
 SECRET_KEY = os.environ.get('SECRET_KEY')
+
 if not SECRET_KEY:
-    if DEBUG:
-        SECRET_KEY = 'django-insecure-local-development-key-do-not-use-in-production'
+    if _secret_key_file.exists():
+        SECRET_KEY = _secret_key_file.read_text(encoding='utf-8').strip()
     else:
-        raise ImproperlyConfigured(
-            'The SECRET_KEY environment variable must be set when DEBUG is False.'
-        )
+        SECRET_KEY = secrets.token_urlsafe(50)
+        _secret_key_file.write_text(SECRET_KEY, encoding='utf-8')
 
 ALLOWED_HOSTS = [
     'dabrahamsson.pythonanywhere.com',
