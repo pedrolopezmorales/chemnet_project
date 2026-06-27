@@ -547,6 +547,7 @@ class ResearcherSearchAPI(APIView):
                     'success': True,
                     'researcher': researcher,
                     'iframe_url': iframe_url,
+                    'graph_html': load_graph_html(iframe_url),
                     'connections': connections,
                     'matches': matches
                 })
@@ -576,6 +577,7 @@ class ResearcherSearchAPI(APIView):
                     'success': True,
                     'researcher': researcher,
                     'iframe_url': iframe_url,
+                    'graph_html': load_graph_html(iframe_url),
                     'connections': connections,
                     'matches': matches
                 })
