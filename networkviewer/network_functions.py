@@ -57,7 +57,7 @@ def load_remote_csv(url, cache_name, **read_csv_kwargs):
 
 
 
-MAIN_CSV_URL = "https://ucsf.box.com/shared/static/fqlnjad1am16x33o0yy6yntm462ws7rk.csv"
+MAIN_CSV_URL = "https://ucsf.box.com/shared/static/9c95305i26voc83jikp8fv6kt5zardth.csv"
 main = load_remote_csv(MAIN_CSV_URL, 'main.csv')
 main = main.dropna(subset=['Authors'])
 
@@ -77,6 +77,81 @@ countries.update({'U.K.':'United Kingdom',
                  })
 university_keys = ['institute of','university','instituto','Universidad','Universita','Universit']
 
+_GOVERNMENT_PATTERNS = [
+    r'\bdepartment\s+of\b',
+    r'\bgovernment\b',
+    r'\bministry\s+of\b',
+    r'\bnational\s+institute(s)?\b',
+    r'\bnational\s+center(s)?\b',
+    r'\bnational\s+lab(oratory|oratories)\b',
+    r'\bnational\s+science\s+foundation\b',
+    r'\bscience\s+foundation\b',
+    r'\bscience\s+and\s+technology\b',
+    r'\bpublic\s+health\s+service\b',
+    r'\b(research\s+)?council\b',
+    r'\bagency\b',
+    r'\bbureau\b',
+    r'\boffice\b',
+]
+
+_FOUNDATION_PATTERNS = [
+    r'\bfoundation\b',
+    r'\btrust\b',
+    r'\bendowment\b',
+    r'\bcharity\b',
+]
+
+_COMPANY_PATTERNS = [
+    r'\binc\.?\b',
+    r'\bcorp\.?\b',
+    r'\bcorporation\b',
+    r'\bcompany\b',
+    r'\bco\.?\b',
+    r'\bllc\b',
+    r'\bltd\b',
+    r'\bpharmaceutical\b',
+    r'\bbiotech\b',
+    r'\btechnolog(y|ies)\b',
+]
+
+_UNIVERSITY_PATTERNS = [
+    r'\buniversity\b',
+    r'\bcollege\b',
+    r'\binstitute of\b',
+    r'\binstitute\b',
+    r'\binstituto\b',
+    r'\buniversidad\b',
+    r'\buniversita\b',
+    r'\buniversit\b',
+]
+
+
+def normalize_entity_name(entity_name):
+    if entity_name is None or pd.isna(entity_name):
+        return ''
+    return re.sub(r'\s+', ' ', str(entity_name)).strip().lower()
+
+
+def matches_any_pattern(entity_lower, patterns):
+    return any(re.search(pattern, entity_lower) for pattern in patterns)
+
+
+def classify_funding_source_by_rules(entity_name):
+    entity_lower = normalize_entity_name(entity_name)
+    if not entity_lower:
+        return 'Unknown'
+
+    if matches_any_pattern(entity_lower, _GOVERNMENT_PATTERNS):
+        return 'Government'
+    if matches_any_pattern(entity_lower, _FOUNDATION_PATTERNS):
+        return 'Foundation'
+    if matches_any_pattern(entity_lower, _COMPANY_PATTERNS):
+        return 'Company'
+    if matches_any_pattern(entity_lower, _UNIVERSITY_PATTERNS):
+        return 'University'
+
+    return 'Unknown'
+
 #function for categorizing funding sources
 
 @lru_cache(maxsize=1000)
@@ -84,7 +159,11 @@ def categorize_funding_source(entity_name):
     if not entity_name or pd.isna(entity_name):
         return 'Unknown'
     
-    result = categorize_funding_source_keywords(entity_name)
+    result = check_government_databases(entity_name)
+    if result != 'Unknown':
+        return result
+
+    result = classify_funding_source_by_rules(entity_name)
     if result != 'Unknown':
         return result
 
@@ -93,10 +172,6 @@ def categorize_funding_source(entity_name):
         return result
     
     result = check_wikipedia_api(entity_name)
-    if result != 'Unknown':
-        return result
-
-    result = check_government_databases(entity_name)
     if result != 'Unknown':
         return result
     
@@ -121,7 +196,7 @@ def check_opencorporates_api(entity_name):
             for company_data in companies:
                 company = company_data.get('company', {})
                 name = company.get('name', '').lower()
-                entity_lower = entity_name.lower()
+                entity_lower = normalize_entity_name(entity_name)
 
                 if entity_lower in name or name in entity_lower:
                     company_type = company.get('company_type', '').lower()
@@ -148,24 +223,25 @@ def check_wikipedia_api(entity_name):
             data = response.json()
             extract = data.get('extract', '').lower()
             title = data.get('title', '').lower()
+            combined_text = f"{title} {extract}"
 
-            if any(term in extract for term in [
+            if any(term in combined_text for term in [
                 'government agency', 'federal agency', 'department of', 
                 'ministry of', 'government department', 'public agency',
                 'federal government', 'united states government', 'government'
             ]):
                 return 'Government'
-            if any(term in extract for term in [
+            if any(term in combined_text for term in [
                 'university', 'college', 'institute of technology',
                 'academic institution', 'higher education', 'medical school'
             ]):
                 return 'University'
-            if any(term in extract for term in [
+            if any(term in combined_text for term in [
                 'foundation', 'charitable foundation', 'non-profit',
                 'nonprofit', 'charity', 'philanthropic', 'endowment'
             ]):
                 return 'Foundation'
-            if any(term in extract for term in [
+            if any(term in combined_text for term in [
                 'corporation', 'company', 'inc.', 'pharmaceutical company',
                 'biotechnology company', 'multinational corporation',
                 'publicly traded', 'private company'
@@ -189,7 +265,7 @@ def obtain_inchikey_from_pubchem(chemical_name):
         return None
         
 def check_government_databases(entity_name):
-    entity_lower = entity_name.lower().strip()
+    entity_lower = normalize_entity_name(entity_name)
 
     us_government = {
         'national science foundation': 'Government',
@@ -211,29 +287,20 @@ def check_government_databases(entity_name):
             return classification
     government_patterns = [
         r'\b(u\.?s\.?|united states)\s+(department|agency|office)\b',
-        r'\bnational\s+(institute|center|laboratory)\b',
-        r'\bministry\s+of\b'
+        r'\bnational\s+(institute|institutes|center|centers|laboratory|laboratories)\b',
+        r'\bministry\s+of\b',
+        r'\bscience\s+foundation\b',
+        r'\bresearch\s+council\b',
+        r'\bpublic\s+health\s+service\b',
     ]
-    
-    for pattern in government_patterns:
-        if re.search(pattern, entity_lower):
+
+    if any(re.search(pattern, entity_lower) for pattern in government_patterns):
             return 'Government'
     
     return 'Unknown'
 
 def categorize_funding_source_keywords(entity_name):
-    entity_lower = entity_name.lower().strip()
-    
-    for key in university_keys:
-        if key.lower() in entity_lower:
-            return 'University'
-    if any(term in entity_lower for term in ['foundation', 'trust', 'endowment', 'charity']):
-            return 'Foundation'
-    if any(term in entity_lower for term in ['inc.', 'corp.', 'corporation', 'llc', 'ltd', 'company', 'pharmaceutical', 'biotech', 'technologies']):
-            return 'Company'
-    if any(term in entity_lower for term in ['department', 'government']):
-            return 'Government'
-    return 'Unknown'
+    return classify_funding_source_by_rules(entity_name)
 #graphing funding source function to get category color
 def get_category_color(category):
     color_map = {
@@ -625,7 +692,7 @@ def is_organic(name):
     except:
         return None  # Not found
 
-FUNDING_SOURCE_CSV_URL =  "https://ucsf.box.com/shared/static/resl286vjwjdpjx3rl4ahtyg8ejy0ikb.csv"
+FUNDING_SOURCE_CSV_URL =  "https://ucsf.box.com/shared/static/rw5cidunf09u2ftfoxrzc89is94wcb4f.csv"
 company_assoc = load_remote_csv(FUNDING_SOURCE_CSV_URL, 'company_assoc.csv')
 
 def _safe_parse_list_cell(value):
@@ -1331,7 +1398,7 @@ def show_company_network_pyvis(company_name, category='Affiliations', chemical_g
 
 
 #CSV_PATH_unis = os.path.join(settings.BASE_DIR, 'data', 'comparing_unis.csv')
-UNI_CSV_URL = 'https://ucsf.box.com/shared/static/m07bjches1crtfkrhgzqrkmkw6ob20n3.csv' 
+UNI_CSV_URL = 'https://ucsf.box.com/shared/static/wrb0245iuc7k8htn3bwxrhwtvyc6trtj.csv' 
 comparing_unis = load_remote_csv(UNI_CSV_URL, 'comparing_unis.csv')
 comparing_unis['Companies'] = comparing_unis['Companies'].apply(
     lambda x: ast.literal_eval(x) if isinstance(x, str) and x.startswith('[') else []
@@ -1728,7 +1795,7 @@ def show_uni_network_pyvis(uni_name, category='Funding Sources', chemical_group=
 
 
 #CSV_PATH_researchers = os.path.join(settings.BASE_DIR, 'data', 'comparing_researchers.csv')
-RESEARCHER_CSV_URL = 'https://ucsf.box.com/shared/static/z3z2oy2z0dkcitxhrjy2j2h7selibiby.csv'
+RESEARCHER_CSV_URL = 'https://ucsf.box.com/shared/static/zdezj8mcpwohroukmwth6wa548hcylo3.csv'
 comparing_researchers = load_remote_csv(RESEARCHER_CSV_URL, 'comparing_researchers.csv')
 comparing_researchers['Companies'] = comparing_researchers['Companies'].apply(
     lambda x: ast.literal_eval(x) if isinstance(x, str) and x.startswith('[') else []
@@ -1834,7 +1901,7 @@ def show_researcher_network_pyvis(researcher, output_file = os.path.join(_GRAPH_
 
 
 #CSV_PATH_chem = os.path.join(settings.BASE_DIR, 'data', 'chem_per_row.csv')
-CHEM_CSV_URL = 'https://ucsf.box.com/shared/static/5ax55ikfnnkska88j370ths2dcow24e0.csv'
+CHEM_CSV_URL = 'https://ucsf.box.com/shared/static/ixxni1j5q945008p76ru86jn19xx5ng8.csv'
 chem_per_row = load_remote_csv(CHEM_CSV_URL, 'chem_per_row.csv')
 chem_per_row['company'] = chem_per_row['company'].apply(
     lambda x: ast.literal_eval(x) if isinstance(x, str) and x.startswith('[') else []

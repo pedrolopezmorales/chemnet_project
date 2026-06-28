@@ -63,7 +63,7 @@ def create_company_classifications(force_reclassify=False):
 
 #creating the main dataframe
 def create_main_dataframe():
-    data_years = range(2015, 2025)
+    data_years = range(2013, 2025)
     dataframes_list = []
 
     for year in data_years:
@@ -107,14 +107,21 @@ def clean_chemicals_cell(value):
     return "; ".join(cleaned)
 
 def create_filtered_main_dataframe():
-    all_studies_csv_url = "https://ucsf.box.com/shared/static/5igzqwyaiztqhnuj744pi4almbxns9au" #change to whatever all_studies link is 
+    all_studies_csv_url = "https://ucsf.box.com/shared/static/2icgan3yd62xhzglav98iaprhk9ecglb" #change to whatever all_studies link is 
     all_studies = pd.read_csv(all_studies_csv_url)
 
     if "DOI" not in all_studies.columns:
         raise KeyError("Input dataframe does not contain a 'DOI' column")
 
+    if "Year" in all_studies.columns:
+        year_values = pd.to_numeric(all_studies["Year"], errors="coerce")
+        exempt_years = year_values.isin([2013, 2014])
+    else:
+        exempt_years = pd.Series(False, index=all_studies.index)
+
+    doi_matches_new_format = all_studies["DOI"].astype(str).str.contains("acs.est.", case=False, na=False, regex=False)
     all_studies = all_studies[
-        all_studies["DOI"].astype(str).str.contains("acs.est.", case=False, na=False, regex=False)
+        doi_matches_new_format | exempt_years
     ].reset_index(drop=True)
 
     all_studies["Chemicals with InChIKey"] = all_studies["Chemicals with InChIKey"].apply(clean_chemicals_cell)
@@ -122,7 +129,7 @@ def create_filtered_main_dataframe():
         all_studies["Chemicals with InChIKey"].str.strip() != ""
     ].reset_index(drop=True)
 
-    main_path = os.path.join(settings.BASE_DIR, "data", "esandt_papers_filtered_main.csv")
+    main_path = os.path.join(settings.BASE_DIR, "data", "esandt_papers_filtered_all.csv")
     all_studies.to_csv(main_path, index=False)
     print(f"Filtered main dataframe saved to {main_path}")
     print(f"Total rows: {len(all_studies)}")

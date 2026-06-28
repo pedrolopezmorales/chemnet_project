@@ -13,7 +13,7 @@ from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 
 
-DEFAULT_MAIN_URL = "https://ucsf.box.com/shared/static/nzp30ijxahusyl73ety1l52utphnleg9.csv"
+DEFAULT_MAIN_URL = "https://ucsf.box.com/shared/static/8rculfr8xjifbq02a46vhiw3jnbtbo3p.csv"
 WIKIPEDIA_HEADERS = {
     "User-Agent": "ChemNetResearchBot/1.0 (local data repair; contact: local)",
     "Accept": "application/json",

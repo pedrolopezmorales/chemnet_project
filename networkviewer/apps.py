@@ -45,7 +45,8 @@ class NetworkviewerConfig(AppConfig):
     #         return
 
     #     try:
-    #         from .dataframes_creation import create_filtered_main_dataframe
+    #         from .dataframes_creation import create_main_dataframe, create_filtered_main_dataframe
+    #         #create_main_dataframe()
     #         create_filtered_main_dataframe()
     #     except Exception as e:
     #         print(f"Error creating main dataframe: {e}")
