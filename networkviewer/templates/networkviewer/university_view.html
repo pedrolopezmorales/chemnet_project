@@ -113,6 +113,22 @@
             });
         }
 
+        function colorizeCategoryText(text) {
+            var escaped = esc(text);
+            var colorMap = {
+                Government: '#FF6B6B',
+                University: '#96CEB4',
+                Foundation: '#4ECDC4',
+                Company: '#EAB308',
+                Unknown: '#8B5CF6'
+            };
+
+            return escaped.replace(/\[(Government|University|Foundation|Company|Unknown)\]/g, function (match, category) {
+                var color = colorMap[category] || colorMap.Unknown;
+                return '<span style="color: ' + color + '; font-weight: 700;">' + match + '</span>';
+            });
+        }
+
         function renderConnections(connections) {
             if (!connections) {
                 connWrap.style.display = 'none';
@@ -125,9 +141,9 @@
                 var items = connections[key];
                 var list = '';
                 if (Array.isArray(items)) {
-                    list = items.map(function (item) { return '<li>' + esc(item) + '</li>'; }).join('');
+                    list = items.map(function (item) { return '<li>' + colorizeCategoryText(item) + '</li>'; }).join('');
                 } else {
-                    list = '<li>' + esc(items) + '</li>';
+                    list = '<li>' + colorizeCategoryText(items) + '</li>';
                 }
                 html += '<details style="margin-bottom: 12px; background: #ffffff; border-radius: 6px; padding: 8px 12px; color: #0b4e86;">' +
                         '<summary style="cursor: pointer; font-weight: 700;">' + esc(key) + '</summary>' +
