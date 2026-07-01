@@ -19,12 +19,74 @@ logger = logging.getLogger(__name__)
 # fallback so the app can still start (with slightly stale data) if the remote
 # host is temporarily unavailable, instead of failing to import entirely.
 _DATA_CACHE_DIR = os.path.join(settings.BASE_DIR, 'data', 'cache')
+_PUBCHEM_CACHE_DIR = os.path.join(_DATA_CACHE_DIR, 'pubchem')
+_PUBCHEM_DESC_CACHE_FILE = os.path.join(_PUBCHEM_CACHE_DIR, 'descriptions.json')
+_PUBCHEM_IMAGE_CACHE_FILE = os.path.join(_PUBCHEM_CACHE_DIR, 'image_urls.json')
+_FUNDING_DESC_CACHE_FILE = os.path.join(_DATA_CACHE_DIR, 'funding_source_descriptions.json')
 
 # Absolute directory where generated network graphs are written. Anchoring to
 # STATIC_ROOT (not a relative "staticfiles/" path) ensures the files land in the
 # exact location Django serves /static/ from, regardless of the current working
 # directory the server was launched from.
 _GRAPH_DIR = os.path.join(settings.BASE_DIR, 'staticfiles')
+
+_pubchem_desc_cache = None
+_pubchem_image_cache = None
+_funding_desc_cache = None
+
+
+def _load_json_cache(cache_file):
+    if os.path.exists(cache_file):
+        try:
+            with open(cache_file, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+            if isinstance(data, dict):
+                return data
+        except Exception as exc:
+            logger.warning("Failed to load cache file %s: %s", cache_file, exc)
+    return {}
+
+
+def _save_json_cache(cache_file, data):
+    os.makedirs(os.path.dirname(cache_file), exist_ok=True)
+    try:
+        with open(cache_file, 'w', encoding='utf-8') as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+    except Exception as exc:
+        logger.warning("Failed to write cache file %s: %s", cache_file, exc)
+
+
+def _pubchem_cache_key(chemical_name=None, inchikey=None):
+    inch = str(inchikey or '').strip()
+    if inch and inch != 'Error':
+        return f"inchikey:{inch.upper()}"
+    chem = str(chemical_name or '').strip().lower()
+    return f"name:{chem}"
+
+
+def _get_pubchem_image_cache():
+    global _pubchem_image_cache
+    if _pubchem_image_cache is None:
+        _pubchem_image_cache = _load_json_cache(_PUBCHEM_IMAGE_CACHE_FILE)
+    return _pubchem_image_cache
+
+
+def _get_pubchem_desc_cache():
+    global _pubchem_desc_cache
+    if _pubchem_desc_cache is None:
+        _pubchem_desc_cache = _load_json_cache(_PUBCHEM_DESC_CACHE_FILE)
+    return _pubchem_desc_cache
+
+
+def _funding_cache_key(funding_source):
+    return re.sub(r'\s+', ' ', str(funding_source or '')).strip().lower()
+
+
+def _get_funding_desc_cache():
+    global _funding_desc_cache
+    if _funding_desc_cache is None:
+        _funding_desc_cache = _load_json_cache(_FUNDING_DESC_CACHE_FILE)
+    return _funding_desc_cache
 
 
 def load_remote_csv(url, cache_name, **read_csv_kwargs):
@@ -2691,13 +2753,22 @@ except Exception as e:
     print(f"Error loading company classifications: {e}; using empty cache")
 
 def get_pubchem_image_url(chemical_name, inchikey=None):
+    cache_key = _pubchem_cache_key(chemical_name=chemical_name, inchikey=inchikey)
+    image_cache = _get_pubchem_image_cache()
+    cached_url = image_cache.get(cache_key)
+    if isinstance(cached_url, str) and cached_url.strip():
+        return cached_url
+
     try:
         if inchikey and inchikey != 'Error':
             try:
                 compounds = pcp.get_compounds(inchikey, 'inchikey')
                 if compounds:
                     cid = compounds[0].cid
-                    return f"https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/{cid}/PNG"
+                    image_url = f"https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/{cid}/PNG"
+                    image_cache[cache_key] = image_url
+                    _save_json_cache(_PUBCHEM_IMAGE_CACHE_FILE, image_cache)
+                    return image_url
             except:
                 pass
         if chemical_name:
@@ -2705,11 +2776,19 @@ def get_pubchem_image_url(chemical_name, inchikey=None):
                 compounds = pcp.get_compounds(chemical_name, 'name')
                 if compounds:
                     cid = compounds[0].cid
-                    return f"https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/{cid}/PNG"
+                    image_url = f"https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/{cid}/PNG"
+                    image_cache[cache_key] = image_url
+                    _save_json_cache(_PUBCHEM_IMAGE_CACHE_FILE, image_cache)
+                    return image_url
             except:
                 pass
     except Exception as e:
         print(f"Error fetching PubChem data for InChIKey {inchikey}: {e}")
+
+    # Final fallback: return cached value if network lookups failed.
+    cached_url = image_cache.get(cache_key)
+    if isinstance(cached_url, str) and cached_url.strip():
+        return cached_url
     return None
 
 def get_top_chemicals_for_company(company_name, limit=5):
@@ -2740,6 +2819,12 @@ def get_top_chemicals_for_company(company_name, limit=5):
 
 def get_pubchem_description(chemical_name, inchikey=None):
     """Get comprehensive PubChem description for a chemical compound."""
+    cache_key = _pubchem_cache_key(chemical_name=chemical_name, inchikey=inchikey)
+    desc_cache = _get_pubchem_desc_cache()
+    cached_description = desc_cache.get(cache_key)
+    if isinstance(cached_description, str) and cached_description.strip():
+        return cached_description
+
     try:
         compound = None
         
@@ -2846,6 +2931,8 @@ def get_pubchem_description(chemical_name, inchikey=None):
                                 'is a', 'medication', 'drug', 'agent', 'compound', 'used for', 
                                 'treatment', 'inhibitor', 'analgesic', 'anti-inflammatory', 'therapeutic'
                             ]):
+                                desc_cache[cache_key] = desc
+                                _save_json_cache(_PUBCHEM_DESC_CACHE_FILE, desc_cache)
                                 return desc
                             
                         # Then try substantial descriptions with good keywords
@@ -2854,11 +2941,15 @@ def get_pubchem_description(chemical_name, inchikey=None):
                                 'is a member of', 'belongs to', 'medication', 'drug', 'therapeutic',
                                 'appears as', 'crystalline', 'powder', 'used for', 'treatment of'
                             ]):
+                                desc_cache[cache_key] = desc
+                                _save_json_cache(_PUBCHEM_DESC_CACHE_FILE, desc_cache)
                                 return desc
                         
                         # Finally, try any decent description
                         for desc in all_descriptions:
                             if len(desc) > 50:
+                                desc_cache[cache_key] = desc
+                                _save_json_cache(_PUBCHEM_DESC_CACHE_FILE, desc_cache)
                                 return desc
                 
                 # Fallback to basic compound information
@@ -2876,9 +2967,15 @@ def get_pubchem_description(chemical_name, inchikey=None):
                     description_parts.append(formula_info)
                 
                 if description_parts:
-                    return " | ".join(description_parts)
+                    description = " | ".join(description_parts)
+                    desc_cache[cache_key] = description
+                    _save_json_cache(_PUBCHEM_DESC_CACHE_FILE, desc_cache)
+                    return description
                 else:
-                    return f"PubChem CID: {compound.cid}"
+                    description = f"PubChem CID: {compound.cid}"
+                    desc_cache[cache_key] = description
+                    _save_json_cache(_PUBCHEM_DESC_CACHE_FILE, desc_cache)
+                    return description
                     
             except Exception as e:
                 print(f"Error in detailed lookup: {e}")
@@ -2886,18 +2983,39 @@ def get_pubchem_description(chemical_name, inchikey=None):
                 try:
                     full_record = pcp.Compound.from_cid(compound.cid)
                     if hasattr(full_record, 'molecular_formula') and full_record.molecular_formula:
-                        return f"Molecular Formula: {full_record.molecular_formula}"
-                    return f"PubChem CID: {compound.cid}"
+                        description = f"Molecular Formula: {full_record.molecular_formula}"
+                        desc_cache[cache_key] = description
+                        _save_json_cache(_PUBCHEM_DESC_CACHE_FILE, desc_cache)
+                        return description
+                    description = f"PubChem CID: {compound.cid}"
+                    desc_cache[cache_key] = description
+                    _save_json_cache(_PUBCHEM_DESC_CACHE_FILE, desc_cache)
+                    return description
                 except:
-                    return f"PubChem CID: {compound.cid}"
+                    description = f"PubChem CID: {compound.cid}"
+                    desc_cache[cache_key] = description
+                    _save_json_cache(_PUBCHEM_DESC_CACHE_FILE, desc_cache)
+                    return description
                 
     except Exception as e:
         print(f"Error fetching PubChem description for {chemical_name} (InChIKey: {inchikey}): {e}")
+
+    # Final fallback: return cached value if lookups fail.
+    cached_description = desc_cache.get(cache_key)
+    if isinstance(cached_description, str) and cached_description.strip():
+        return cached_description
     
     return None
 def get_wikipedia_description_fundingsource(funding_source):
     if not funding_source or pd.isna(funding_source):
         return None
+
+    cache_key = _funding_cache_key(funding_source)
+    desc_cache = _get_funding_desc_cache()
+    cached_value = desc_cache.get(cache_key)
+    if isinstance(cached_value, dict) and cached_value.get('description'):
+        return cached_value
+
     try:
         search_url = "https://en.wikipedia.org/api/rest_v1/page/summary/"
         funding_source_encoded = funding_source.replace(' ', '_')
@@ -2912,14 +3030,23 @@ def get_wikipedia_description_fundingsource(funding_source):
             extract = data.get('extract', '')
 
             if extract:
-                return {
+                result = {
                     'description': extract,
                     'title' : data.get('title', funding_source),
                     'url' : data.get('content_urls', {}).get('desktop', {}).get('page', ''),
                     'thumbnail': data.get('thumbnail', {}).get('source', '') if data.get('thumbnail') else None
                 }
+                desc_cache[cache_key] = result
+                _save_json_cache(_FUNDING_DESC_CACHE_FILE, desc_cache)
+                return result
     except Exception as e:
         print(f"Error fetching Wikipedia description for {funding_source}: {e}")
+
+    # Network fallback: return cached value when available.
+    cached_value = desc_cache.get(cache_key)
+    if isinstance(cached_value, dict) and cached_value.get('description'):
+        return cached_value
+
     return None
 
 company_counts = {}
