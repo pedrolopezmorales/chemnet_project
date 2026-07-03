@@ -25,7 +25,7 @@
             </span>
             <span style="display: flex; align-items: center;">
                 <span style="display:inline-block;width:18px;height:18px;border-radius:4px;background:#e9d5ff;margin-right:8px;"></span>
-                <span style="font-size:15px;color:#333;">Unknown</span>
+                    <span style="font-size:15px;color:#333;">Not Recognized</span>
             </span>
         </div>
         <div class="periodic-table-container">
@@ -339,7 +339,8 @@
             document.getElementById('modalStudyCount').textContent = studyCount;
             
             const classificationBadge = document.getElementById('modalClassification');
-            classificationBadge.textContent = classification;
+            const displayClassification = classification === 'Unknown' ? 'Not Recognized' : classification;
+            classificationBadge.textContent = displayClassification;
             classificationBadge.className = `classification-badge ${classification.toLowerCase()}`;
             
             // Show modal

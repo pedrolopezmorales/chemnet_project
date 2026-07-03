@@ -374,6 +374,12 @@ def get_category_color(category):
       }
     return color_map.get(category, "#DDD6FE")
 
+
+def get_category_display_name(category):
+    if category == 'Unknown':
+        return 'Not Recognized'
+    return category
+
 def add_classification_to_funding_sources(funding_sources_list):
     classified_sources = []
     for source in funding_sources_list:
@@ -1620,7 +1626,7 @@ def show_uni_network_pyvis(uni_name, category='Funding Sources', chemical_group=
                 net.add_node(
                     original_name,
                     label=original_name,
-                    title=f"{original_name}\n Category: {entity_category}",
+                    title=f"{original_name}\n Category: {get_category_display_name(entity_category)}",
                     color=entity_color,
                     shape="ellipse",
                     size=15
@@ -1739,7 +1745,7 @@ def show_uni_network_pyvis(uni_name, category='Funding Sources', chemical_group=
                 </div>
                 <div style="display: flex; align-items: center;">
                     <div style="width: 16px; height: 16px; background: #DDD6FE; border-radius: 50%; margin-right: 8px;"></div>
-                    <span style="font-size: 13px; color: #333;">Unknown</span>
+                    <span style="font-size: 13px; color: #333;">Not Recognized</span>
                 </div>
             </div>
         </div>
@@ -2019,7 +2025,7 @@ def show_chemical_network(chemical, inch='Error', output_file=None, row=None, ma
             net.add_node(
                     original_name,
                     label=original_name,
-                    title=f"{original_name}\n Category: {entity_category}",
+                    title=f"{original_name}\n Category: {get_category_display_name(entity_category)}",
                     color=entity_color,
                     shape="ellipse",
                     size=15
@@ -2126,7 +2132,7 @@ def show_chemical_network(chemical, inch='Error', output_file=None, row=None, ma
                 </div>
                 <div style="display: flex; align-items: center;">
                     <div style="width: 16px; height: 16px; background: #DDD6FE; border-radius: 50%; margin-right: 8px;"></div>
-                    <span style="font-size: 13px; color: #333;">Unknown</span>
+                    <span style="font-size: 13px; color: #333;">Not Recognized</span>
                 </div>
             </div>
         </div>
@@ -2273,7 +2279,7 @@ def show_researcher_network_pyvis_from_row(row, output_file=None, researcher_row
             net.add_node(
             original_name,
             label=original_name,
-            title=f"{original_name}\nCategory: {entity_type}",
+            title=f"{original_name}\nCategory: {get_category_display_name(entity_type)}",
             color=entity_color,
             shape="ellipse",
             size=15
@@ -2371,7 +2377,7 @@ def show_researcher_network_pyvis_from_row(row, output_file=None, researcher_row
                 </div>
                 <div style="display: flex; align-items: center;">
                     <div style="width: 16px; height: 16px; background: #DDD6FE; border-radius: 50%; margin-right: 8px;"></div>
-                    <span style="font-size: 13px; color: #333;">Unknown</span>
+                    <span style="font-size: 13px; color: #333;">Not Recognized</span>
                 </div>
             </div>
         </div>
