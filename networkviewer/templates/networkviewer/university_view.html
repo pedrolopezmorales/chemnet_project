@@ -125,7 +125,8 @@
 
             return escaped.replace(/\[(Government|University|Foundation|Company|Unknown)\]/g, function (match, category) {
                 var color = colorMap[category] || colorMap.Unknown;
-                return '<span style="color: ' + color + '; font-weight: 700;">' + match + '</span>';
+                var displayLabel = (category === 'Unknown') ? 'Not Recognized' : category;
+                return '<span style="color: ' + color + '; font-weight: 700;">[' + displayLabel + ']</span>';
             });
         }
 

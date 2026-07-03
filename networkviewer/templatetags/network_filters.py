@@ -13,10 +13,15 @@ def colorize_categories(text):
         'Company': '#FFEAA7',
         'Unknown': '#DDD6FE'
     }
+
+    display_map = {
+        'Unknown': 'Not Recognized',
+    }
     
     for category, color in color_map.items():
         pattern = f'\\[{category}\\]'
-        replacement = f'<span style="color: {color}; font-weight: bold;">[{category}]</span>'
+        display_label = display_map.get(category, category)
+        replacement = f'<span style="color: {color}; font-weight: bold;">[{display_label}]</span>'
         text = re.sub(pattern, replacement, text)
     
     return text
