@@ -35,7 +35,7 @@ from .network_functions import (
 )
 import difflib
 import random
-
+import pandas as pd
 
 def resolve_case_insensitive_name(query, valid_names):
     if query is None:
@@ -594,6 +594,17 @@ class ResearcherSearchAPI(APIView):
 class FundingTableAPI(APIView):
     def get(self, request):
         company_name = request.GET.get('company_name')
+        category = (request.GET.get('category') or 'all').strip().lower()
+        try:
+            top_n = int(request.GET.get('top_n', 50))
+        except (TypeError, ValueError):
+            top_n = 50
+        top_n = max(1, top_n)
+
+        allowed_categories = {'all', 'government', 'university', 'foundation', 'company', 'unknown'}
+        if category not in allowed_categories:
+            category = 'all'
+
         if company_name:
             known_names = funding_source_table_df['company'].dropna().astype(str).tolist()
             company_name = resolve_case_insensitive_name(company_name, known_names)
@@ -635,8 +646,21 @@ class FundingTableAPI(APIView):
                 }, status=500)
         else:
             try:
+                rows = funding_source_table_df.copy()
+
+                if category != 'all':
+                    rows = rows[
+                        rows.get('classification', '').fillna('').astype(str).str.lower() == category
+                    ]
+
+                count_series = pd.to_numeric(
+                    rows.get('study_count', rows.get('count', 0)), errors='coerce'
+                ).fillna(0)
+                rows = rows.assign(_count_value=count_series)
+                rows = rows.sort_values(by='_count_value', ascending=False).head(top_n)
+
                 funding_data = []
-                for _, row in funding_source_table_df.iterrows():
+                for _, row in rows.iterrows():
                     count_value = row.get('study_count', row.get('count', 0))
                     funding_data.append({
                         'company': row.get('company', ''),
@@ -647,7 +671,9 @@ class FundingTableAPI(APIView):
                 return Response({
                     'success': True,
                     'funding_data': funding_data,
-                    'total_companies': len(funding_data)
+                    'total_companies': len(funding_data),
+                    'category': category,
+                    'top_n': top_n,
                 })
             except Exception as e:
                 return Response({
