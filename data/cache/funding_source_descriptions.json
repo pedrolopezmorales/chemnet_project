@@ -1,0 +1,800 @@
+{
+  "national natural science foundation of china": {
+    "description": "The National Natural Science Foundation of China is a vice-ministerial institution under the Ministry of Science and Technology. It administers the National Natural Science Fund.",
+    "title": "National Natural Science Foundation of China",
+    "url": "https://en.wikipedia.org/wiki/National_Natural_Science_Foundation_of_China",
+    "thumbnail": null
+  },
+  "ministry of science and technology of the people's republic of china": {
+    "description": "The Ministry of Science and Technology is the executive department of the Central Science and Technology Commission, which coordinates science and technology activities in the country. The office is located in Xicheng District, Beijing.",
+    "title": "Ministry of Science and Technology (China)",
+    "url": "https://en.wikipedia.org/wiki/Ministry_of_Science_and_Technology_(China)",
+    "thumbnail": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/74/Ministry_of_Science_and_Technology_of_China_%2820240314153418%29.jpg/330px-Ministry_of_Science_and_Technology_of_China_%2820240314153418%29.jpg"
+  },
+  "not found": {
+    "description": "\nIn HTTP, the 404 HTTP status code indicates that a web client was able to communicate with a server, but the server could not provide the requested resource. The server may not have the resource or it may not wish to disclose whether it has the resource. The code is often associated with response reason Not Found and is often referred to as page not found or file not found.",
+    "title": "HTTP 404",
+    "url": "https://en.wikipedia.org/wiki/HTTP_404",
+    "thumbnail": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5b/HTTP_logo.svg/330px-HTTP_logo.svg.png"
+  },
+  "national institute of environmental health sciences": {
+    "description": "The National Institute of Environmental Health Sciences (NIEHS) conducts research into the effects of the environment on human disease, as one of the 27 institutes and centers of the National Institutes of Health (NIH). It is located in the Research Triangle Park in North Carolina, and is the only primary division of the NIH located outside of the Washington metropolitan area.",
+    "title": "National Institute of Environmental Health Sciences",
+    "url": "https://en.wikipedia.org/wiki/National_Institute_of_Environmental_Health_Sciences",
+    "thumbnail": null
+  },
+  "chinese academy of sciences": {
+    "description": "The Chinese Academy of Sciences is the national academy for natural sciences and the highest consultancy for science and technology of the People's Republic of China. It is the world's largest research organization, with 106 research institutes, 2 universities, 71,300 full-time employees, and 79,000 graduate students, and ranked first in the 2025 SCImago Institutions Rankings.",
+    "title": "Chinese Academy of Sciences",
+    "url": "https://en.wikipedia.org/wiki/Chinese_Academy_of_Sciences",
+    "thumbnail": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/de/Seal_of_the_Chinese_Academy_of_Sciences.png/330px-Seal_of_the_Chinese_Academy_of_Sciences.png"
+  },
+  "ministry of education of the people's republic of china": {
+    "description": "The Ministry of Education of the People's Republic of China is a constituent department of the State Council, responsible for basic education, vocational education, higher education, and other educational affairs throughout the country. The Ministry of Education acts as the predominant funder of national universities and colleges in China. The ministry also accredits tertiary institutions, degree curriculum, and school teachers of the country.",
+    "title": "Ministry of Education (China)",
+    "url": "https://en.wikipedia.org/wiki/Ministry_of_Education_(China)",
+    "thumbnail": "https://upload.wikimedia.org/wikipedia/en/d/d1/Education_China.png"
+  },
+  "national science foundation": {
+    "description": "The United States National Science Foundation (NSF) is an independent agency of the United States federal government that supports fundamental research and education in all the non-medical fields of science and engineering. Its medical counterpart is the National Institutes of Health. With an annual budget of about $8.75 billion, the NSF funds approximately 25% of all federally supported basic research conducted by the United States' colleges and universities. In some fields, such as mathematics, computer science, economics, and the social sciences, the NSF is the major source of federal backing.",
+    "title": "National Science Foundation",
+    "url": "https://en.wikipedia.org/wiki/National_Science_Foundation",
+    "thumbnail": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/56/NSF_logo.svg/330px-NSF_logo.svg.png"
+  },
+  "natural sciences and engineering research council of canada": {
+    "description": "The Natural Sciences and Engineering Research Council of Canada is a federal agency responsible for funding natural sciences and engineering research in Canada. NSERC directly funds university professors and students as well as Canadian companies to perform research and training.",
+    "title": "Natural Sciences and Engineering Research Council of Canada",
+    "url": "https://en.wikipedia.org/wiki/Natural_Sciences_and_Engineering_Research_Council_of_Canada",
+    "thumbnail": "https://upload.wikimedia.org/wikipedia/en/thumb/3/3c/Natural_Sciences_and_Engineering_Research_Council_Logo.svg/330px-Natural_Sciences_and_Engineering_Research_Council_Logo.svg.png"
+  },
+  "u.s. environmental protection agency": {
+    "description": "The Environmental Protection Agency (EPA) is an independent agency of the United States government tasked with environmental protection matters. President Richard Nixon proposed the establishment of EPA on July 9, 1970; it began operation on December 2, 1970, after Nixon signed an executive order. The order establishing the EPA was ratified by committee hearings in the House and Senate.",
+    "title": "United States Environmental Protection Agency",
+    "url": "https://en.wikipedia.org/wiki/United_States_Environmental_Protection_Agency",
+    "thumbnail": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6f/Seal_of_the_United_States_Environmental_Protection_Agency.svg/330px-Seal_of_the_United_States_Environmental_Protection_Agency.svg.png"
+  },
+  "china scholarship council": {
+    "description": "The China Scholarship Council is China's Ministry of Education body that provides support for international academic exchanges with the country and is the primary vehicle through which the Chinese government awards scholarships. CSC provides both funding for Chinese citizens and residents to study abroad, and for foreign students and scholars to study in China. The agency predominantly provides scholarships to individuals, including in batches allocated to specific foreign universities.",
+    "title": "China Scholarship Council",
+    "url": "https://en.wikipedia.org/wiki/China_Scholarship_Council",
+    "thumbnail": null
+  },
+  "australian research council": {
+    "description": "The Australian Research Council (ARC) is a Commonwealth entity established as an independent body under the Australian Research Council Act 2001, reporting to the Minister for Education.",
+    "title": "Australian Research Council",
+    "url": "https://en.wikipedia.org/wiki/Australian_Research_Council",
+    "thumbnail": null
+  },
+  "u.s. department of energy": {
+    "description": "The  United States Department of Energy (DOE) is an executive department of the U.S. federal government that oversees national energy policy and energy production, the research and development of nuclear power, the military's nuclear weapons program, nuclear reactor production for the United States Navy, energy-related research, and energy conservation.",
+    "title": "United States Department of Energy",
+    "url": "https://en.wikipedia.org/wiki/United_States_Department_of_Energy",
+    "thumbnail": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0b/Seal_of_the_Department_of_Energy.svg/330px-Seal_of_the_Department_of_Energy.svg.png"
+  },
+  "deutsche forschungsgemeinschaft": {
+    "description": "The German Research Foundation is a German research funding organization, which functions as a self-governing institution for the promotion of science and research in the Federal Republic of Germany. In 2019, the DFG had a funding budget of €3.3 billion.",
+    "title": "German Research Foundation",
+    "url": "https://en.wikipedia.org/wiki/German_Research_Foundation",
+    "thumbnail": null
+  },
+  "natural environment research council": {
+    "description": "The Natural Environment Research Council (NERC) is a council of UK Research and Innovation (UKRI), a non-departmental public body sponsored by the Department for Science, Innovation and Technology, responsible for supporting research, training and knowledge transfer activities in the environmental sciences.",
+    "title": "Natural Environment Research Council",
+    "url": "https://en.wikipedia.org/wiki/Natural_Environment_Research_Council",
+    "thumbnail": null
+  },
+  "national institute of food and agriculture": {
+    "description": "The National Institute of Food and Agriculture (NIFA) is a U.S. federal government body whose creation was mandated in the Food, Conservation, and Energy Act of 2008. Its purpose is to consolidate all federally funded agricultural research, and it is subordinate to the Department of Agriculture. It replaced the Cooperative State Research, Education, and Extension Service in 2009. Dr. Jaye L. Hamby was appointed NIFA Director on March 20, 2025.",
+    "title": "National Institute of Food and Agriculture",
+    "url": "https://en.wikipedia.org/wiki/National_Institute_of_Food_and_Agriculture",
+    "thumbnail": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/54/NIFA_headquarters_2019.jpg/330px-NIFA_headquarters_2019.jpg"
+  },
+  "national research foundation of korea": {
+    "description": "The National Research Foundation of Korea is a research institute for Korean studies.",
+    "title": "National Research Foundation of Korea",
+    "url": "https://en.wikipedia.org/wiki/National_Research_Foundation_of_Korea",
+    "thumbnail": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/ec/%ED%95%9C%EA%B5%AD%EC%97%B0%EA%B5%AC%EC%9E%AC%EB%8B%A8_%EB%8C%80%EC%A0%84_%EC%B2%AD%EC%82%AC_%EC%97%B0%EA%B5%AC%EA%B4%80_%EC%A0%84%EA%B2%BD%EC%82%AC%EC%A7%84%282014-6-10_%EC%B4%AC%EC%98%81%29_2014-06-10_13-57.jpg/330px-%ED%95%9C%EA%B5%AD%EC%97%B0%EA%B5%AC%EC%9E%AC%EB%8B%A8_%EB%8C%80%EC%A0%84_%EC%B2%AD%EC%82%AC_%EC%97%B0%EA%B5%AC%EA%B4%80_%EC%A0%84%EA%B2%BD%EC%82%AC%EC%A7%84%282014-6-10_%EC%B4%AC%EC%98%81%29_2014-06-10_13-57.jpg"
+  },
+  "japan society for the promotion of science": {
+    "description": "The Japan Society for the Promotion of Science  is an Independent Administrative Institution in Japan, established for the purpose of contributing to the advancement of science in all fields of the natural and social sciences and the humanities.",
+    "title": "Japan Society for the Promotion of Science",
+    "url": "https://en.wikipedia.org/wiki/Japan_Society_for_the_Promotion_of_Science",
+    "thumbnail": null
+  },
+  "agence nationale de la recherche": {
+    "description": "The Agence Nationale de la Recherche is a French institution tasked with funding scientific research. It was founded on 7 February 2005 as a groupement d'intérêt public, and has acquired the status of établissement public à caractère administratif on 1 August 2006.",
+    "title": "Agence nationale de la recherche",
+    "url": "https://en.wikipedia.org/wiki/Agence_nationale_de_la_recherche",
+    "thumbnail": null
+  },
+  "u.s. department of defense": {
+    "description": "The United States Department of Defense (DoD), also referred to as the Department of War (DoW), is an executive department of the United States federal government charged with coordinating and supervising the United States Armed Forces—the Army, Navy, Marines, Air Force, Space Force, and, for some purposes, the Coast Guard—and related functions and agencies. Headquartered at the Pentagon in Arlington County, Virginia, just outside Washington, D.C., the stated mission of the Department of Defense is \"to provide the military forces needed to deter war and ensure our nation's security\".",
+    "title": "United States Department of Defense",
+    "url": "https://en.wikipedia.org/wiki/United_States_Department_of_Defense",
+    "thumbnail": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2e/Seal_of_the_United_States_Department_of_Defense.svg/330px-Seal_of_the_United_States_Department_of_Defense.svg.png"
+  },
+  "national aeronautics and space administration": {
+    "description": "The National Aeronautics and Space Administration is an independent agency of the U.S. federal government responsible for the United States' civil space program and for research in aeronautics and space. Headquartered in Washington, D.C., NASA operates ten field centers across the U.S. and is organized into three mission directorates: Human Spaceflight, Research and Technology, and Science. Established in 1958 amid the Space Race, NASA succeeded the National Advisory Committee for Aeronautics (NACA) to give the U.S. space program a distinct civilian orientation focused on peaceful applications. Since then, it has led most American spaceflight programs, including Project Mercury, Project Gemini, the Apollo program, Skylab, the Space Shuttle, the International Space Station (ISS) and the ongoing multi-national Artemis program.",
+    "title": "NASA",
+    "url": "https://en.wikipedia.org/wiki/NASA",
+    "thumbnail": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ae/NASA_seal.svg/330px-NASA_seal.svg.png"
+  },
+  "alfred p. sloan foundation": {
+    "description": "The Alfred P. Sloan Foundation is an American philanthropic nonprofit organization. It was established in 1934 by Alfred P. Sloan Jr., president and chief executive officer of General Motors.",
+    "title": "Alfred P. Sloan Foundation",
+    "url": "https://en.wikipedia.org/wiki/Alfred_P._Sloan_Foundation",
+    "thumbnail": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c9/Alfred_P_Sloan_Foundation_Logo.png/330px-Alfred_P_Sloan_Foundation_Logo.png"
+  },
+  "european commission": {
+    "description": "The European Commission (EC) is the executive cabinet of the European Union. It is composed of 27 members of the Commission corresponding to the number of member states, unless the European Council, by unanimous consent, decides to alter this number.",
+    "title": "European Commission",
+    "url": "https://en.wikipedia.org/wiki/European_Commission",
+    "thumbnail": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d2/Belgique_-_Bruxelles_-_Schuman_-_Berlaymont_-_01.jpg/330px-Belgique_-_Bruxelles_-_Schuman_-_Berlaymont_-_01.jpg"
+  },
+  "bundesministerium für bildung und forschung": {
+    "description": "The Federal Ministry of Research, Technology and Space is a cabinet-level ministry of Germany. It is headquartered in Bonn, with an office in Berlin. The Ministry provides funding for research projects and institutions.",
+    "title": "Federal Ministry of Research, Technology and Space",
+    "url": "https://en.wikipedia.org/wiki/Federal_Ministry_of_Research%2C_Technology_and_Space",
+    "thumbnail": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/32/BMFTR_-_Logo_%28en%29.svg/330px-BMFTR_-_Logo_%28en%29.svg.png"
+  },
+  "u.s. geological survey": {
+    "description": "The United States Geological Survey (USGS), founded as the Geological Survey, is an agency of the United States Department of the Interior whose work spans the disciplines of biology, geography, geology, and hydrology. The agency was founded on March 3, 1879, to study the landscape of the United States, its natural resources, and the natural hazards that threaten it. The agency also makes maps of planets and moons, based on data from U.S. space probes.",
+    "title": "United States Geological Survey",
+    "url": "https://en.wikipedia.org/wiki/United_States_Geological_Survey",
+    "thumbnail": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0f/Seal_of_the_United_States_Geological_Survey.svg/330px-Seal_of_the_United_States_Geological_Survey.svg.png"
+  },
+  "canada research chairs": {
+    "description": "Canada Research Chair (CRC) is a title given to certain Canadian university research professors by the Canada Research Chairs Program.",
+    "title": "Canada Research Chair",
+    "url": "https://en.wikipedia.org/wiki/Canada_Research_Chair",
+    "thumbnail": null
+  },
+  "guangdong province": {
+    "description": "Guangdong is a coastal province in South China, on the north shore of the South China Sea with Guangzhou as the capital. With a population of 128.590 million across a total area of about 179,800 km2 (69,400 sq mi), Guangdong is the Chinese province with the largest GDP, the largest population and the 15th-largest by area, as well as the third-most populous country subdivision and the 5th largest country subdivision by GDP in the world.",
+    "title": "Guangdong",
+    "url": "https://en.wikipedia.org/wiki/Guangdong",
+    "thumbnail": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/73/China_Resources_Headquarters%26Shenzhen_Bay_gymnasium_in_Nanshan_District2020.jpg/330px-China_Resources_Headquarters%26Shenzhen_Bay_gymnasium_in_Nanshan_District2020.jpg"
+  },
+  "state administration of foreign experts affairs": {
+    "description": "The State Administration of Foreign Experts Affairs is an external name used by China's Ministry of Human Resources and Social Security. SAFEA was previously its own agency of the government of the People's Republic of China (PRC) that operated under the State Council and the Ministry of Human Resources and Social Security. It was responsible for recruiting foreign experts outside of mainland China - including Taiwan and the special administrative regions - for work in the PRC, and managing the training of Chinese nationals outside of the PRC. It was headquartered in Zhongguancun, Haidian District, Beijing.",
+    "title": "State Administration of Foreign Experts Affairs",
+    "url": "https://en.wikipedia.org/wiki/State_Administration_of_Foreign_Experts_Affairs",
+    "thumbnail": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/Ministry_of_Human_Resources_and_Social_Security_headquarters_%2820240409171018%29.jpg/330px-Ministry_of_Human_Resources_and_Social_Security_headquarters_%2820240409171018%29.jpg"
+  },
+  "u.s. department of agriculture": {
+    "description": "The United States Department of Agriculture (USDA) is an executive department of the United States federal government that aims to meet the needs of commercial farming and livestock food production, promotes agricultural trade and production, works to assure food safety, protects natural resources, fosters rural communities and works to end hunger in the United States and internationally. It is headed by the secretary of agriculture, who reports directly to the president of the United States and is a member of the president's Cabinet. The current secretary is Brooke Rollins, who has served since February 13, 2025.",
+    "title": "United States Department of Agriculture",
+    "url": "https://en.wikipedia.org/wiki/United_States_Department_of_Agriculture",
+    "thumbnail": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/88/Seal_of_the_U.S._Department_of_Agriculture.svg/330px-Seal_of_the_U.S._Department_of_Agriculture.svg.png"
+  },
+  "engineering and physical sciences research council": {
+    "description": "The Engineering and Physical Sciences Research Council (EPSRC) is a council of UK Research and Innovation (UKRI), a non-departmental public body sponsored by the Department for Science, Innovation and Technology, responsible for funding grants to undertake research and postgraduate degrees in engineering and the physical sciences, mainly to universities in the United Kingdom. EPSRC research areas include mathematics, physics, chemistry, artificial intelligence and computer science, but exclude particle physics, nuclear physics, space science and astronomy.",
+    "title": "Engineering and Physical Sciences Research Council",
+    "url": "https://en.wikipedia.org/wiki/Engineering_and_Physical_Sciences_Research_Council",
+    "thumbnail": null
+  },
+  "government of canada": {
+    "description": "The Government of Canada, formally His Majesty's Government, is the federal executive of Canada, which includes ministers of the Crown and the federal civil service ; it is corporately branded as the Government of Canada. There are over 100 departments and agencies, as well as over 300,000 persons employed in the Government of Canada. These institutions carry out the programs and enforce the laws established by the Parliament of Canada.",
+    "title": "Government of Canada",
+    "url": "https://en.wikipedia.org/wiki/Government_of_Canada",
+    "thumbnail": null
+  },
+  "environmental protection agency": {
+    "description": "The Environmental Protection Agency (EPA) is an independent agency of the United States government tasked with environmental protection matters. President Richard Nixon proposed the establishment of EPA on July 9, 1970; it began operation on December 2, 1970, after Nixon signed an executive order. The order establishing the EPA was ratified by committee hearings in the House and Senate.",
+    "title": "United States Environmental Protection Agency",
+    "url": "https://en.wikipedia.org/wiki/United_States_Environmental_Protection_Agency",
+    "thumbnail": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6f/Seal_of_the_United_States_Environmental_Protection_Agency.svg/330px-Seal_of_the_United_States_Environmental_Protection_Agency.svg.png"
+  },
+  "national institute of general medical sciences": {
+    "description": "The National Institute of General Medical Sciences (NIGMS) is one of the National Institutes of Health (NIH), the principal medical research agency of the United States Federal Government. NIH is a component of the U.S. Department of Health and Human Services.",
+    "title": "National Institute of General Medical Sciences",
+    "url": "https://en.wikipedia.org/wiki/National_Institute_of_General_Medical_Sciences",
+    "thumbnail": null
+  },
+  "u.s. department of health and human services": {
+    "description": "The United States Department of Health and Human Services (HHS) is a cabinet-level executive branch department of the U.S. federal government created to set guidelines for the private healthcare system and providing essential human services in areas such as funding medical studies. Before the separate federal Department of Education was created in 1979, it was called the Department of Health, Education, and Welfare (HEW). HHS is administered by the secretary of health and human services, who is appointed by the president with the advice and consent of the United States Senate. The United States Public Health Service Commissioned Corps, the uniformed service of the U.S. Public Health Service, is led by the surgeon general who is responsible for addressing matters concerning public health as authorized by the secretary or by the assistant secretary for health in addition to their primary mission of administering the Commissioned Corps.",
+    "title": "United States Department of Health and Human Services",
+    "url": "https://en.wikipedia.org/wiki/United_States_Department_of_Health_and_Human_Services",
+    "thumbnail": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b7/US_Department_of_Health_and_Human_Services_seal.svg/330px-US_Department_of_Health_and_Human_Services_seal.svg.png"
+  },
+  "office of science": {
+    "description": "The Office of Science is a component of the United States Department of Energy (DOE). The Office of Science is the lead federal agency supporting fundamental scientific research for energy and the Nation’s largest supporter of basic research in the physical sciences. The Office of Science portfolio has two principal thrusts: direct support of scientific research and direct support of the development, construction, and operation of unique, open-access scientific user facilities that are made available for use by external researchers.",
+    "title": "Office of Science",
+    "url": "https://en.wikipedia.org/wiki/Office_of_Science",
+    "thumbnail": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e2/Seal_of_the_United_States_Department_of_Energy.svg/330px-Seal_of_the_United_States_Department_of_Energy.svg.png"
+  },
+  "national institutes of health": {
+    "description": "The National Institutes of Health (NIH) is the primary agency of the United States federal government responsible for biomedical and public health research. It was founded in 1887 and is part of the United States Department of Health and Human Services (HHS). Many NIH facilities are located in Bethesda, Maryland, and other nearby suburbs of the Washington metropolitan area, with other primary facilities in Research Triangle Park in North Carolina and smaller satellite facilities located around the United States.",
+    "title": "National Institutes of Health",
+    "url": "https://en.wikipedia.org/wiki/National_Institutes_of_Health",
+    "thumbnail": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a6/NIH_2013_logo_vertical.svg/330px-NIH_2013_logo_vertical.svg.png"
+  },
+  "ministry of education, culture, sports, science and technology": {
+    "description": "The Ministry of Education, Culture, Sports, Science and Technology  is one of the eleven ministries of Japan that compose part of the executive branch of the government of Japan.",
+    "title": "Ministry of Education, Culture, Sports, Science and Technology",
+    "url": "https://en.wikipedia.org/wiki/Ministry_of_Education%2C_Culture%2C_Sports%2C_Science_and_Technology",
+    "thumbnail": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7d/Kasumigaseki-Common-Gate-01.jpg/330px-Kasumigaseki-Common-Gate-01.jpg"
+  },
+  "biotechnology and biological sciences research council": {
+    "description": "The Biotechnology and Biological Sciences Research Council (BBSRC), is a council of UK Research and Innovation (UKRI), a non-departmental public body sponsored by the Department for Science, Innovation and Technology. It is the largest UK public funder of non-medical bioscience. It predominantly funds scientific research institutes and university research departments in the UK.",
+    "title": "Biotechnology and Biological Sciences Research Council",
+    "url": "https://en.wikipedia.org/wiki/Biotechnology_and_Biological_Sciences_Research_Council",
+    "thumbnail": null
+  },
+  "european research council": {
+    "description": "The European Research Council (ERC) is a public body for funding of scientific and technological research conducted within the European Union (EU). Established by the European Commission in 2007, the ERC is composed of an independent Scientific Council, its governing body consisting of distinguished researchers, and an Executive Agency, in charge of the implementation. It forms part of the framework programme of the union dedicated to research and innovation, Horizon 2020, preceded by the Seventh Research Framework Programme (FP7). The ERC budget is over €13 billion from 2014 – 2020 and comes from the Horizon 2020 programme, a part of the European Union's budget. Under Horizon 2020 it is estimated that around 7,000 ERC grantees will be funded and 42,000 team members supported, including 11,000 doctoral students and almost 16,000 post-doctoral researchers. The ERC awards to individuals are widely considered to be either among the most, or else the most prestigious grant for academics in Europe.",
+    "title": "European Research Council",
+    "url": "https://en.wikipedia.org/wiki/European_Research_Council",
+    "thumbnail": "https://upload.wikimedia.org/wikipedia/en/thumb/e/e9/European_Research_Council_logo.svg/330px-European_Research_Council_logo.svg.png"
+  },
+  "office of energy efficiency and renewable energy": {
+    "description": "The Office of Critical Minerals and Energy Innovation (CMEI) formerly known as the Office of Energy Efficiency and Renewable Energy (EERE) is an office within the United States Department of Energy. The office supports research, development, demonstration, and deployment programs related to critical materials, manufacturing, energy technology, transportation, buildings, hydropower, and energy efficiency.",
+    "title": "Office of Energy Efficiency and Renewable Energy",
+    "url": "https://en.wikipedia.org/wiki/Office_of_Energy_Efficiency_and_Renewable_Energy",
+    "thumbnail": null
+  },
+  "national institute for occupational safety and health": {
+    "description": "The National Institute for Occupational Safety and Health is the United States federal agency responsible for conducting research and making recommendations for the prevention of work-related injury, illness, disability, and death. Its functions include gathering information, conducting scientific research both in the laboratory and in the field, and translating the knowledge gained into products and services. Among NIOSH's programs are determination of recommended exposure limits for toxic chemicals and other hazards, field research such as the Health Hazard Evaluation Program, epidemiology and health surveillance programs such as the National Firefighter Registry for Cancer, regulatory approval of respirators according to the NIOSH air filtration rating system, and compensation and support programs such as the World Trade Center Health Program.",
+    "title": "National Institute for Occupational Safety and Health",
+    "url": "https://en.wikipedia.org/wiki/National_Institute_for_Occupational_Safety_and_Health",
+    "thumbnail": null
+  },
+  "university of queensland": {
+    "description": "The University of Queensland is a public research university located primarily in Brisbane, the capital city of the Australian state of Queensland. Founded in 1909 by the Queensland parliament, UQ is one of the six sandstone universities, an informal designation of the oldest university in each state. UQ is also a founding member of edX, Australia's leading Group of Eight and the international research-intensive Association of Pacific Rim Universities.",
+    "title": "University of Queensland",
+    "url": "https://en.wikipedia.org/wiki/University_of_Queensland",
+    "thumbnail": "https://upload.wikimedia.org/wikipedia/en/thumb/7/76/University_of_Queensland_%28crest%29.svg/330px-University_of_Queensland_%28crest%29.svg.png"
+  },
+  "instituto de salud carlos iii": {
+    "description": "The Carlos III Health Institute is a Spanish public health research institute, legally constituted as a public research agency, a type of quasi-autonomous entity under Spanish law. The ISCIII is integrated in the Department of Science and Innovation, although it also reports to the Department of Health in the institute's activities relating health, healthcare and its planning.",
+    "title": "Carlos III Health Institute",
+    "url": "https://en.wikipedia.org/wiki/Carlos_III_Health_Institute",
+    "thumbnail": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e1/Logo_ISCIII.svg/330px-Logo_ISCIII.svg.png"
+  },
+  "nanjing university": {
+    "description": "Nanjing University (NJU) is a public university in Nanjing and Suzhou, Jiangsu, China. It is affiliated and sponsored by the Ministry of Education. The university is part of Project 211, Project 985, and the Double First-Class Construction. The university is a member of the C9 League.",
+    "title": "Nanjing University",
+    "url": "https://en.wikipedia.org/wiki/Nanjing_University",
+    "thumbnail": "https://upload.wikimedia.org/wikipedia/en/thumb/6/6a/Nanjing_University_Logo.svg/330px-Nanjing_University_Logo.svg.png"
+  },
+  "tsinghua university": {
+    "description": "Tsinghua University is a public research university in Haidian, Beijing, China. It is affiliated with and funded by the Ministry of Education of China. The university is part of the Double First-Class Construction, and was a part of its predecessor initiatives: Project 211 and Project 985. It is also a member of the C9 League.",
+    "title": "Tsinghua University",
+    "url": "https://en.wikipedia.org/wiki/Tsinghua_University",
+    "thumbnail": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/ec/Tsinghua_University_Logo.svg/330px-Tsinghua_University_Logo.svg.png"
+  },
+  "health effects institute": {
+    "description": "The Health Effects Institute (HEI) is an independent, non-profit corporation specializing in research on the health effects of air pollution. It is headquartered in Boston, Massachusetts, United States.",
+    "title": "Health Effects Institute",
+    "url": "https://en.wikipedia.org/wiki/Health_Effects_Institute",
+    "thumbnail": null
+  },
+  "carnegie mellon university": {
+    "description": "Carnegie Mellon University (CMU) is a private research university in Pittsburgh, Pennsylvania, United States. The institution was established in 1900 by Andrew Carnegie as the Carnegie Technical Schools. In 1912, it became the Carnegie Institute of Technology and began granting four-year degrees. In 1967, it became Carnegie Mellon University through its merger with the Mellon Institute of Industrial Research, founded in 1913 by Andrew Mellon and Richard B. Mellon and formerly a part of the University of Pittsburgh.",
+    "title": "Carnegie Mellon University",
+    "url": "https://en.wikipedia.org/wiki/Carnegie_Mellon_University",
+    "thumbnail": "https://upload.wikimedia.org/wikipedia/en/thumb/b/bb/Carnegie_Mellon_University_seal.svg/330px-Carnegie_Mellon_University_seal.svg.png"
+  },
+  "oak ridge institute for science and education": {
+    "description": "The Oak Ridge Institute for Science and Education (ORISE) is an asset of the U.S. Department of Energy that provides expertise in STEM workforce development, scientific and technical reviews, and the evaluation of radiation exposure and environmental contamination. Located in Oak Ridge, Tennessee, ORISE was established in 1992 to support DOE's mission by prepare the next generation of STEM professionals and by collaborating with the DOE Office of Science and other DOE programs, federal agencies, the scientific community, and industry to address scientific initiatives.",
+    "title": "Oak Ridge Institute for Science and Education",
+    "url": "https://en.wikipedia.org/wiki/Oak_Ridge_Institute_for_Science_and_Education",
+    "thumbnail": null
+  },
+  "nanyang technological university": {
+    "description": "Nanyang Technological University (NTU) is a national public research university in Singapore. Founded in 1981, it is also the second oldest autonomous university in the country.",
+    "title": "Nanyang Technological University",
+    "url": "https://en.wikipedia.org/wiki/Nanyang_Technological_University",
+    "thumbnail": "https://upload.wikimedia.org/wikipedia/en/thumb/f/f8/Nanyang_Technological_University_coat_of_arms_vector.svg/330px-Nanyang_Technological_University_coat_of_arms_vector.svg.png"
+  },
+  "national heart, lung, and blood institute": {
+    "description": "The National Heart, Lung, and Blood Institute (NHLBI) is the third largest Institute of the National Institutes of Health, located in Bethesda, Maryland, United States. It is tasked with allocating about $3.6 billion in FY 2020 in tax revenue to advancing the understanding of the following issues: development and progression of disease, diagnosis of disease, treatment of disease, disease prevention, reduction of health care disparities within the American population, and advancing the effectiveness of the US medical system. NHLBI's Director is Gary H. Gibbons (2012–present).",
+    "title": "National Heart, Lung, and Blood Institute",
+    "url": "https://en.wikipedia.org/wiki/National_Heart%2C_Lung%2C_and_Blood_Institute",
+    "thumbnail": null
+  },
+  "korea polar research institute": {
+    "description": "Established in 2004, the Korea Polar Research Institute (KOPRI) is the lead agency for South Korea's national polar programme for the Arctic and the Antarctic and an advisor to the Government of South Korea. Its research projects have focused on biodiversity, climate change and geological evolution. The Institute participates in fora such as the Convention for the Conservation of Antarctic Marine Living Resources, the Council of Managers of National Antarctic Programs, the International Arctic Science Committee and the Scientific Committee on Antarctic Research (SCAR). KOPRI researchers and support staff operate on the icebreaker Araon, on campus at the Korea University of Science and Technology and in the country's three research stations — King Sejong and Jang Bogo in Antarctica, and Dasan at Ny-Ålesund, Svalbard. KOPRI sits within South Korea's Ministry of Oceans and Fisheries. Through international collaboration, KOPRI researches have undertaken studies in Alaska and Canada.",
+    "title": "Korea Polar Research Institute",
+    "url": "https://en.wikipedia.org/wiki/Korea_Polar_Research_Institute",
+    "thumbnail": null
+  },
+  "university of california, riverside": {
+    "description": "The University of California, Riverside is a public land-grant research university in Riverside, California, United States. It is one of the ten campuses of the University of California system. The main campus sits on 1,900 acres (769 ha) in a suburban district of Riverside with a branch campus of 20 acres (8 ha) in Palm Desert. In 1907, the predecessor to UCR was founded as the UC Citrus Experiment Station, which conducted research in biological pest control and the use of growth regulators.",
+    "title": "University of California, Riverside",
+    "url": "https://en.wikipedia.org/wiki/University_of_California%2C_Riverside",
+    "thumbnail": "https://upload.wikimedia.org/wikipedia/en/thumb/5/51/UC_Riverside_seal.svg/330px-UC_Riverside_seal.svg.png"
+  },
+  "national cancer institute": {
+    "description": "The National Cancer Institute (NCI) coordinates the United States National Cancer Program and is part of the National Institutes of Health (NIH), which is one of eleven agencies that are part of the U.S. Department of Health and Human Services. The NCI conducts and supports research, training, health information dissemination, and other activities related to the causes, prevention, diagnosis, and treatment of cancer; the supportive care of cancer patients and their families; and cancer survivorship.",
+    "title": "National Cancer Institute",
+    "url": "https://en.wikipedia.org/wiki/National_Cancer_Institute",
+    "thumbnail": null
+  },
+  "sun yat-sen university": {
+    "description": "Sun Yat-sen University is a public university in Guangzhou, Guangdong, China. It is affiliated with the Ministry of Education and co-funded by the Ministry of Education, SASTIND, and Guangdong Provincial People's Government. As one of the top universities in China, it is part of Project 211, Project 985, and the Double First-Class Construction.",
+    "title": "Sun Yat-sen University",
+    "url": "https://en.wikipedia.org/wiki/Sun_Yat-sen_University",
+    "thumbnail": "https://upload.wikimedia.org/wikipedia/en/f/fb/Sun_Yat-sen_University_Logo.png"
+  },
+  "shanghai jiao tong university": {
+    "description": "Shanghai Jiao Tong University (SJTU) is a public university in Shanghai, China. It is affiliated with the Ministry of Education of China. The university is part of Project 211, Project 985, and the Double First-Class Construction. It is a member of the C9 League.",
+    "title": "Shanghai Jiao Tong University",
+    "url": "https://en.wikipedia.org/wiki/Shanghai_Jiao_Tong_University",
+    "thumbnail": "https://upload.wikimedia.org/wikipedia/en/d/da/Sjtu-logo-standard-red.png"
+  },
+  "stanford woods institute for the environment": {
+    "description": "The Stanford Woods Institute for the Environment serves as Stanford University's environmental studies hub for faculty. An interdisciplinary research lab, Woods encompasses senior fellows and affiliated faculty as well as researchers, postdoctoral scholars, and students collaborating on sustainability research. It supports research in seven areas: climate, ecosystem services and conservation biology, food security, freshwater, oceans, public health, and sustainable development. It provides seed funding for environmental research and supports seven research centers, programs and workshops. In September 2022, it became part of the Stanford Doerr School of Sustainability.",
+    "title": "Stanford Woods Institute for the Environment",
+    "url": "https://en.wikipedia.org/wiki/Stanford_Woods_Institute_for_the_Environment",
+    "thumbnail": "https://upload.wikimedia.org/wikipedia/commons/4/48/StanfordWoodsLogo.jpg"
+  },
+  "university of michigan": {
+    "description": "The University of Michigan is a public research university in Ann Arbor, Michigan, United States. It was founded in 1817 and is the oldest institution of higher education in the state. It is also one of the earliest American research universities and is a founding member of the Association of American Universities.",
+    "title": "University of Michigan",
+    "url": "https://en.wikipedia.org/wiki/University_of_Michigan",
+    "thumbnail": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/93/Seal_of_the_University_of_Michigan.svg/330px-Seal_of_the_University_of_Michigan.svg.png"
+  },
+  "pennsylvania state university": {
+    "description": "The Pennsylvania State University is a public state-related land-grant research university with campuses and facilities throughout Pennsylvania, United States. Founded in 1855 as the Farmers' High School of Pennsylvania, Penn State was named the state's first land-grant university eight years later. Its primary campus, known as Penn State University Park, is located in State College and College Township in Centre County.",
+    "title": "Pennsylvania State University",
+    "url": "https://en.wikipedia.org/wiki/Pennsylvania_State_University",
+    "thumbnail": "https://upload.wikimedia.org/wikipedia/en/thumb/5/5c/Pennsylvania_State_University_seal.svg/330px-Pennsylvania_State_University_seal.svg.png"
+  },
+  "peking university": {
+    "description": "Peking University (PKU) is a public university in Haidian, Beijing, China. It is affiliated with and funded by the Ministry of Education. The university is part of Project 211, Project 985, and the Double First-Class Construction. It is also a member in the C9 League.",
+    "title": "Peking University",
+    "url": "https://en.wikipedia.org/wiki/Peking_University",
+    "thumbnail": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f4/Peking_University_seal.svg/330px-Peking_University_seal.svg.png"
+  },
+  "hong kong polytechnic university": {
+    "description": "The Hong Kong Polytechnic University is a public university in Hung Hom, Kowloon, Hong Kong. The university is one of the eight government-funded degree-granting tertiary institutions in Hong Kong. Founded in 1937 as the first Government Trade School, it is the first institution to provide technical education in Hong Kong. In 1994, the Legislative Council of Hong Kong passed a bill which granted the former Hong Kong Polytechnic official university status.",
+    "title": "Hong Kong Polytechnic University",
+    "url": "https://en.wikipedia.org/wiki/Hong_Kong_Polytechnic_University",
+    "thumbnail": "https://upload.wikimedia.org/wikipedia/en/thumb/c/c4/Hong_Kong_Polytechnic_University_logo.svg/330px-Hong_Kong_Polytechnic_University_logo.svg.png"
+  },
+  "stanford university": {
+    "description": "Leland Stanford Junior University, commonly referred to as Stanford University, is a private research university in Stanford, California, United States. It was founded in 1885 by railroad magnate Leland Stanford and his wife, Jane, in memory of their only child, Leland Jr.",
+    "title": "Stanford University",
+    "url": "https://en.wikipedia.org/wiki/Stanford_University",
+    "thumbnail": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b5/Seal_of_Leland_Stanford_Junior_University.svg/330px-Seal_of_Leland_Stanford_Junior_University.svg.png"
+  },
+  "city university of hong kong": {
+    "description": "The City University of Hong Kong (CityUHK) is a public university in Kowloon Tong, Kowloon, Hong Kong. It was founded in 1984 as the City Polytechnic of Hong Kong and formally established as the City University of Hong Kong in 1994.",
+    "title": "City University of Hong Kong",
+    "url": "https://en.wikipedia.org/wiki/City_University_of_Hong_Kong",
+    "thumbnail": "https://upload.wikimedia.org/wikipedia/en/thumb/4/4a/CityU_logo.svg/330px-CityU_logo.svg.png"
+  },
+  "washington university in st. louis": {
+    "description": "Washington University in St. Louis (WashU) is a private research university in the St. Louis metropolitan area, Missouri, United States. Founded in 1853 by a group of civic leaders and named for the first U.S. President George Washington, the university spans 355 acres across its Danforth and Medical campuses. It comprises 10 schools and offers more than 150 undergraduate, 80 master's and professional, and 50 doctoral degree programs. As of 2024, Washington University enrolled 16,399 students representing all 50 U.S. states and more than 110 countries.",
+    "title": "Washington University in St. Louis",
+    "url": "https://en.wikipedia.org/wiki/Washington_University_in_St._Louis",
+    "thumbnail": "https://upload.wikimedia.org/wikipedia/en/thumb/d/d7/WashU_St._Louis_seal.svg/330px-WashU_St._Louis_seal.svg.png"
+  },
+  "mcgill university": {
+    "description": "McGill University is an English-language public research university in Montreal, Quebec, Canada. Founded in 1821 by royal charter, the university bears the name of James McGill, a Scottish merchant, whose bequest in 1813 established the University of McGill College. In 1885, the name of the university was officially changed to McGill University.",
+    "title": "McGill University",
+    "url": "https://en.wikipedia.org/wiki/McGill_University",
+    "thumbnail": "https://upload.wikimedia.org/wikipedia/en/thumb/2/29/McGill_University_CoA.svg/330px-McGill_University_CoA.svg.png"
+  },
+  "china university of geosciences": {
+    "description": "China University of Geosciences may refer to two independent and separated universities:China University of Geosciences (Beijing)\nChina University of Geosciences (Wuhan)",
+    "title": "China University of Geosciences",
+    "url": "https://en.wikipedia.org/wiki/China_University_of_Geosciences",
+    "thumbnail": null
+  },
+  "university of illinois at urbana-champaign": {
+    "description": "The University of Illinois Urbana-Champaign is a public land-grant research university in the Champaign–Urbana metropolitan area, Illinois, United States. Established in 1867, it is the founding campus and flagship institution of the University of Illinois System. With over 59,000 students, the University of Illinois is one of the largest public universities by enrollment in the United States.",
+    "title": "University of Illinois Urbana-Champaign",
+    "url": "https://en.wikipedia.org/wiki/University_of_Illinois_Urbana-Champaign",
+    "thumbnail": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/af/University_of_Illinois_seal.svg/330px-University_of_Illinois_seal.svg.png"
+  },
+  "national university of singapore": {
+    "description": "The National University of Singapore (NUS) is a national public research university in Singapore. It was officially established in 1980 through the government-directed merger of the public University of Singapore and the private Nanyang University.",
+    "title": "National University of Singapore",
+    "url": "https://en.wikipedia.org/wiki/National_University_of_Singapore",
+    "thumbnail": "https://upload.wikimedia.org/wikipedia/en/thumb/b/b9/NUS_coat_of_arms.svg/330px-NUS_coat_of_arms.svg.png"
+  },
+  "nankai university": {
+    "description": "Nankai University is a public university in Tianjin, China. It is affiliated with the Ministry of Education of China. The university is part of Project 211, Project 985, and the Double First-Class Construction.",
+    "title": "Nankai University",
+    "url": "https://en.wikipedia.org/wiki/Nankai_University",
+    "thumbnail": "https://upload.wikimedia.org/wikipedia/en/thumb/a/a5/Nankai_University_logo.svg/330px-Nankai_University_logo.svg.png"
+  },
+  "university of new south wales": {
+    "description": "The University of New South Wales (UNSW) is a public research university based in Sydney, New South Wales, Australia. It was established in 1949.",
+    "title": "University of New South Wales",
+    "url": "https://en.wikipedia.org/wiki/University_of_New_South_Wales",
+    "thumbnail": "https://upload.wikimedia.org/wikipedia/en/6/6e/University_of_New_South_Wales_Crest_Variant_2022.png"
+  },
+  "zhejiang university": {
+    "description": "Zhejiang University (ZJU) is a public research university in Hangzhou, Zhejiang, China. It is affiliated with the Ministry of Education. The university is part of the C9 League, Project 211, Project 985, and Double First-Class Construction.",
+    "title": "Zhejiang University",
+    "url": "https://en.wikipedia.org/wiki/Zhejiang_University",
+    "thumbnail": "https://upload.wikimedia.org/wikipedia/en/thumb/1/16/Zhejiang_University_Logo.svg/330px-Zhejiang_University_Logo.svg.png"
+  },
+  "university of california, davis": {
+    "description": "The University of California, Davis is a public land-grant research university in the Davis, California area, United States. It is the northernmost of the ten campuses of the University of California system. The institution was first founded as an agricultural branch of the system in 1905 and became the sixth campus of the University of California in 1959.",
+    "title": "University of California, Davis",
+    "url": "https://en.wikipedia.org/wiki/University_of_California%2C_Davis",
+    "thumbnail": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f3/The_University_of_California_Davis.svg/330px-The_University_of_California_Davis.svg.png"
+  },
+  "university of toronto": {
+    "description": "The University of Toronto is a public research university with three main campuses in the Greater Toronto Area of Ontario, Canada. Based on the grounds that surround Queen's Park in Toronto, it was founded by royal charter in 1827 as King's College, the provincial university of Upper Canada and its first institution of higher learning. Originally controlled by the Church of England, the university assumed its present name in 1850 upon becoming a secular institution.",
+    "title": "University of Toronto",
+    "url": "https://en.wikipedia.org/wiki/University_of_Toronto",
+    "thumbnail": "https://upload.wikimedia.org/wikipedia/en/thumb/0/04/Utoronto_coa.svg/330px-Utoronto_coa.svg.png"
+  },
+  "university grants committee": {
+    "description": "University Grants Committee may refer to:University Grants Committee \nUniversity Grants Committee \nUniversities New Zealand",
+    "title": "University Grants Committee",
+    "url": "https://en.wikipedia.org/wiki/University_Grants_Committee",
+    "thumbnail": null
+  },
+  "university of hong kong": {
+    "description": "The University of Hong Kong (HKU) is a public university in Pokfulam, Hong Kong. It was founded in 1887 as the Hong Kong College of Medicine for Chinese by the London Missionary Society and formally established as the University of Hong Kong in 1911. It is the oldest tertiary institution in Hong Kong.",
+    "title": "University of Hong Kong",
+    "url": "https://en.wikipedia.org/wiki/University_of_Hong_Kong",
+    "thumbnail": "https://upload.wikimedia.org/wikipedia/en/5/5e/University_of_Hong_Kong_coat_of_arms.png"
+  },
+  "university of saskatchewan": {
+    "description": "The University of Saskatchewan is a Canadian public research university, founded on March 19, 1907, and located on the east side of the South Saskatchewan River in Saskatoon, Saskatchewan, Canada. An \"Act to establish and incorporate a University for the Province of Saskatchewan\" was passed by the provincial legislature in 1907. It established the provincial university on March 19, 1907 \"for the purpose of providing facilities for higher education in all its branches and enabling all persons without regard to race, creed or religion to take the fullest advantage\". The University of Saskatchewan is the largest education institution in the Canadian province of Saskatchewan. The University of Saskatchewan is one of Canada's top research universities and is a member of the U15 Group of Canadian Research Universities.",
+    "title": "University of Saskatchewan",
+    "url": "https://en.wikipedia.org/wiki/University_of_Saskatchewan",
+    "thumbnail": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/38/USask_Coat_of_Arms.svg/330px-USask_Coat_of_Arms.svg.png"
+  },
+  "beijing normal university": {
+    "description": "Beijing Normal University (BNU) is a public university in Haidian, Beijing, China. It is affiliated with the Ministry of Education of China, and co-funded by the Ministry of Education and the Beijing Municipal People's Government. It is a renowned institution of higher education known for teacher education, education science and basic learning in both the arts and the sciences. The university is part of Project 211, Project 985, and the Double First-Class Construction.",
+    "title": "Beijing Normal University",
+    "url": "https://en.wikipedia.org/wiki/Beijing_Normal_University",
+    "thumbnail": "https://upload.wikimedia.org/wikipedia/en/thumb/8/87/Beijing_Normal_University_logo.svg/330px-Beijing_Normal_University_logo.svg.png"
+  },
+  "michigan state university": {
+    "description": "Michigan State University is a public land-grant research university in East Lansing, Michigan, United States. It was founded in 1855 as the Agricultural College of the State of Michigan, the first of its kind in the country. After the introduction of the Morrill Act in 1862, the state designated the college a land-grant institution in 1863, making it the first of the land-grant colleges in the United States. The college became coeducational in 1870. Michigan State has facilities across the state, and over 550,500 alumni.",
+    "title": "Michigan State University",
+    "url": "https://en.wikipedia.org/wiki/Michigan_State_University",
+    "thumbnail": "https://upload.wikimedia.org/wikipedia/en/thumb/5/53/Michigan_State_University_seal.svg/330px-Michigan_State_University_seal.svg.png"
+  },
+  "university of central florida": {
+    "description": "The University of Central Florida (UCF) is a public research university with its main campus in unincorporated Orange County, Florida, United States, near Orlando. It is part of the State University System of Florida. With 70,674 students as of the fall 2025 semester, UCF has the second largest on-campus student body of any public university in the United States. UCF is classified among \"R1: Doctoral Universities – Very high research spending and doctorate production\" and is accredited by the Commission on Colleges of the Southern Association of Colleges and Schools.",
+    "title": "University of Central Florida",
+    "url": "https://en.wikipedia.org/wiki/University_of_Central_Florida",
+    "thumbnail": "https://upload.wikimedia.org/wikipedia/en/thumb/a/a4/Seal_of_the_University_of_Central_Florida.svg/330px-Seal_of_the_University_of_Central_Florida.svg.png"
+  },
+  "shandong university": {
+    "description": "Shandong University is a public university in Jinan, Shandong, China. It is affiliated with the Ministry of Education of China. The university is part of Project 211, Project 985, and the Double First-Class Construction.",
+    "title": "Shandong University",
+    "url": "https://en.wikipedia.org/wiki/Shandong_University",
+    "thumbnail": "https://upload.wikimedia.org/wikipedia/en/thumb/7/79/Shandong_University_Emblem.svg/330px-Shandong_University_Emblem.svg.png"
+  },
+  "university of california": {
+    "description": "The University of California (UC) is a public land-grant research university system in the U.S. state of California. Headquartered in Oakland, the system is composed of its ten campuses at Berkeley, Davis, Irvine, Los Angeles, Merced, Riverside, San Diego, San Francisco, Santa Barbara, and Santa Cruz, along with numerous research centers and academic centers abroad. The system is the state's land-grant university.",
+    "title": "University of California",
+    "url": "https://en.wikipedia.org/wiki/University_of_California",
+    "thumbnail": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0c/Seal_of_the_University_of_California.svg/330px-Seal_of_the_University_of_California.svg.png"
+  },
+  "university of alberta": {
+    "description": "The University of Alberta is a public research university located in Edmonton, Alberta, Canada. It was founded in 1908 by Alexander Cameron Rutherford, the first premier of Alberta, and Henry Marshall Tory, the university's first president. It was enabled through the Post-secondary Learning Act. The university is considered a \"comprehensive academic and research university\" (CARU), which means that it offers a range of academic and professional programs that generally lead to undergraduate and graduate level credentials.",
+    "title": "University of Alberta",
+    "url": "https://en.wikipedia.org/wiki/University_of_Alberta",
+    "thumbnail": "https://upload.wikimedia.org/wikipedia/en/9/92/University_of_Alberta_Coat_of_Arms.png"
+  },
+  "imperial college london": {
+    "description": "The Imperial College of Science, Technology and Medicine, known by its trade names Imperial College London and Imperial, is a public research university in London, England. Its history began with Prince Albert, husband of Queen Victoria, who envisioned South Kensington as a cultural district with museums, colleges, and the Royal Albert Hall. In 1907, two colleges – the Royal College of Science and the Royal School of Mines – merged to form Imperial College London, with City and Guilds College joining in 1910.",
+    "title": "Imperial College London",
+    "url": "https://en.wikipedia.org/wiki/Imperial_College_London",
+    "thumbnail": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/Shield_of_Imperial_College_London.svg/330px-Shield_of_Imperial_College_London.svg.png"
+  },
+  "university of cincinnati": {
+    "description": "The University of Cincinnati is a public research university in Cincinnati, Ohio, United States. It was founded in 1819 and had an enrollment of over 53,000 students in 2024, making it the second-largest university in Ohio. It is part of the University System of Ohio. The university's primary uptown campus and medical campus are located in the Heights and Corryville neighborhoods, with branch campuses located in Batavia and Blue Ash, Ohio.",
+    "title": "University of Cincinnati",
+    "url": "https://en.wikipedia.org/wiki/University_of_Cincinnati",
+    "thumbnail": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/63/University_of_Cincinnati_seal.svg/330px-University_of_Cincinnati_seal.svg.png"
+  },
+  "university of texas system": {
+    "description": "The University of Texas System is a public university system in the U.S. state of Texas. It includes nine universities and five independent health institutions. The UT System is headquartered in Downtown Austin. It is the largest university system in Texas with 250,000+ enrolled students, 21,000+ employed faculty, 83,000+ health care professionals, researchers and support staff. The UT System's $47.5 billion endowment is the largest of any public university system in the United States.",
+    "title": "University of Texas System",
+    "url": "https://en.wikipedia.org/wiki/University_of_Texas_System",
+    "thumbnail": "https://upload.wikimedia.org/wikipedia/en/thumb/2/20/UofTsystem_seal.svg/330px-UofTsystem_seal.svg.png"
+  },
+  "east china normal university": {
+    "description": "East China Normal University (ECNU) is a public university in Shanghai, China. It is affiliated with the Ministry of Education and co-funded with the Shanghai Municipal People's Government. The university is part of Project 211, Project 985, and the Double First-Class Construction.",
+    "title": "East China Normal University",
+    "url": "https://en.wikipedia.org/wiki/East_China_Normal_University",
+    "thumbnail": "https://upload.wikimedia.org/wikipedia/en/thumb/2/2a/East_China_Normal_University_logo.svg/330px-East_China_Normal_University_logo.svg.png"
+  },
+  "electric power research institute": {
+    "description": "The Electric Power Research Institute (EPRI) is an American independent, nonprofit organization that conducts research and development related to the generation, delivery, and use of electricity to help address challenges in the energy industry, including reliability, efficiency, affordability, health, safety, and the environment.",
+    "title": "Electric Power Research Institute",
+    "url": "https://en.wikipedia.org/wiki/Electric_Power_Research_Institute",
+    "thumbnail": null
+  },
+  "university of iowa": {
+    "description": "The University of Iowa is a public research university in Iowa City, Iowa, United States. Founded in 1847, it is the oldest and largest university in the state. The University of Iowa is organized into 12 colleges offering more than 200 areas of study and 7 professional degrees.",
+    "title": "University of Iowa",
+    "url": "https://en.wikipedia.org/wiki/University_of_Iowa",
+    "thumbnail": "https://upload.wikimedia.org/wikipedia/en/thumb/4/49/University_of_Iowa_seal.svg/330px-University_of_Iowa_seal.svg.png"
+  },
+  "university of colorado boulder": {
+    "description": "The University of Colorado Boulder is a public research university in Boulder, Colorado, United States. Founded in 1876, five months before Colorado became a state, it is the flagship university of the University of Colorado system. CU Boulder is a member of the Association of American Universities, is classified among \"R1: Doctoral Universities – Very high research activity\" and has been referred to as a Public Ivy.",
+    "title": "University of Colorado Boulder",
+    "url": "https://en.wikipedia.org/wiki/University_of_Colorado_Boulder",
+    "thumbnail": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/02/Seal_of_the_University_of_Colorado.svg/330px-Seal_of_the_University_of_Colorado.svg.png"
+  },
+  "canada foundation for innovation": {
+    "description": "The Canada Foundation for Innovation is an independent corporation created by the Government of Canada to invest in research facilities and equipment in Canada's universities, colleges, research hospitals, and non-profit research institutions.",
+    "title": "Canada Foundation for Innovation",
+    "url": "https://en.wikipedia.org/wiki/Canada_Foundation_for_Innovation",
+    "thumbnail": null
+  },
+  "bill and melinda gates foundation": {
+    "description": "The Gates Foundation is an American private foundation founded by Bill Gates and Melinda French Gates. Based in Seattle, Washington, it was launched in 2000 and is reported to be the third-wealthiest charitable foundation in the world, holding $86 billion in assets as of July 31, 2025. The primary stated goals of the foundation are to enhance healthcare and reduce extreme poverty across the world, and to expand educational opportunities and access to information technology in the United States. Key individuals of the foundation include Warren Buffett, chief executive officer Mark Suzman, and Michael Larson.",
+    "title": "Gates Foundation",
+    "url": "https://en.wikipedia.org/wiki/Gates_Foundation",
+    "thumbnail": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/67/Bill_%26_Melinda_Gates_Foundation_NE.jpg/330px-Bill_%26_Melinda_Gates_Foundation_NE.jpg"
+  },
+  "gordon and betty moore foundation": {
+    "description": "The Gordon and Betty Moore Foundation is an American foundation established by Intel co-founder Gordon E. Moore and his wife Betty I. Moore in September 2000 to support scientific discovery, environmental conservation, and preservation of the character of the San Francisco Bay Area.",
+    "title": "Gordon and Betty Moore Foundation",
+    "url": "https://en.wikipedia.org/wiki/Gordon_and_Betty_Moore_Foundation",
+    "thumbnail": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d1/Gordon_and_Betty_Moore_Foundation_logo.svg/330px-Gordon_and_Betty_Moore_Foundation_logo.svg.png"
+  },
+  "welch foundation": {
+    "description": "The Welch Foundation, based in Houston, Texas, is one of the United States' oldest and largest private funding sources for chemistry researchers. It is a non-profit organization named for Robert Alonzo Welch, an industrialist who provided the funds to set up the foundation, along with research grants, endowments, and funding for chemical research. Since its founding in 1954, the organization has contributed to the advancement of chemistry through research grants, departmental grant programs, endowed chairs, and other special projects at educational institutions in Texas. The foundation hosts an annual chemical research conference in Houston that attracts chemists from around the globe and also sponsors The Welch Award in Chemistry as well as the Norman Hackerman Award in Chemical Research.",
+    "title": "Robert A. Welch Foundation",
+    "url": "https://en.wikipedia.org/wiki/Robert_A._Welch_Foundation",
+    "thumbnail": null
+  },
+  "wisconsin alumni research foundation": {
+    "description": "The Wisconsin Alumni Research Foundation is the independent nonprofit technology transfer organization serving the University of Wisconsin–Madison and Morgridge Institute for Research. It provides significant research support, granting tens of millions of dollars to the university each year and contributing to the university's \"margin of excellence\".",
+    "title": "Wisconsin Alumni Research Foundation",
+    "url": "https://en.wikipedia.org/wiki/Wisconsin_Alumni_Research_Foundation",
+    "thumbnail": "https://upload.wikimedia.org/wikipedia/en/thumb/b/b5/Wisconsin_Alumni_Research_Foundation_%28WARF%29_new_logo_2014.png/330px-Wisconsin_Alumni_Research_Foundation_%28WARF%29_new_logo_2014.png"
+  },
+  "russian foundation for basic research": {
+    "description": "Russian Foundation for Basic Research (RFBR) is a national science funding body of the Russian government created on 27 April 1992 by a decree of the President of Russia.",
+    "title": "Russian Foundation for Basic Research",
+    "url": "https://en.wikipedia.org/wiki/Russian_Foundation_for_Basic_Research",
+    "thumbnail": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/14/Russian_Foundation_for_Basic_Research_-_Russian_logo_-_2.png/330px-Russian_Foundation_for_Basic_Research_-_Russian_logo_-_2.png"
+  },
+  "camille and henry dreyfus foundation": {
+    "description": "The Camille and Henry Dreyfus Foundation is a New York City-based foundation founded in 1946 by chemist and investor Camille Dreyfus in honour of his brother, Henry Dreyfus. The two men invented the acetate yarn Celanese, and Henry Dreyfus was founder and chairman of British Celanese, parent of the Celanese Corporation of America. Following Camille's death in 1956, his wife, the opera singer Jean Tennyson, served as the foundation's president until her death in 1991.",
+    "title": "The Camille and Henry Dreyfus Foundation",
+    "url": "https://en.wikipedia.org/wiki/The_Camille_and_Henry_Dreyfus_Foundation",
+    "thumbnail": null
+  },
+  "wellcome trust": {
+    "description": "The Wellcome Trust is a charitable foundation focused on health research based in London, United Kingdom. It was established in 1936 with legacies from the pharmaceutical magnate Henry Wellcome to fund research to improve human and animal health. The aim of the Trust is to \"support science to solve the urgent health challenges facing everyone.\" It had a financial endowment of £37.6 billion in 2025, making it the fourth wealthiest charitable foundation in the world. In 2012, the Wellcome Trust was described by the Financial Times as the United Kingdom's largest provider of non-governmental funding for scientific research, and one of the largest providers in the world. According to their annual report, the Wellcome Trust spent GBP £1.1 billion on charitable activities across their 2023/2024 financial year. According to the OECD, the Wellcome Trust's financing for 2023 development increased by 107% to US$887.7 million.",
+    "title": "Wellcome Trust",
+    "url": "https://en.wikipedia.org/wiki/Wellcome_Trust",
+    "thumbnail": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/58/Wellcome_Trust_logo.svg/330px-Wellcome_Trust_logo.svg.png"
+  },
+  "simons foundation": {
+    "description": "The Simons Foundation is an American private foundation established in 1994 by Marilyn and Jim Simons with offices in New York City. As one of the largest charitable organizations in the United States with assets of over $5 billion in 2022, the foundation's mission is to advance the frontiers of research in mathematics and basic sciences. The foundation supports science by making grants to individual researchers and their projects.",
+    "title": "Simons Foundation",
+    "url": "https://en.wikipedia.org/wiki/Simons_Foundation",
+    "thumbnail": null
+  },
+  "w. garfield weston foundation": {
+    "description": "The Weston Family Foundation is a Canadian charitable foundation that makes grants for the benefit of Canadians.",
+    "title": "Weston Family Foundation",
+    "url": "https://en.wikipedia.org/wiki/Weston_Family_Foundation",
+    "thumbnail": null
+  },
+  "national research foundation": {
+    "description": "National Research Foundation may refer to:National Research Foundation (Greece)\nNational Research Foundation (India)\nNational Research Foundation, a foundation to promote research activity in the United Arab Emirates\nNational Research Foundation, the intermediary agency between the Government of South Africa and South Africa's research institutions\nNational Research Foundation of Korea\nNational Hellenic Research Foundation",
+    "title": "National Research Foundation",
+    "url": "https://en.wikipedia.org/wiki/National_Research_Foundation",
+    "thumbnail": null
+  },
+  "leverhulme trust": {
+    "description": "The Leverhulme Trust is a large national grant-making organisation in the United Kingdom. It was established in 1925 under the will of the 1st Viscount Leverhulme (1851–1925), with the instruction that its resources should be used to cover certain trade charities and support \"scholarships for the purposes of research and education.\" Over time, it has come to focus on the latter aim.",
+    "title": "Leverhulme Trust",
+    "url": "https://en.wikipedia.org/wiki/Leverhulme_Trust",
+    "thumbnail": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a0/William_Lever.jpg/330px-William_Lever.jpg"
+  },
+  "david and lucile packard foundation": {
+    "description": "The David and Lucile Packard Foundation is a private foundation that provides grants to not-for-profit organizations. It was created in 1964 by David Packard and his wife Lucile Salter Packard. Following David Packard's death in 1996, the Foundation became the beneficiary of part of his estate.",
+    "title": "David and Lucile Packard Foundation",
+    "url": "https://en.wikipedia.org/wiki/David_and_Lucile_Packard_Foundation",
+    "thumbnail": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/30/David%26Lucille_Packard_Foundation_Olivia_Palmer.jpg/330px-David%26Lucille_Packard_Foundation_Olivia_Palmer.jpg"
+  },
+  "tides foundation": {
+    "description": "Tides Foundation is a left-leaning donor advised fund based in the United States that manages over $1.4 billion in assets. It was founded in San Francisco in 1976 by Drummond Pike. Tides distributes money from anonymous donors to other organizations, which are often politically progressive.",
+    "title": "Tides Foundation",
+    "url": "https://en.wikipedia.org/wiki/Tides_Foundation",
+    "thumbnail": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9b/Tides-Logo_6000px.png/330px-Tides-Logo_6000px.png"
+  },
+  "minderoo foundation": {
+    "description": "The Minderoo Foundation, founded as the Australian Children's Trust in 2001, is an Australian charity organisation founded by Andrew and Nicola Forrest. It runs film production and support company Minderoo Pictures.",
+    "title": "Minderoo Foundation",
+    "url": "https://en.wikipedia.org/wiki/Minderoo_Foundation",
+    "thumbnail": "https://upload.wikimedia.org/wikipedia/en/thumb/c/c3/Minderoo_Foundation_logo.svg/330px-Minderoo_Foundation_logo.svg.png"
+  },
+  "andrew w. mellon foundation": {
+    "description": "The Andrew W. Mellon Foundation, commonly known as the Mellon Foundation, is a New York City-based private foundation with wealth accumulated by Andrew Mellon of the Mellon family of Pittsburgh, Pennsylvania. It is the product of the 1969 merger of the Avalon Foundation and the Old Dominion Foundation. These foundations had been set up separately by Ailsa Mellon Bruce and Paul Mellon, the children of Andrew Mellon.",
+    "title": "Andrew W. Mellon Foundation",
+    "url": "https://en.wikipedia.org/wiki/Andrew_W._Mellon_Foundation",
+    "thumbnail": null
+  },
+  "mitsubishi foundation": {
+    "description": "The Mitsubishi Foundation is a Japanese organization providing grants for academic research.",
+    "title": "Mitsubishi Foundation",
+    "url": "https://en.wikipedia.org/wiki/Mitsubishi_Foundation",
+    "thumbnail": null
+  },
+  "massachusetts institute of technology": {
+    "description": " \nThe Massachusetts Institute of Technology (MIT) is a private research university in Cambridge, Massachusetts, United States. Founded in 1861 to advance \"useful knowledge\", the university has played a significant role in the development of many areas of technology and science.",
+    "title": "Massachusetts Institute of Technology",
+    "url": "https://en.wikipedia.org/wiki/Massachusetts_Institute_of_Technology",
+    "thumbnail": "https://upload.wikimedia.org/wikipedia/en/thumb/4/44/MIT_Seal.svg/330px-MIT_Seal.svg.png"
+  },
+  "innovation and technology commission": {
+    "description": "Innovation, Technology and Industry Bureau (ITIB) is a policy bureau of the Government of Hong Kong. It is responsible for policy matters on the development of innovation and technology and information technology which are the key drivers in this endeavour. The Bureau is led by the Secretary for Innovation, Technology and Industry, currently Dong Sun.",
+    "title": "Innovation, Technology and Industry Bureau",
+    "url": "https://en.wikipedia.org/wiki/Innovation%2C_Technology_and_Industry_Bureau",
+    "thumbnail": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/90/Regional_Emblem_of_Hong_Kong.svg/330px-Regional_Emblem_of_Hong_Kong.svg.png"
+  },
+  "samsung advanced institute of technology": {
+    "description": "Samsung Group is a South Korean multinational manufacturing conglomerate headquartered in the Samsung Town office complex in Seoul. The group consists of numerous affiliated businesses, most of which operate under the Samsung brand, and is the largest chaebol. As of 2024, Samsung has the world's fifth-highest brand value.",
+    "title": "Samsung",
+    "url": "https://en.wikipedia.org/wiki/Samsung",
+    "thumbnail": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e2/Samsung_headquarters.jpg/330px-Samsung_headquarters.jpg"
+  },
+  "georgia institute of technology": {
+    "description": "The Georgia Institute of Technology is a public research university and institute of technology in Atlanta, Georgia, United States. Established in 1885, it has the largest student enrollment of the University System of Georgia institutions, with satellite campuses in Savannah, Georgia, and Metz, France.",
+    "title": "Georgia Tech",
+    "url": "https://en.wikipedia.org/wiki/Georgia_Tech",
+    "thumbnail": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6c/Georgia_Tech_seal.svg/330px-Georgia_Tech_seal.svg.png"
+  },
+  "ford motor company": {
+    "description": "The Ford Motor Company is an American multinational automobile manufacturer headquartered in Dearborn, Michigan, United States. It was founded by Henry Ford and incorporated on June 16, 1903. The company sells automobiles and commercial vehicles under the Ford brand, and luxury cars under its Lincoln brand. The company is listed on the New York Stock Exchange under the single-letter ticker symbol F and is controlled by the Ford family. They have minority ownership but a plurality of the voting power.",
+    "title": "Ford Motor Company",
+    "url": "https://en.wikipedia.org/wiki/Ford_Motor_Company",
+    "thumbnail": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8f/Ford_World_Headquarters_from_sidewalk%2C_against_sun.jpg/330px-Ford_World_Headquarters_from_sidewalk%2C_against_sun.jpg"
+  },
+  "harbin institute of technology": {
+    "description": "The Harbin Institute of Technology (HIT) is a public science and engineering university in Nan'gang, Harbin, Heilongjiang, China. It is one of the top universities in China and is affiliated with the Ministry of Industry and Information Technology. The university is part of Project 211, Project 985, and the Double First-Class Construction. The university is a member of the C9 League.",
+    "title": "Harbin Institute of Technology",
+    "url": "https://en.wikipedia.org/wiki/Harbin_Institute_of_Technology",
+    "thumbnail": "https://upload.wikimedia.org/wikipedia/en/thumb/5/50/Harbin_Institute_of_Technology_%28crest%29.gif/330px-Harbin_Institute_of_Technology_%28crest%29.gif"
+  },
+  "exxon mobil corporation": {
+    "description": "ExxonMobil Holdings Corporation is an American multinational oil and gas corporation headquartered in Spring, Texas, a suburb of Houston. Founded as the largest direct successor of John D. Rockefeller's Standard Oil, the company was formed in 1999, with the merger of Exxon and Mobil. It is vertically integrated across the entire oil and gas industry, as well as within its chemicals division, which produces plastic, synthetic rubber, and other chemical products. As the largest U.S.-based oil and gas company, ExxonMobil is the eighth-largest company by revenue in the U.S. and 13th-largest in the world. It is also the largest investor-owned oil company in the world.",
+    "title": "ExxonMobil",
+    "url": "https://en.wikipedia.org/wiki/ExxonMobil",
+    "thumbnail": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ae/Cube_xom_mine.png/330px-Cube_xom_mine.png"
+  },
+  "dow chemical company": {
+    "description": "The Dow Chemical Company is an American multinational corporation headquartered in Midland, Michigan, United States. The company was among the three largest chemical producers in the world in 2021. It is the operating subsidiary of Dow Inc., a publicly traded holding company incorporated under Delaware law.",
+    "title": "Dow Chemical Company",
+    "url": "https://en.wikipedia.org/wiki/Dow_Chemical_Company",
+    "thumbnail": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9b/Dow_Chemical_Company_logo.svg/330px-Dow_Chemical_Company_logo.svg.png"
+  },
+  "chemours company": {
+    "description": "The Chemours Company, headquartered in Wilmington, Delaware, is an American chemical company. It was spun-off from DuPont in July 2015. The company's primary products are refrigerants, titanium dioxide pigment, and industrial fluoropolymer resins. The company operates 28 major production facilities in 8 countries and serves approximately 2,400 customers in approximately 110 countries.",
+    "title": "Chemours",
+    "url": "https://en.wikipedia.org/wiki/Chemours",
+    "thumbnail": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/ef/Freon_134a_refrigerant_for_car_AC_001.jpg/330px-Freon_134a_refrigerant_for_car_AC_001.jpg"
+  },
+  "semiconductor research corporation": {
+    "description": "Semiconductor Research Corporation (SRC), commonly known as SRC, is a high-technology research consortium active in the semiconductor industry. It is a leading semiconductor research consortium. Todd Younkin is the incumbent president and chief executive officer of the company.",
+    "title": "Semiconductor Research Corporation",
+    "url": "https://en.wikipedia.org/wiki/Semiconductor_Research_Corporation",
+    "thumbnail": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/df/SRC_logo_%282022%29.png/330px-SRC_logo_%282022%29.png"
+  },
+  "california institute of technology": {
+    "description": "The California Institute of Technology (branded as Caltech) is a private research university in Pasadena, California, United States. The university is responsible for many modern scientific advancements and is among a small group of institutes of technology in the United States that are devoted to the instruction of pure and applied sciences.",
+    "title": "California Institute of Technology",
+    "url": "https://en.wikipedia.org/wiki/California_Institute_of_Technology",
+    "thumbnail": "https://upload.wikimedia.org/wikipedia/en/thumb/a/a4/Seal_of_the_California_Institute_of_Technology.svg/330px-Seal_of_the_California_Institute_of_Technology.svg.png"
+  },
+  "agilent technologies": {
+    "description": "Agilent Technologies, Inc. is an American global company headquartered in Santa Clara, California, that provides instruments, software, services, and consumables for laboratories. Agilent was established in 1999 as a spin-off from Hewlett-Packard. The resulting initial public offering of Agilent stock was the largest in the history of Silicon Valley at the time. From 1999 to 2014, the company produced optics, semiconductors, EDA software and test and measurement equipment for electronics; that division was spun off to form Keysight. Since then, the company has continued to expand into pharmaceutical, diagnostics & clinical, and academia & government (research) markets.",
+    "title": "Agilent Technologies",
+    "url": "https://en.wikipedia.org/wiki/Agilent_Technologies",
+    "thumbnail": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/92/Agilent-HQ-Lobby.jpg/330px-Agilent-HQ-Lobby.jpg"
+  },
+  "new energy and industrial technology development organization": {
+    "description": "The New Energy and Industrial Technology Development Organization (新エネルギー・産業技術総合開発機構), or NEDO, is Japan's largest public management organization promoting research and development as well as deployment of industrial, energy and environmental technologies. In 2003, NEDO was reorganized as an Independent Administrative Institution. NEDO has approximately 1,000 personnel and domestic offices in Hokkaido, Kansai, and Kyushu and international offices in Washington D.C., Silicon Valley (California), Paris, Beijing, Bangkok, Jakarta and New Delhi. Its budget for fiscal year 2009 was 234,700,000,000 yen, the vast majority of which was provided by Japan's Ministry of Economy, Trade and Industry (METI). Its head office is located just outside Tokyo in Kawasaki City, Kanagawa Prefecture.",
+    "title": "New Energy and Industrial Technology Development Organization",
+    "url": "https://en.wikipedia.org/wiki/New_Energy_and_Industrial_Technology_Development_Organization",
+    "thumbnail": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/70/Muza_Kawasaki2.jpg/330px-Muza_Kawasaki2.jpg"
+  },
+  "university of technology sydney": {
+    "description": "The University of Technology Sydney (UTS) is a public research university located in Sydney, New South Wales, Australia. The university was founded in its current form in 1988, though its origins as a technical institution can be traced back to the 1870s. UTS is a founding member of the Australian Technology Network (ATN), and is a member of Universities Australia (UA) and the Worldwide Universities Network (WUN).",
+    "title": "University of Technology Sydney",
+    "url": "https://en.wikipedia.org/wiki/University_of_Technology_Sydney",
+    "thumbnail": "https://upload.wikimedia.org/wikipedia/en/thumb/6/64/University_of_Technology_Sydney_emblem.svg/330px-University_of_Technology_Sydney_emblem.svg.png"
+  },
+  "curtin university of technology": {
+    "description": "Curtin University is an Australian public research university based in Bentley, Perth, Western Australia. It is named after John Curtin, Prime Minister of Australia from 1941 to 1945, and is Western Australia's largest university, with 58,607 students in 2022.",
+    "title": "Curtin University",
+    "url": "https://en.wikipedia.org/wiki/Curtin_University",
+    "thumbnail": "https://upload.wikimedia.org/wikipedia/en/4/41/Curtin_University_Crest.jpg"
+  },
+  "guangdong university of technology": {
+    "description": "The Guangdong University of Technology is a provincial public university in Guangzhou, Guangdong, China. The university is affiliated with and sponsored by the Guangdong Provincial People's Government.",
+    "title": "Guangdong University of Technology",
+    "url": "https://en.wikipedia.org/wiki/Guangdong_University_of_Technology",
+    "thumbnail": "https://upload.wikimedia.org/wikipedia/en/thumb/7/71/Guangdong_University_of_Technology_Logo.svg/330px-Guangdong_University_of_Technology_Logo.svg.png"
+  },
+  "dalian university of technology": {
+    "description": "The Dalian University of Technology (DLUT) is a public university in Ganjingzi, Dalian, Liaoning, China. It is affiliated with the Ministry of Education. The university is part of Project 211, Project 985, and the Double First-Class Construction.",
+    "title": "Dalian University of Technology",
+    "url": "https://en.wikipedia.org/wiki/Dalian_University_of_Technology",
+    "thumbnail": "https://upload.wikimedia.org/wikipedia/en/e/e4/DLUT_logo.png"
+  },
+  "china university of mining and technology": {
+    "description": "The China University of Mining and Technology is a public university located in Xuzhou, Jiangsu, China. It is affiliated with the Ministry of Education, and co-sponsored with the Jiangsu Provincial People's Government and the Ministry of Emergency Management. The university is part of Project 211 and the Double First-Class Construction.",
+    "title": "China University of Mining and Technology",
+    "url": "https://en.wikipedia.org/wiki/China_University_of_Mining_and_Technology",
+    "thumbnail": "https://upload.wikimedia.org/wikipedia/en/8/82/China_University_of_Mining_and_Technology_logo.png"
+  },
+  "toyota motor corporation": {
+    "description": "Toyota Motor Corporation  is a Japanese multinational automotive manufacturer headquartered in Toyota City, Aichi, Japan. It was founded by Kiichiro Toyoda and incorporated on August 28, 1937. Toyota is the largest automobile manufacturer in the world, producing about 10 million vehicles per year.",
+    "title": "Toyota",
+    "url": "https://en.wikipedia.org/wiki/Toyota",
+    "thumbnail": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/ff/Headquarter_of_Toyota_Motor_Corporation_3.JPG/330px-Headquarter_of_Toyota_Motor_Corporation_3.JPG"
+  },
+  "national energy technology laboratory": {
+    "description": "The National Energy Technology Laboratory (NETL) is a U.S. national laboratory under the Department of Energy Office of Fossil Energy. NETL focuses on applied research for the clean production and use of domestic energy resources. It performs research and development on the supply, efficiency, and environmental constraints of producing and using fossil energy resources while maintaining affordability.",
+    "title": "National Energy Technology Laboratory",
+    "url": "https://en.wikipedia.org/wiki/National_Energy_Technology_Laboratory",
+    "thumbnail": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7d/National_Energy_Technology_Laboratory_logo.svg/330px-National_Energy_Technology_Laboratory_logo.svg.png"
+  },
+  "vetenskapsrådet": {
+    "description": "The Swedish Research Council is a Government agency in Sweden established in 2001, with the responsibility to support and develop basic scientific research. Its objective is for Sweden to be a leading nation in scientific research. The agency has three main functions:To distribute government funding for basic research\nTo advise the government on issues related to scientific research\nTo communicate science and scientific research to the general public",
+    "title": "Swedish Research Council",
+    "url": "https://en.wikipedia.org/wiki/Swedish_Research_Council",
+    "thumbnail": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d8/Vetenskapsr%C3%A5det.JPG/330px-Vetenskapsr%C3%A5det.JPG"
+  },
+  "national oceanic and atmospheric administration": {
+    "description": "The National Oceanic and Atmospheric Administration is a United States scientific and regulatory agency tasked with forecasting weather, monitoring oceanic and atmospheric conditions, charting the seas, conducting deep-sea exploration, and managing fishing and protection of marine mammals and endangered species in the US exclusive economic zone. The agency is part of the United States Department of Commerce and is headquartered in Silver Spring, Maryland.",
+    "title": "National Oceanic and Atmospheric Administration",
+    "url": "https://en.wikipedia.org/wiki/National_Oceanic_and_Atmospheric_Administration",
+    "thumbnail": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/79/NOAA_logo.svg/330px-NOAA_logo.svg.png"
+  },
+  "european regional development fund": {
+    "description": "The European Regional Development Fund (ERDF) is one of the European Structural and Investment Funds allocated by the European Union. Its purpose is to transfer money from richer regions, and invest it in the infrastructure and services of underdeveloped regions. This will allow those regions to start attracting private sector investments, and create jobs on their own.",
+    "title": "European Regional Development Fund",
+    "url": "https://en.wikipedia.org/wiki/European_Regional_Development_Fund",
+    "thumbnail": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/62/20250917053951%21ERDF_2021-2027_it.svg/330px-20250917053951%21ERDF_2021-2027_it.svg.png"
+  },
+  "environment and climate change canada": {
+    "description": "Environment and Climate Change Canada is the department of the Government of Canada responsible for coordinating environmental policies and programs, as well as preserving and enhancing the natural environment and renewable resources. It is also colloquially known by its former name, Environment Canada.",
+    "title": "Environment and Climate Change Canada",
+    "url": "https://en.wikipedia.org/wiki/Environment_and_Climate_Change_Canada",
+    "thumbnail": null
+  },
+  "nederlandse organisatie voor wetenschappelijk onderzoek": {
+    "description": "The Dutch Research Council is the national research council of the Netherlands. NWO funds scientific research at Dutch universities and research institutes through grants and research programs. NWO is an independent administrative body operating under the responsibility of the Dutch Ministry of Education, Culture and Science.",
+    "title": "Dutch Research Council",
+    "url": "https://en.wikipedia.org/wiki/Dutch_Research_Council",
+    "thumbnail": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a6/NWO_logo.svg/330px-NWO_logo.svg.png"
+  },
+  "austrian science fund": {
+    "description": "The Austrian Science Fund is the most important Austrian funding organization for basic research. The FWF supports research in science, engineering, and the humanities through a large variety of grant programmes, prizes and by funding infrastructure. The self-governed organization is based in Vienna and financed by the Austrian federal government.",
+    "title": "Austrian Science Fund",
+    "url": "https://en.wikipedia.org/wiki/Austrian_Science_Fund",
+    "thumbnail": null
+  },
+  "centre national de la recherche scientifique": {
+    "description": "The French National Centre for Scientific Research is the French state research organisation and is the largest public research body in Europe and the second largest research organisation in the world.",
+    "title": "French National Centre for Scientific Research",
+    "url": "https://en.wikipedia.org/wiki/French_National_Centre_for_Scientific_Research",
+    "thumbnail": "https://upload.wikimedia.org/wikipedia/en/thumb/f/f5/Centre_national_de_la_recherche_scientifique_%28logo%29.svg/330px-Centre_national_de_la_recherche_scientifique_%28logo%29.svg.png"
+  },
+  "royal society": {
+    "description": "The Royal Society of London for Improving Natural Knowledge, commonly referred to as the Royal Society, is a learned society and the United Kingdom's national academy of sciences. The society fulfils a number of roles: promoting science and its benefits, recognising excellence in science, supporting outstanding science, providing scientific advice for policy, education and public engagement and fostering international and global co-operation. Founded on 28 November 1660, it was granted a royal charter by King Charles II and is the oldest continuously existing scientific academy in the world.",
+    "title": "Royal Society",
+    "url": "https://en.wikipedia.org/wiki/Royal_Society",
+    "thumbnail": "https://upload.wikimedia.org/wikipedia/en/thumb/3/38/Royal_Society_logo.png/330px-Royal_Society_logo.png"
+  },
+  "research councils uk": {
+    "description": "Research Councils UK, sometimes known as RCUK, was a non-departmental public body that coordinated science policy in the United Kingdom from 2002 to 2018. It was an umbrella organisation that coordinated the seven separate research councils that were responsible for funding and coordinating academic research for the arts, humanities, science and engineering. In 2018 Research Councils transitioned into UK Research and Innovation (UKRI).",
+    "title": "Research Councils UK",
+    "url": "https://en.wikipedia.org/wiki/Research_Councils_UK",
+    "thumbnail": "https://upload.wikimedia.org/wikipedia/en/6/6c/UK_Research_Council%27s_Logo.jpg"
+  }
+}

@@ -3062,14 +3062,56 @@ company_counts = {}
 #             count = funding_source_match_mask(main["Funding Sources"], company).sum()
 #             company_counts[company] = count
 
-def create_funding_source_dataframe(chem_limit=5, top_n=50):
+
+def _compute_company_counts_from_all_studies():
+    """Count funding-source occurrences directly from all studies in main dataframe."""
+    if 'Funding Sources' not in main.columns:
+        return {}
+
+    counts_series = (
+        main['Funding Sources']
+        .dropna()
+        .astype(str)
+        .str.split(r'[;]')
+        .explode()
+        .astype(str)
+        .str.strip()
+    )
+    counts_series = counts_series[counts_series != '']
+    return counts_series.value_counts().to_dict()
+
+
+def _normalized_classification(value):
+    text = str(value or '').strip().lower()
+    return text if text else 'unknown'
+
+def create_funding_source_dataframe(
+    chem_limit=5,
+    top_n=50,
+    category='all',
+    counts_override=None,
+    auto_build_category_csvs=True,
+):
     """
     Build funding table dataframe from the same company_assoc pipeline used by company search.
     This keeps funding table popup chemicals/counts consistent with company page results.
     """
+    category_key = _normalize_funding_table_category(category)
     company_assoc_names = set(company_assoc['Company'].dropna().astype(str).str.strip())
-    sorted_companies = sorted(company_counts.items(), key=lambda x: x[1], reverse=True)
-    top_companies = [(name, count) for name, count in sorted_companies if name in company_assoc_names][:top_n]
+    source_counts = counts_override if counts_override is not None else (company_counts if company_counts else _compute_company_counts_from_all_studies())
+
+    sorted_companies = sorted(source_counts.items(), key=lambda x: x[1], reverse=True)
+    top_companies = []
+    for name, count in sorted_companies:
+        if name not in company_assoc_names:
+            continue
+        if category_key != 'all':
+            classification = _normalized_classification(company_classification_dict.get(name, 'Unknown'))
+            if classification != category_key:
+                continue
+        top_companies.append((name, count))
+        if top_n is not None and len(top_companies) >= max(1, int(top_n)):
+            break
 
     rows = []
     total = len(top_companies)
@@ -3112,10 +3154,82 @@ def create_funding_source_dataframe(chem_limit=5, top_n=50):
             })
 
     print(f"✓ Completed! Processed {len(rows)} companies")
-    return pd.DataFrame(rows)
+    result_df = pd.DataFrame(rows)
+
+    # Keep category tables in sync whenever the main/all funding table is rebuilt.
+    if auto_build_category_csvs and category_key == 'all' and counts_override is None:
+        try:
+            create_funding_source_category_dataframes(top_n=top_n, source_counts=source_counts)
+        except Exception as exc:
+            logger.warning("Failed to auto-build funding source category CSVs: %s", exc)
+
+    return result_df
 
 FUNDING_SOURCE_TABLE_URL = "https://ucsf.box.com/shared/static/ghk9hv5p7fuzoquqa54xjyaiwyp0za8g.csv"
 funding_source_table_df = load_remote_csv(FUNDING_SOURCE_TABLE_URL, 'funding_source_table.csv')
+
+_FUNDING_TABLE_CATEGORIES = ('all', 'government', 'university', 'foundation', 'company', 'unknown')
+
+
+def _normalize_funding_table_category(category):
+    normalized = str(category or 'all').strip().lower()
+    return normalized if normalized in _FUNDING_TABLE_CATEGORIES else 'all'
+
+
+def _funding_table_category_path(category):
+    category_key = _normalize_funding_table_category(category)
+    return os.path.join(settings.BASE_DIR, 'data', f'funding_source_table_{category_key}.csv')
+
+
+def _prepare_funding_table_rows(df, category='all', top_n=50):
+    rows = df.copy()
+    category_key = _normalize_funding_table_category(category)
+    if category_key != 'all':
+        rows = rows[
+            rows.get('classification', '').fillna('').astype(str).str.lower() == category_key
+        ]
+
+    count_series = pd.to_numeric(rows.get('study_count', rows.get('count', 0)), errors='coerce').fillna(0)
+    rows = rows.assign(_count_value=count_series)
+    rows = rows.sort_values(by='_count_value', ascending=False)
+    if top_n is not None:
+        rows = rows.head(max(1, int(top_n)))
+    return rows.drop(columns=['_count_value'], errors='ignore').reset_index(drop=True)
+
+
+def create_funding_source_category_dataframes(top_n=50, source_counts=None):
+    """Create per-category funding source CSVs from raw study-level counts."""
+    if source_counts is None:
+        source_counts = _compute_company_counts_from_all_studies()
+    created_files = {}
+    for category in _FUNDING_TABLE_CATEGORIES:
+        rows = create_funding_source_dataframe(
+            top_n=top_n,
+            category=category,
+            counts_override=source_counts,
+            auto_build_category_csvs=False,
+        )
+        output_path = _funding_table_category_path(category)
+        os.makedirs(os.path.dirname(output_path), exist_ok=True)
+        rows.to_csv(output_path, index=False)
+        created_files[category] = output_path
+    return created_files
+
+
+def load_funding_source_table_for_category(category='all', top_n=50):
+    """Load prebuilt per-category funding table CSV; fallback to in-memory table when missing."""
+    category_key = _normalize_funding_table_category(category)
+    category_path = _funding_table_category_path(category_key)
+    if os.path.exists(category_path):
+        try:
+            df = pd.read_csv(category_path)
+            return _prepare_funding_table_rows(df, category='all', top_n=top_n)
+        except Exception as exc:
+            logger.warning("Failed to load category table %s: %s", category_path, exc)
+
+    # Build on demand using raw study-level counts when prebuilt files are unavailable.
+    source_counts = _compute_company_counts_from_all_studies()
+    return create_funding_source_dataframe(top_n=top_n, category=category_key, counts_override=source_counts)
 
 
 def parse_list_cell(value):
@@ -3144,7 +3258,10 @@ def parse_chemicals_list(chemicals_str):
     items = parse_list_cell(chemicals_str)
     return [parse_chemical_with_count(item) for item in items]
 def get_funding_source_row(company_name):
-    row = funding_source_table_df[funding_source_table_df["company"] == company_name]
+    table_df = load_funding_source_table_for_category('all', top_n=1000000)
+    row = table_df[table_df["company"] == company_name]
+    if row.empty:
+        row = funding_source_table_df[funding_source_table_df["company"] == company_name]
     if row.empty:
         return None
     record = row.iloc[0]

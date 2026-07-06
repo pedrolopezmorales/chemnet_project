@@ -24,7 +24,7 @@ from .network_functions import (
     get_top_chemicals_for_company,
     get_pubchem_description,
     get_wikipedia_description_fundingsource,
-    funding_source_table_df,
+    load_funding_source_table_for_category,
     get_funding_source_row,
     parse_chemicals_list,
     obtain_inchikey_from_pubchem,
@@ -605,8 +605,10 @@ class FundingTableAPI(APIView):
         if category not in allowed_categories:
             category = 'all'
 
+        all_table_df = load_funding_source_table_for_category('all', top_n=1000000)
+
         if company_name:
-            known_names = funding_source_table_df['company'].dropna().astype(str).tolist()
+            known_names = all_table_df['company'].dropna().astype(str).tolist()
             company_name = resolve_case_insensitive_name(company_name, known_names)
         if company_name:
             try:
@@ -646,18 +648,7 @@ class FundingTableAPI(APIView):
                 }, status=500)
         else:
             try:
-                rows = funding_source_table_df.copy()
-
-                if category != 'all':
-                    rows = rows[
-                        rows.get('classification', '').fillna('').astype(str).str.lower() == category
-                    ]
-
-                count_series = pd.to_numeric(
-                    rows.get('study_count', rows.get('count', 0)), errors='coerce'
-                ).fillna(0)
-                rows = rows.assign(_count_value=count_series)
-                rows = rows.sort_values(by='_count_value', ascending=False).head(top_n)
+                rows = load_funding_source_table_for_category(category, top_n=top_n)
 
                 funding_data = []
                 for _, row in rows.iterrows():
