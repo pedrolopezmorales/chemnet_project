@@ -5,7 +5,19 @@
     {% include "networkviewer/tabs.html" %}
     <div class="container mt-4">
         <h1 class="text-center mb-4">Research Funding Sources</h1>
-        <p class="text-center text-muted">Top 50 funding sources by number of studies funded</p>
+        <p class="text-center text-muted">Top {{ top_n }} {{ active_category_label }} funding sources by number of studies funded</p>
+        <div style="margin-bottom: 1.25em; display: flex; flex-wrap: wrap; justify-content: center; gap: 0.5em;">
+            {% for tab in category_tabs %}
+                <a
+                    href="?category={{ tab.value }}&top_n={{ top_n }}"
+                    class="category-tab-link"
+                >
+                    <span class="category-tab {% if active_category == tab.value %}category-tab-active{% else %}category-tab-inactive{% endif %}">
+                        {{ tab.label }}
+                    </span>
+                </a>
+            {% endfor %}
+        </div>
         <div style="margin-bottom: 1em; display: flex; flex-wrap: wrap; gap: 1.5em; align-items: center;">
             <span style="display: flex; align-items: center;">
                 <span style="display:inline-block;width:18px;height:18px;border-radius:4px;background:#ef4444;margin-right:8px;"></span>
@@ -61,7 +73,7 @@
                     <strong>Top Chemicals:</strong>
                     <div id="modalChemicals">Loading...</div>
                 </div>
-                <div class=""info-item">
+                <div class="info-item">
                     <strong>Description:</strong>
                     <div id="modalDescription">Loading...</div>
                 </div>
@@ -299,11 +311,39 @@
         color: #666;
         font-style: italic;
     }
+
+    .category-tab-link {
+        text-decoration: none;
+    }
+
+    .category-tab {
+        display: inline-block;
+        padding: 8px 14px;
+        border-radius: 999px;
+        font-size: 14px;
+        font-weight: 600;
+        border: 1px solid #d1d5db;
+        transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+    }
+
+    .category-tab-active {
+        background: #2563eb;
+        color: #ffffff;
+        border-color: #2563eb;
+    }
+
+    .category-tab-inactive {
+        background: #ffffff;
+        color: #374151;
+    }
     </style>
     <script>
     document.addEventListener('DOMContentLoaded', function() {
         const fundingBoxes = document.querySelectorAll('.funding-box');
         const modal = document.getElementById('companyModal');
+        if (!modal) {
+            return;
+        }
         const modalBackdrop = modal.querySelector('.modal-backdrop');
         const modalClose = modal.querySelector('.modal-close');
         const viewNetworkBtn = document.getElementById('viewNetworkBtn');
@@ -323,15 +363,21 @@
         });
         
         // Close modal handlers
-        modalBackdrop.addEventListener('click', hideModal);
-        modalClose.addEventListener('click', hideModal);
+        if (modalBackdrop) {
+            modalBackdrop.addEventListener('click', hideModal);
+        }
+        if (modalClose) {
+            modalClose.addEventListener('click', hideModal);
+        }
         
         // View network button
-        viewNetworkBtn.addEventListener('click', function() {
-            if (currentCompany) {
-                window.location.href = `/company/?company_name=${encodeURIComponent(currentCompany)}`;
-            }
-        });
+        if (viewNetworkBtn) {
+            viewNetworkBtn.addEventListener('click', function() {
+                if (currentCompany) {
+                    window.location.href = `/company/?company_name=${encodeURIComponent(currentCompany)}`;
+                }
+            });
+        }
         
         function showModal(companyName, studyCount, classification) {
             // Update modal content
@@ -393,7 +439,8 @@
                     document.getElementById('modalDescription').innerHTML = '<em>Error loading description</em>';
 
                 });
-            }})
+        }
+    });
     </script>
 </body>
 </html>

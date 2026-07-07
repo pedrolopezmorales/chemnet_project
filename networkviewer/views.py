@@ -22,7 +22,7 @@ from .network_functions import (
     get_top_chemicals_for_company,
     get_pubchem_description,
     get_wikipedia_description_fundingsource,
-    funding_source_table_df,
+    load_funding_source_table_for_category,
     get_funding_source_row,
     parse_chemicals_list,
     obtain_inchikey_from_pubchem,
@@ -435,8 +435,20 @@ def contact_view(request):
     return render(request, 'networkviewer/contact.html')
 
 def funding_table_view(request):
+    category = (request.GET.get('category') or 'all').strip().lower()
+    allowed_categories = ['all', 'government', 'university', 'foundation', 'company', 'unknown']
+    if category not in allowed_categories:
+        category = 'all'
+
+    try:
+        top_n = int(request.GET.get('top_n', 50))
+    except (TypeError, ValueError):
+        top_n = 50
+    top_n = max(1, top_n)
+
+    rows = load_funding_source_table_for_category(category, top_n=top_n)
     periodic_data = []
-    for _, row in funding_source_table_df.iterrows():
+    for _, row in rows.iterrows():
         count_value = row.get('study_count', row.get('count', 0))
         periodic_data.append({
             'company': row.get('company', ''),
@@ -444,8 +456,28 @@ def funding_table_view(request):
             'classification': row.get('classification', 'Unknown')
         })
 
+    category_labels = {
+        'all': 'All',
+        'government': 'Government',
+        'university': 'University',
+        'foundation': 'Foundation',
+        'company': 'Company',
+        'unknown': 'Not Recognized',
+    }
+
     context = {
         'periodic_data': periodic_data,
+        'active_category': category,
+        'active_category_label': category_labels.get(category, 'All'),
+        'top_n': top_n,
+        'category_tabs': [
+            {'value': 'all', 'label': 'All'},
+            {'value': 'government', 'label': 'Government'},
+            {'value': 'university', 'label': 'University'},
+            {'value': 'foundation', 'label': 'Foundation'},
+            {'value': 'company', 'label': 'Company'},
+            {'value': 'unknown', 'label': 'Not Recognized'},
+        ],
         'show_main_nav': True
     }
     return render(request, 'networkviewer/funding_table.html', context)
