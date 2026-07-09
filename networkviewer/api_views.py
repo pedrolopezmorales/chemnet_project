@@ -537,13 +537,13 @@ class ResearcherSearchAPI(APIView):
         if len(matches) == 1:
             # Only one match, generate graph immediately
             row = matches[0]
-            found = show_researcher_network_pyvis_from_row(row, researcher_rows=comparing_researchers, category=category)
+            found = show_researcher_network_pyvis_from_row(row, category=category)
             if found:
                 safe_researcher = researcher.replace(' ', '_').replace(',', '').replace('/', '_').replace('\\', '_').replace('.', '_')
                 safe_aff = str(row['Affiliation'])[:20].replace(' ', '_').replace('/', '_').replace('\\', '_').replace('.', '_')
                 safe_category = category.strip().lower().replace(' ', '_')
                 iframe_url = f"/networks/network_{safe_researcher}_{safe_aff}_{safe_category}.html"
-                connections = show_res_connections(researcher=researcher, researcher_rows=comparing_researchers, category=category)
+                connections = show_res_connections(researcher=researcher, matches=all_matches, category=category)
                 
                 return Response({
                     'success': True,
@@ -572,13 +572,13 @@ class ResearcherSearchAPI(APIView):
             else:
                 row = matches[int(selected_index)]
             
-            found = show_researcher_network_pyvis_from_row(row, researcher_rows=comparing_researchers, category=category)
+            found = show_researcher_network_pyvis_from_row(row, category=category)
             if found:
                 safe_researcher = researcher.replace(' ', '_').replace(',', '').replace('/', '_').replace('\\', '_').replace('.', '_')
                 safe_aff = str(row['Affiliation'])[:20].replace(' ', '_').replace('/', '_').replace('\\', '_').replace('.', '_')
                 safe_category = category.strip().lower().replace(' ', '_')
                 iframe_url = f"/networks/network_{safe_researcher}_{safe_aff}_{safe_category}.html"
-                connections = show_res_connections(researcher, matches=all_matches, researcher_rows=comparing_researchers, category=category)
+                connections = show_res_connections(researcher, matches=all_matches, category=category)
                 
                 return Response({
                     'success': True,
