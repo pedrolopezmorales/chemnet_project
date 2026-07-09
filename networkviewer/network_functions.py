@@ -671,6 +671,57 @@ def funding_source_match_mask(funding_sources_series, target_name):
         return normalized_target in parts
 
     return funding_sources_series.apply(matches)
+
+
+def parse_collaborator_entry(entry):
+    """Return collaborator (name, affiliation) from dict/tuple/string input."""
+    if isinstance(entry, dict):
+        name = str(entry.get('Researcher', '')).strip()
+        affiliation = str(entry.get('Affiliation', '')).strip()
+        return name, affiliation
+
+    if isinstance(entry, (list, tuple)) and len(entry) >= 2:
+        name = str(entry[0]).strip()
+        affiliation = str(entry[1]).strip()
+        return name, affiliation
+
+    if isinstance(entry, str):
+        return entry.strip(), ''
+
+    return str(entry).strip(), ''
+
+
+def parse_collaborators_cell(value):
+    """Normalize collaborator cell to a list of {'Researcher', 'Affiliation'} dicts."""
+    parsed = value
+    if isinstance(value, str):
+        text = value.strip()
+        if text.startswith('['):
+            try:
+                parsed = ast.literal_eval(text)
+            except Exception:
+                parsed = []
+        elif not text:
+            parsed = []
+        else:
+            parsed = [text]
+
+    if parsed is None or (isinstance(parsed, float) and pd.isna(parsed)):
+        return []
+
+    if not isinstance(parsed, list):
+        parsed = [parsed]
+
+    normalized = []
+    for collaborator in parsed:
+        name, affiliation = parse_collaborator_entry(collaborator)
+        if not name:
+            continue
+        normalized.append({
+            'Researcher': name,
+            'Affiliation': affiliation,
+        })
+    return normalized
 def extract_university_comp(affil, university_keys):
     if pd.isna(affil) or affil is None:
         return None
@@ -1863,15 +1914,13 @@ def show_uni_network_pyvis(uni_name, category='Funding Sources', chemical_group=
 
 
 #CSV_PATH_researchers = os.path.join(settings.BASE_DIR, 'data', 'comparing_researchers.csv')
-RESEARCHER_CSV_URL = 'https://ucsf.box.com/shared/static/5p05syaykg61cmecjc0dqurna3lox1kf.csv'
+RESEARCHER_CSV_URL = 'https://ucsf.box.com/shared/static/jrks0l53xm4wk58xi5ykix0a9xjf8bfp.csv'
 comparing_researchers = load_remote_csv(RESEARCHER_CSV_URL, 'comparing_researchers.csv')
 comparing_researchers['Companies'] = comparing_researchers['Companies'].apply(
     lambda x: ast.literal_eval(x) if isinstance(x, str) and x.startswith('[') else []
 )
 if 'Collaborators' in comparing_researchers.columns:
-    comparing_researchers['Collaborators'] = comparing_researchers['Collaborators'].apply(
-        lambda x: ast.literal_eval(x) if isinstance(x, str) and x.startswith('[') else []
-    )
+    comparing_researchers['Collaborators'] = comparing_researchers['Collaborators'].apply(parse_collaborators_cell)
 else:
     comparing_researchers['Collaborators'] = [[] for _ in range(len(comparing_researchers))]
 
@@ -1926,15 +1975,29 @@ def show_researcher_network_pyvis(researcher, output_file = os.path.join(_GRAPH_
 
     # Add connection nodes and edges
     total_comp = []
+    collaborator_affiliations = {}
     for affil in data:
-        if affil not in total_comp:
-            if category_key == 'Collaborators':
-                net.add_node(affil, label=affil, title=f"Collaborator: {affil}", color="#A78BFA", shape="ellipse", size=15)
-            else:
-                net.add_node(affil, label=affil, title=affil, color="lightblue", shape="ellipse", size=15)
-            total_comp.append(affil)
+        if category_key == 'Collaborators':
+            collaborator_name, collaborator_aff = parse_collaborator_entry(affil)
+            if not collaborator_name:
+                continue
+            if collaborator_name not in collaborator_affiliations:
+                collaborator_affiliations[collaborator_name] = set()
+            if collaborator_aff:
+                collaborator_affiliations[collaborator_name].add(collaborator_aff)
+            node_id = collaborator_name
+            aff_text = '; '.join(sorted(collaborator_affiliations[collaborator_name])) if collaborator_affiliations[collaborator_name] else 'Not Found'
+            node_title = f"Collaborator: {collaborator_name}\\nAffiliation: {aff_text}"
         else:
-            total_comp.append(affil)
+            node_id = affil
+            node_title = affil
+
+        if node_id not in total_comp:
+            if category_key == 'Collaborators':
+                net.add_node(node_id, label=node_id, title=node_title, color="#A78BFA", shape="ellipse", size=15)
+            else:
+                net.add_node(node_id, label=node_id, title=node_title, color="lightblue", shape="ellipse", size=15)
+            total_comp.append(node_id)
     study_counts = {}
     # Pre-filter to this researcher's rows once instead of scanning all of
     # `main` for every company node.
@@ -2294,16 +2357,27 @@ def show_researcher_network_pyvis_from_row(row, output_file=None, researcher_row
 
     # Add connection nodes and edges
     total_comp = []
+    collaborator_affiliations = {}
     for comp in data:
-        if comp not in total_comp:
-            if category_key == 'collaborators':
-                original_name = comp
-                entity_color = '#A78BFA'
-                node_title = f"Collaborator: {original_name}"
-            else:
-                original_name, entity_type = extract_name_and_class(comp)
-                entity_color = get_category_color(entity_type)
-                node_title = f"{original_name}\nCategory: {get_category_display_name(entity_type)}"
+        if category_key == 'collaborators':
+            original_name, collaborator_aff = parse_collaborator_entry(comp)
+            if not original_name:
+                continue
+            if original_name not in collaborator_affiliations:
+                collaborator_affiliations[original_name] = set()
+            if collaborator_aff:
+                collaborator_affiliations[original_name].add(collaborator_aff)
+            aff_text = '; '.join(sorted(collaborator_affiliations[original_name])) if collaborator_affiliations[original_name] else 'Not Found'
+            node_key = original_name
+            entity_color = '#A78BFA'
+            node_title = f"Collaborator: {original_name}\nAffiliation: {aff_text}"
+        else:
+            original_name, entity_type = extract_name_and_class(comp)
+            node_key = comp
+            entity_color = get_category_color(entity_type)
+            node_title = f"{original_name}\nCategory: {get_category_display_name(entity_type)}"
+
+        if node_key not in total_comp:
             net.add_node(
             original_name,
             label=original_name,
@@ -2312,9 +2386,7 @@ def show_researcher_network_pyvis_from_row(row, output_file=None, researcher_row
             shape="ellipse",
             size=15
             )
-            total_comp.append(comp)
-        else:
-            total_comp.append(comp)
+            total_comp.append(node_key)
     study_counts = {}
     for node in net.nodes:
         if node['id'] != researcher:  # Skip the researcher node itself
@@ -2377,7 +2449,12 @@ def show_researcher_network_pyvis_from_row(row, output_file=None, researcher_row
         main['Authors'].str.contains(researcher, na=False, regex=False)
     ]
     for comp in data:
-        original_name, _ = extract_name_and_class(comp) if category_key != 'collaborators' else (comp, None)
+        if category_key == 'collaborators':
+            original_name, _ = parse_collaborator_entry(comp)
+            if not original_name:
+                continue
+        else:
+            original_name, _ = extract_name_and_class(comp)
         if category_key == 'collaborators':
             studies = researcher_main[
                 author_match_mask(researcher_main['Authors'], original_name)
@@ -2731,7 +2808,12 @@ def show_res_connections(researcher, matches=None, researcher_rows=None, categor
     labeled_companies = []
 
     for comp in data:
-        original_name, _ = extract_name_and_class(comp) if category_key == 'Funding Sources' else (comp, None)
+        if category_key == 'Collaborators':
+            original_name, _ = parse_collaborator_entry(comp)
+        else:
+            original_name, _ = extract_name_and_class(comp)
+        if not original_name:
+            continue
         company_key = original_name.strip().lower()
         if company_key not in seen_company_keys:
             if category_key == 'Collaborators':

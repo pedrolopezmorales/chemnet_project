@@ -295,15 +295,50 @@ def create_researcher_collaborator_pairs(row):
     elif len(researchers) < len(affiliations):
         affiliations = affiliations[:len(researchers)]
 
-    pairs = []
+    researcher_info = list(zip(researchers, affiliations))
 
-    for researcher, affiliation in zip(researchers, affiliations):
-        collaborators = [r for r in researchers if r != researcher]
+    records = []
 
-        pairs.append((researcher, affiliation, collaborators))
+    for researcher, affiliation in researcher_info:
 
-    return pairs
+        collaborators = []
 
+        for coauthor, coaffiliation in researcher_info:
+
+            if coauthor == researcher:
+                continue
+
+            collaborators.append({
+                "Researcher": coauthor,
+                "Affiliation": coaffiliation
+            })
+
+        records.append(
+            (researcher, affiliation, collaborators)
+        )
+
+    return records
+def unique_collaborators(collaborators, researcher):
+    seen = set()
+    unique = []
+
+    researcher = normalize_name(researcher)
+
+    for collaborator in collaborators:
+
+        name = collaborator["Researcher"]
+        affiliation = collaborator["Affiliation"]
+
+        if normalize_name(name) == researcher:
+            continue
+
+        key = (normalize_name(name), affiliation)
+
+        if key not in seen:
+            seen.add(key)
+            unique.append(collaborator)
+
+    return unique
 reduced = main.drop(['DOI', 'URL','Year','Title','Chemicals Mentioned','Abstract','Chemicals with InChIKey'], axis = 1)
 
 reduced['Researchers'] = reduced['Authors'].apply(split_researchers)
@@ -313,11 +348,17 @@ reduced['Aff'] = reduced['Affiliations'].apply(
 reduced['Companies'] = reduced['Funding Sources'].str.split(';').apply(lambda lst: [x.strip() for x in lst])
 reduced = reduced.drop(['Authors','Affiliations','Funding Sources'],axis=1)
 
-reduced['ResearcherRecords'] = reduced.apply(create_researcher_collaborator_pairs, axis=1)
+
+reduced['ResearcherRecords'] = reduced.apply(
+    create_researcher_collaborator_pairs,
+    axis=1
+)
 
 reduced_expanded = reduced.explode('ResearcherRecords')
 
-reduced_expanded[['Researcher', 'Affiliation', 'Collaborators']] = pd.DataFrame(
+reduced_expanded[
+    ['Researcher', 'Affiliation', 'Collaborators']
+] = pd.DataFrame(
     reduced_expanded['ResearcherRecords'].tolist(),
     index=reduced_expanded.index
 )
@@ -337,13 +378,11 @@ comparing_researchers = final_reduced.groupby('GroupKey').agg({
     'Companies': lambda lists: sum(lists, []),
     'Collaborators': lambda lists: sum(lists, [])
 }).reset_index(drop=True)
-comparing_researchers['Collaborators'] = comparing_researchers.apply(
-    lambda row: sorted(
-        set(
-            collaborator
-            for collaborator in row['Collaborators']
-            if collaborator != row['Researcher']
-        )
+
+comparing_researchers["Collaborators"] = comparing_researchers.apply(
+    lambda row: unique_collaborators(
+        row["Collaborators"],
+        row["Researcher"]
     ),
     axis=1
 )
