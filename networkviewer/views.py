@@ -348,6 +348,7 @@ def researcher_view(request):
     matches = []
     selected_index = None
     combine = False
+    category = 'Funding Sources'
     connections = None 
 
     all_researcher_names = sorted(comparing_researchers['Researcher'].dropna().unique())
@@ -370,6 +371,7 @@ def researcher_view(request):
         researcher = request.POST.get('researcher', '').strip()
         selected_index = request.POST.get('selected_index')
         combine = request.POST.get('combine', '') == 'on'
+        category = request.POST.get('category', 'Funding Sources')
         # Find all matches
         all_matches = get_researcher_matches(researcher)
         matches = all_matches.to_dict('records')
@@ -387,32 +389,38 @@ def researcher_view(request):
         if matches and len(matches) == 1:
             # Only one match, generate graph immediately
             row = matches[0]
-            found = show_researcher_network_pyvis_from_row(row, researcher_rows=researcher_rows)
+            found = show_researcher_network_pyvis_from_row(row, researcher_rows=researcher_rows, category=category)
             if found:
                 safe_researcher = researcher.replace(' ', '_').replace(',', '').replace('/', '_').replace('\\', '_').replace('.', '_')
                 safe_aff = str(row['Affiliation'])[:20].replace(' ', '_').replace('/', '_').replace('\\', '_').replace('.', '_')
-                iframe = f"/networks/network_{safe_researcher}_{safe_aff}.html"
-            connections = show_res_connections(researcher=researcher, matches=all_matches, researcher_rows=researcher_rows)
+                safe_category = category.strip().lower().replace(' ', '_')
+                iframe = f"/networks/network_{safe_researcher}_{safe_aff}_{safe_category}.html"
+            connections = show_res_connections(researcher=researcher, matches=all_matches, researcher_rows=researcher_rows, category=category)
         elif selected_index is not None or combine:
             if combine:
-                # Combine all companies and affiliations
-                all_companies = sum(all_matches['Companies'], [])
+                # Combine all compare targets and affiliations
+                if category == 'Collaborators':
+                    all_companies = sum(all_matches['Collaborators'], []) if 'Collaborators' in all_matches.columns else []
+                else:
+                    all_companies = sum(all_matches['Companies'], [])
                 unique_affiliations = all_matches['Affiliation'].dropna().unique()
                 combined_aff = '; '.join(unique_affiliations)
                 row = {
                     'Researcher': researcher,
                     'Affiliation': combined_aff,
-                    'Companies': all_companies
+                    'Companies': all_companies,
+                    'Collaborators': sum(all_matches['Collaborators'], []) if 'Collaborators' in all_matches.columns else []
                 }
             else:
                 row = matches[int(selected_index)]
-            found = show_researcher_network_pyvis_from_row(row, researcher_rows=researcher_rows)
+            found = show_researcher_network_pyvis_from_row(row, researcher_rows=researcher_rows, category=category)
             if found:
                 safe_researcher = researcher.replace(' ', '_').replace(',', '').replace('/', '_').replace('\\', '_').replace('.', '_')
                 safe_aff = str(row['Affiliation'])[:20].replace(' ', '_').replace('/', '_').replace('\\', '_').replace('.', '_')
-                iframe = f"/networks/network_{safe_researcher}_{safe_aff}.html"
+                safe_category = category.strip().lower().replace(' ', '_')
+                iframe = f"/networks/network_{safe_researcher}_{safe_aff}_{safe_category}.html"
         # If multiple matches and no selection yet, just show the options
-            connections = show_res_connections(researcher, matches=all_matches, researcher_rows=researcher_rows)
+            connections = show_res_connections(researcher, matches=all_matches, researcher_rows=researcher_rows, category=category)
     context = {
         'researcher': researcher,
         'iframe': iframe,
@@ -420,6 +428,7 @@ def researcher_view(request):
         'matches': matches,
         'selected_index': selected_index,
         'combine': combine,
+        'category': category,
         'connections': connections,
         'show_main_nav': True,
         'example_researchers': random_examples,

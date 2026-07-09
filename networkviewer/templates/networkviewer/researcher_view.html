@@ -9,11 +9,16 @@
     {% include "networkviewer/tabs.html" %}
     <div style="background-color: #0b4e86; padding: 40px 10px; color: white;">
         <h1>Researcher Network Viewer</h1>
-        <h2>This search only shows connections between the Researcher and Funding Sources</h2>
+        <h2>This search shows researcher links to funding sources or collaborators</h2>
         <form method="post" class="js-search-form">
             {% csrf_token %}
             <label for="researcher">Enter Researcher Name:</label>
             <input type="text" name="researcher" id="researcher" list="researcher-suggestions" value="{{ researcher|default_if_none:'' }}">
+            <label for="category" style="margin-left: 12px;">Compare To:</label>
+            <select name="category" id="category">
+                <option value="Funding Sources" {% if category == 'Funding Sources' %}selected{% endif %}>Funding Sources</option>
+                <option value="Collaborators" {% if category == 'Collaborators' %}selected{% endif %}>Collaborators</option>
+            </select>
             <datalist id="researcher-suggestions">
                     {% for name in all_researcher_names %}
                         <option value="{{ name }}">{{ name }}</option>
@@ -44,12 +49,17 @@
             <form method="post" class="js-search-form">
                 {% csrf_token %}
                 <input type="hidden" name="researcher" value="{{ researcher }}">
+                <input type="hidden" name="category" value="{{ category }}">
                 <ul>
                 {% for match in matches %}
                     <li>
                         <input type="radio" name="selected_index" value="{{ forloop.counter0 }}">
                         <b>Affiliation:</b> {{ match.Affiliation }}<br>
-                        <b>Companies:</b> {{ match.Companies|join:", " }}
+                        {% if category == 'Collaborators' %}
+                            <b>Collaborators:</b> {{ match.Collaborators|join:", " }}
+                        {% else %}
+                            <b>Funding Sources:</b> {{ match.Companies|join:", " }}
+                        {% endif %}
                     </li>
                 {% endfor %}
                 </ul>

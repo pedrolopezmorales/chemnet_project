@@ -1863,13 +1863,19 @@ def show_uni_network_pyvis(uni_name, category='Funding Sources', chemical_group=
 
 
 #CSV_PATH_researchers = os.path.join(settings.BASE_DIR, 'data', 'comparing_researchers.csv')
-RESEARCHER_CSV_URL = 'https://ucsf.box.com/shared/static/zdezj8mcpwohroukmwth6wa548hcylo3.csv'
+RESEARCHER_CSV_URL = 'https://ucsf.box.com/shared/static/5p05syaykg61cmecjc0dqurna3lox1kf.csv'
 comparing_researchers = load_remote_csv(RESEARCHER_CSV_URL, 'comparing_researchers.csv')
 comparing_researchers['Companies'] = comparing_researchers['Companies'].apply(
     lambda x: ast.literal_eval(x) if isinstance(x, str) and x.startswith('[') else []
 )
+if 'Collaborators' in comparing_researchers.columns:
+    comparing_researchers['Collaborators'] = comparing_researchers['Collaborators'].apply(
+        lambda x: ast.literal_eval(x) if isinstance(x, str) and x.startswith('[') else []
+    )
+else:
+    comparing_researchers['Collaborators'] = [[] for _ in range(len(comparing_researchers))]
 
-def show_researcher_network_pyvis(researcher, output_file = os.path.join(_GRAPH_DIR, "company_network.html")):    # Filter for the selected company
+def show_researcher_network_pyvis(researcher, output_file = os.path.join(_GRAPH_DIR, "company_network.html"), category='Funding Sources'):    # Filter for the selected company
     # Filter for the selected company
     matches = comparing_researchers[comparing_researchers['Researcher'].str.lower() == researcher.lower()]
     
@@ -1888,12 +1894,14 @@ def show_researcher_network_pyvis(researcher, output_file = os.path.join(_GRAPH_
             if choice == 'c':
                 # Combine all companies and pick the longest affiliation
                 all_companies = sum(matches['Companies'], [])
+                all_collaborators = sum(matches['Collaborators'], []) if 'Collaborators' in matches.columns else []
                 unique_affiliations = matches['Affiliation'].dropna().unique()
                 combined_aff = '; '.join(unique_affiliations)
                 row = {
                     'Researcher': researcher,
                     'Affiliation': combined_aff,
-                    'Companies': all_companies
+                    'Companies': all_companies,
+                    'Collaborators': all_collaborators,
                 }
                 break
             elif choice.isdigit() and int(choice) in matches.index:
@@ -1904,7 +1912,8 @@ def show_researcher_network_pyvis(researcher, output_file = os.path.join(_GRAPH_
                 continue  # keep prompting until valid input
     if len(matches) == 1:
         row = matches.iloc[0]
-    data = row['Companies']
+    category_key = 'Collaborators' if str(category).strip().lower() == 'collaborators' else 'Funding Sources'
+    data = row['Collaborators'] if category_key == 'Collaborators' else row['Companies']
     aff = row['Affiliation']
     if aff == '':
         aff = 'Not Found'
@@ -1915,11 +1924,14 @@ def show_researcher_network_pyvis(researcher, output_file = os.path.join(_GRAPH_
     # Add company node
     net.add_node(researcher, label=researcher, title=f"Affiliation: {aff}",color="red", shape="ellipse", size=55)
 
-    # Add affiliation nodes and edges
+    # Add connection nodes and edges
     total_comp = []
     for affil in data:
         if affil not in total_comp:
-            net.add_node(affil, label=affil, title=affil, color="lightblue", shape="ellipse",size=15)
+            if category_key == 'Collaborators':
+                net.add_node(affil, label=affil, title=f"Collaborator: {affil}", color="#A78BFA", shape="ellipse", size=15)
+            else:
+                net.add_node(affil, label=affil, title=affil, color="lightblue", shape="ellipse", size=15)
             total_comp.append(affil)
         else:
             total_comp.append(affil)
@@ -1933,9 +1945,14 @@ def show_researcher_network_pyvis(researcher, output_file = os.path.join(_GRAPH_
         if node['id'] != researcher:  # Skip the researcher node itself
             company = node.get('label', '')  # Company name is the label
             if company:
-                studies = researcher_rows[
-                    researcher_rows['Funding Sources'].str.contains(company, na=False, regex=False)
-                ]
+                if category_key == 'Collaborators':
+                    studies = researcher_rows[
+                        author_match_mask(researcher_rows['Authors'], company)
+                    ]
+                else:
+                    studies = researcher_rows[
+                        researcher_rows['Funding Sources'].str.contains(company, na=False, regex=False)
+                    ]
                 study_count = len(studies.drop_duplicates(subset=['DOI']))
 
                 study_counts[node['id']] = study_count
@@ -1943,7 +1960,7 @@ def show_researcher_network_pyvis(researcher, output_file = os.path.join(_GRAPH_
                     researcher,
                     node['id'], 
                     width=max(1, study_count), 
-                    title=f"Studies: {study_count}"
+                    title=f"Collaborations: {study_count}" if category_key == 'Collaborators' else f"Studies: {study_count}"
                 )
     num_nodes = len(net.nodes)
 
@@ -2247,16 +2264,21 @@ def show_chemical_network(chemical, inch='Error', output_file=None, row=None, ma
         f.write(html)
     return True
 
-def show_researcher_network_pyvis_from_row(row, output_file=None, researcher_rows=None):
+def show_researcher_network_pyvis_from_row(row, output_file=None, researcher_rows=None, category='Funding Sources'):
     if output_file is None:
         researcher = row['Researcher']
         safe_researcher = researcher.replace(' ', '_').replace(',', '').replace('/', '_').replace('\\', '_').replace('.', '_')
         # Use first 20 chars of affiliation to make filename more unique
         safe_aff = str(row['Affiliation'])[:20].replace(' ', '_').replace('/', '_').replace('\\', '_').replace('.', '_')
-        output_file = os.path.join(_GRAPH_DIR, f"network_{safe_researcher}_{safe_aff}.html")
+        safe_category = str(category).strip().lower().replace(' ', '_')
+        output_file = os.path.join(_GRAPH_DIR, f"network_{safe_researcher}_{safe_aff}_{safe_category}.html")
     if _graph_output_exists(output_file):
         return True
-    data = row['Companies']
+    category_key = str(category).strip().lower()
+    if category_key == 'collaborators':
+        data = row.get('Collaborators', [])
+    else:
+        data = row['Companies']
     aff = row['Affiliation']
     researcher = row['Researcher']
     if aff == '':
@@ -2270,16 +2292,22 @@ def show_researcher_network_pyvis_from_row(row, output_file=None, researcher_row
     # Add researcher node
     net.add_node(researcher, label=researcher, title=f"Affiliation: {aff}", color="red", shape="ellipse", size=55)
 
-    # Add company nodes and edges
+    # Add connection nodes and edges
     total_comp = []
     for comp in data:
         if comp not in total_comp:
-            original_name, entity_type = extract_name_and_class(comp)
-            entity_color = get_category_color(entity_type)
+            if category_key == 'collaborators':
+                original_name = comp
+                entity_color = '#A78BFA'
+                node_title = f"Collaborator: {original_name}"
+            else:
+                original_name, entity_type = extract_name_and_class(comp)
+                entity_color = get_category_color(entity_type)
+                node_title = f"{original_name}\nCategory: {get_category_display_name(entity_type)}"
             net.add_node(
             original_name,
             label=original_name,
-            title=f"{original_name}\nCategory: {get_category_display_name(entity_type)}",
+            title=node_title,
             color=entity_color,
             shape="ellipse",
             size=15
@@ -2292,10 +2320,15 @@ def show_researcher_network_pyvis_from_row(row, output_file=None, researcher_row
         if node['id'] != researcher:  # Skip the researcher node itself
             company = node.get('id')  # Company name is the label
             if company:
-                # Count studies mentioning this researcher with this company
-                studies = researcher_rows[
-                    researcher_rows['Funding Sources'].str.contains(company, na=False, regex=False)
-                ]
+                if category_key == 'collaborators':
+                    studies = researcher_rows[
+                        author_match_mask(researcher_rows['Authors'], company)
+                    ]
+                else:
+                    # Count studies mentioning this researcher with this company
+                    studies = researcher_rows[
+                        researcher_rows['Funding Sources'].str.contains(company, na=False, regex=False)
+                    ]
                 study_count = len(studies.drop_duplicates(subset=['DOI']))
                 
                 study_counts[node['id']] = study_count
@@ -2303,7 +2336,7 @@ def show_researcher_network_pyvis_from_row(row, output_file=None, researcher_row
                     researcher,
                     node['id'], 
                     width=max(1, study_count), 
-                    title=f"Studies: {study_count}"
+                    title=f"Collaborations: {study_count}" if category_key == 'collaborators' else f"Studies: {study_count}"
                 )
     num_nodes = len(net.nodes)
 
@@ -2344,10 +2377,15 @@ def show_researcher_network_pyvis_from_row(row, output_file=None, researcher_row
         main['Authors'].str.contains(researcher, na=False, regex=False)
     ]
     for comp in data:
-        original_name, _ = extract_name_and_class(comp)
-        studies = researcher_main[
-            researcher_main['Funding Sources'].str.contains(original_name, na=False, regex=False)
-        ]
+        original_name, _ = extract_name_and_class(comp) if category_key != 'collaborators' else (comp, None)
+        if category_key == 'collaborators':
+            studies = researcher_main[
+                author_match_mask(researcher_main['Authors'], original_name)
+            ]
+        else:
+            studies = researcher_main[
+                researcher_main['Funding Sources'].str.contains(original_name, na=False, regex=False)
+            ]
         study_info = "<br>".join(
             f"{row['Title']} (DOI: {row['DOI']})" for _, row in studies.drop_duplicates(subset=['DOI']).iterrows()
         ) or "No studies found for this connection."
@@ -2660,7 +2698,7 @@ def show_uni_connections(university, uni_rows=None):
         "Chemicals": labeled_chemicals
     }
 
-def show_res_connections(researcher, matches=None, researcher_rows=None):
+def show_res_connections(researcher, matches=None, researcher_rows=None, category='Funding Sources'):
     if matches is None:
         matches = get_researcher_matches(researcher)
     if matches.empty:
@@ -2671,39 +2709,53 @@ def show_res_connections(researcher, matches=None, researcher_rows=None):
     
     if len(matches) > 1:
         all_companies = sum(matches['Companies'], [])
+        all_collaborators = sum(matches['Collaborators'], []) if 'Collaborators' in matches.columns else []
         unique_affiliations = matches['Affiliation'].dropna().unique()
         combined_aff = '; '.join(unique_affiliations)
         row = {
             'Researcher': researcher,
             'Affiliation': combined_aff,
-            'Companies': all_companies
+            'Companies': all_companies,
+            'Collaborators': all_collaborators,
         }
     else:
         row = matches.iloc[0]
 
-    data = row['Companies']
+    category_key = 'Collaborators' if str(category).strip().lower() == 'collaborators' else 'Funding Sources'
+    data = row['Collaborators'] if category_key == 'Collaborators' and 'Collaborators' in row else row['Companies']
     aff = row['Affiliation']
     if aff == '':
         aff = 'Not Found'
 
-    # Companies
     seen_company_keys = set()
     labeled_companies = []
-    
+
     for comp in data:
-        original_name, _ = extract_name_and_class(comp)
+        original_name, _ = extract_name_and_class(comp) if category_key == 'Funding Sources' else (comp, None)
         company_key = original_name.strip().lower()
         if company_key not in seen_company_keys:
-            studies = researcher_rows[
-                funding_source_match_mask(researcher_rows["Funding Sources"], original_name)
-            ]
+            if category_key == 'Collaborators':
+                studies = researcher_rows[
+                    author_match_mask(researcher_rows["Authors"], original_name)
+                ]
+            else:
+                studies = researcher_rows[
+                    funding_source_match_mask(researcher_rows["Funding Sources"], original_name)
+                ]
             study_count = len(studies.drop_duplicates(subset=['DOI']))
-            labeled_companies.append(f"{comp} ({study_count})")
+            labeled_companies.append(f"{original_name} ({study_count})")
             seen_company_keys.add(company_key)
     labeled_companies = sorted(labeled_companies, key=count_key, reverse=True)
+
+    if category_key == 'Collaborators':
+        return {
+            "Affiliation(s)": aff,
+            "Collaborators": labeled_companies,
+        }
+
     return {
         "Affiliation(s)": aff,
-        "Funding Sources": labeled_companies
+        "Funding Sources": labeled_companies,
     }
 
 def show_chem_connections(chemical=None, inchikey=None, row=None):

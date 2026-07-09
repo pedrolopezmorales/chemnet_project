@@ -515,6 +515,7 @@ class ResearcherSearchAPI(APIView):
         researcher = data['researcher'].strip()
         selected_index = data.get('selected_index')
         combine = data.get('combine', False)
+        category = data.get('category', 'Funding Sources')
         
         # Find all matches
         all_matches = comparing_researchers[comparing_researchers['Researcher'].str.lower() == researcher.lower()]
@@ -536,12 +537,13 @@ class ResearcherSearchAPI(APIView):
         if len(matches) == 1:
             # Only one match, generate graph immediately
             row = matches[0]
-            found = show_researcher_network_pyvis_from_row(row)
+            found = show_researcher_network_pyvis_from_row(row, researcher_rows=comparing_researchers, category=category)
             if found:
                 safe_researcher = researcher.replace(' ', '_').replace(',', '').replace('/', '_').replace('\\', '_').replace('.', '_')
                 safe_aff = str(row['Affiliation'])[:20].replace(' ', '_').replace('/', '_').replace('\\', '_').replace('.', '_')
-                iframe_url = f"/networks/network_{safe_researcher}_{safe_aff}.html"
-                connections = show_res_connections(researcher=researcher)
+                safe_category = category.strip().lower().replace(' ', '_')
+                iframe_url = f"/networks/network_{safe_researcher}_{safe_aff}_{safe_category}.html"
+                connections = show_res_connections(researcher=researcher, researcher_rows=comparing_researchers, category=category)
                 
                 return Response({
                     'success': True,
@@ -554,24 +556,29 @@ class ResearcherSearchAPI(APIView):
         
         elif selected_index is not None or combine:
             if combine:
-                # Combine all companies and affiliations
-                all_companies = sum(all_matches['Companies'], [])
+                # Combine all compare targets and affiliations
+                if category == 'Collaborators':
+                    all_companies = sum(all_matches['Collaborators'], []) if 'Collaborators' in all_matches.columns else []
+                else:
+                    all_companies = sum(all_matches['Companies'], [])
                 unique_affiliations = all_matches['Affiliation'].dropna().unique()
                 combined_aff = '; '.join(unique_affiliations)
                 row = {
                     'Researcher': researcher,
                     'Affiliation': combined_aff,
-                    'Companies': all_companies
+                    'Companies': all_companies,
+                    'Collaborators': sum(all_matches['Collaborators'], []) if 'Collaborators' in all_matches.columns else []
                 }
             else:
                 row = matches[int(selected_index)]
             
-            found = show_researcher_network_pyvis_from_row(row)
+            found = show_researcher_network_pyvis_from_row(row, researcher_rows=comparing_researchers, category=category)
             if found:
                 safe_researcher = researcher.replace(' ', '_').replace(',', '').replace('/', '_').replace('\\', '_').replace('.', '_')
                 safe_aff = str(row['Affiliation'])[:20].replace(' ', '_').replace('/', '_').replace('\\', '_').replace('.', '_')
-                iframe_url = f"/networks/network_{safe_researcher}_{safe_aff}.html"
-                connections = show_res_connections(researcher)
+                safe_category = category.strip().lower().replace(' ', '_')
+                iframe_url = f"/networks/network_{safe_researcher}_{safe_aff}_{safe_category}.html"
+                connections = show_res_connections(researcher, matches=all_matches, researcher_rows=comparing_researchers, category=category)
                 
                 return Response({
                     'success': True,
@@ -588,6 +595,7 @@ class ResearcherSearchAPI(APIView):
             'researcher': researcher,
             'matches': matches,
             'needs_selection': True,
+            'category': category,
             'message': f"Multiple matches found for '{researcher}'. Please select one or combine all."
         })
 

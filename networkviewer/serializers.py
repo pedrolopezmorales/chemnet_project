@@ -31,3 +31,7 @@ class ResearcherSearchSerializer(serializers.Serializer):
     researcher = serializers.CharField(max_length=200)
     selected_index = serializers.IntegerField(required=False, allow_null=True)
     combine = serializers.BooleanField(default=False)
+    category = serializers.ChoiceField(
+        choices=['Funding Sources', 'Collaborators'],
+        default='Funding Sources'
+    )

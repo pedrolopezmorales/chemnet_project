@@ -286,6 +286,23 @@ comparing_unis.to_csv(os.path.join(settings.BASE_DIR, 'data', 'comparing_unis.cs
 
 
 # showing researchers and their company funding
+def create_researcher_collaborator_pairs(row):
+    researchers = row['Researchers']
+    affiliations = row['Aff']
+
+    if len(researchers) > len(affiliations):
+        affiliations.extend([''] * (len(researchers) - len(affiliations)))
+    elif len(researchers) < len(affiliations):
+        affiliations = affiliations[:len(researchers)]
+
+    pairs = []
+
+    for researcher, affiliation in zip(researchers, affiliations):
+        collaborators = [r for r in researchers if r != researcher]
+
+        pairs.append((researcher, affiliation, collaborators))
+
+    return pairs
 
 reduced = main.drop(['DOI', 'URL','Year','Title','Chemicals Mentioned','Abstract','Chemicals with InChIKey'], axis = 1)
 
@@ -296,26 +313,18 @@ reduced['Aff'] = reduced['Affiliations'].apply(
 reduced['Companies'] = reduced['Funding Sources'].str.split(';').apply(lambda lst: [x.strip() for x in lst])
 reduced = reduced.drop(['Authors','Affiliations','Funding Sources'],axis=1)
 
-def create_researcher_affiliation_paris(row):
-    researchers = row['Researchers']
-    affiliations = row['Aff']
-    if len(researchers) > len(affiliations):
-        affiliations.extend([''] * (len(researchers) - len(affiliations)))
-    elif len(researchers) < len(affiliations):
-        affiliations = affiliations[:len(researchers)]
-    return list(zip(researchers, affiliations))
+reduced['ResearcherRecords'] = reduced.apply(create_researcher_collaborator_pairs, axis=1)
 
-reduced['ResearcherAffPairs'] = reduced.apply(create_researcher_affiliation_paris, axis=1)
+reduced_expanded = reduced.explode('ResearcherRecords')
 
-reduced_expanded = reduced.explode('ResearcherAffPairs')
-
-
-reduced_expanded[['Researcher', 'Affiliation']] = pd.DataFrame(
-    reduced_expanded['ResearcherAffPairs'].tolist(),
+reduced_expanded[['Researcher', 'Affiliation', 'Collaborators']] = pd.DataFrame(
+    reduced_expanded['ResearcherRecords'].tolist(),
     index=reduced_expanded.index
 )
 
-final_reduced = reduced_expanded[['Researcher', 'Affiliation', 'Companies']].reset_index(drop=True)
+final_reduced = reduced_expanded[
+    ['Researcher', 'Affiliation', 'Companies', 'Collaborators']
+].reset_index(drop=True)
 
 final_reduced['NormalizedName'] = final_reduced['Researcher'].apply(normalize_name)
 
@@ -324,9 +333,20 @@ final_reduced['GroupKey'] = final_reduced['NormalizedName'] + '|' + final_reduce
 
 comparing_researchers = final_reduced.groupby('GroupKey').agg({
     'Researcher': 'first',
-    'Affiliation': lambda affs: max(affs, key=len),  # longest affiliation
-    'Companies': lambda lists: sum(lists, [])        # flatten company lists
+    'Affiliation': lambda affs: max(affs, key=len),
+    'Companies': lambda lists: sum(lists, []),
+    'Collaborators': lambda lists: sum(lists, [])
 }).reset_index(drop=True)
+comparing_researchers['Collaborators'] = comparing_researchers.apply(
+    lambda row: sorted(
+        set(
+            collaborator
+            for collaborator in row['Collaborators']
+            if collaborator != row['Researcher']
+        )
+    ),
+    axis=1
+)
 
 comparing_researchers['Companies'] = comparing_researchers['Companies'].apply(classify_companies_series)
 
