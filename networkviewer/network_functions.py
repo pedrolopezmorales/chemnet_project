@@ -1779,23 +1779,23 @@ def show_uni_network_pyvis(uni_name, category='Funding Sources', chemical_group=
             <h4 style="margin-bottom: 10px; color: #333; font-size: 16px;">Funding Source Categories:</h4>
             <div style="display: flex; flex-wrap: wrap; gap: 12px;">
                 <div style="display: flex; align-items: center;">
-                    <div style="width: 16px; height: 16px; background: #FF6B6B; border-radius: 50%; margin-right: 8px;"></div>
+                    <div style="width: 16px; height: 16px; background: #DD403A; border-radius: 50%; margin-right: 8px;"></div>
                     <span style="font-size: 13px; color: #333;">Government</span>
                 </div>
                 <div style="display: flex; align-items: center;">
-                    <div style="width: 16px; height: 16px; background: #96CEB4; border-radius: 50%; margin-right: 8px;"></div>
+                    <div style="width: 16px; height: 16px; background: #7B4B94; border-radius: 50%; margin-right: 8px;"></div>
                     <span style="font-size: 13px; color: #333;">University</span>
                 </div>
                 <div style="display: flex; align-items: center;">
-                    <div style="width: 16px; height: 16px; background: #4ECDC4; border-radius: 50%; margin-right: 8px;"></div>
+                    <div style="width: 16px; height: 16px; background: #B7E3CC; border-radius: 50%; margin-right: 8px;"></div>
                     <span style="font-size: 13px; color: #333;">Foundation</span>
                 </div>
                 <div style="display: flex; align-items: center;">
-                    <div style="width: 16px; height: 16px; background: #FFEAA7; border-radius: 50%; margin-right: 8px;"></div>
+                    <div style="width: 16px; height: 16px; background: #7D82B8; border-radius: 50%; margin-right: 8px;"></div>
                     <span style="font-size: 13px; color: #333;">Company</span>
                 </div>
                 <div style="display: flex; align-items: center;">
-                    <div style="width: 16px; height: 16px; background: #DDD6FE; border-radius: 50%; margin-right: 8px;"></div>
+                    <div style="width: 16px; height: 16px; background: #FFC145; border-radius: 50%; margin-right: 8px;"></div>
                     <span style="font-size: 13px; color: #333;">Not Recognized</span>
                 </div>
             </div>
@@ -2195,23 +2195,23 @@ def show_chemical_network(chemical, inch='Error', output_file=None, row=None, ma
             <h4 style="margin-bottom: 10px; color: #333; font-size: 16px;">Funding Source Categories:</h4>
             <div style="display: flex; flex-wrap: wrap; gap: 12px;">
                 <div style="display: flex; align-items: center;">
-                    <div style="width: 16px; height: 16px; background: #FF6B6B; border-radius: 50%; margin-right: 8px;"></div>
+                    <div style="width: 16px; height: 16px; background: #DD403A; border-radius: 50%; margin-right: 8px;"></div>
                     <span style="font-size: 13px; color: #333;">Government</span>
                 </div>
                 <div style="display: flex; align-items: center;">
-                    <div style="width: 16px; height: 16px; background: #96CEB4; border-radius: 50%; margin-right: 8px;"></div>
+                    <div style="width: 16px; height: 16px; background: #7B4B94; border-radius: 50%; margin-right: 8px;"></div>
                     <span style="font-size: 13px; color: #333;">University</span>
                 </div>
                 <div style="display: flex; align-items: center;">
-                    <div style="width: 16px; height: 16px; background: #4ECDC4; border-radius: 50%; margin-right: 8px;"></div>
+                    <div style="width: 16px; height: 16px; background: #B7E3CC; border-radius: 50%; margin-right: 8px;"></div>
                     <span style="font-size: 13px; color: #333;">Foundation</span>
                 </div>
                 <div style="display: flex; align-items: center;">
-                    <div style="width: 16px; height: 16px; background: #FFEAA7; border-radius: 50%; margin-right: 8px;"></div>
+                    <div style="width: 16px; height: 16px; background: #7D82B8; border-radius: 50%; margin-right: 8px;"></div>
                     <span style="font-size: 13px; color: #333;">Company</span>
                 </div>
                 <div style="display: flex; align-items: center;">
-                    <div style="width: 16px; height: 16px; background: #DDD6FE; border-radius: 50%; margin-right: 8px;"></div>
+                    <div style="width: 16px; height: 16px; background: #FFC145; border-radius: 50%; margin-right: 8px;"></div>
                     <span style="font-size: 13px; color: #333;">Not Recognized</span>
                 </div>
             </div>
@@ -2475,23 +2475,23 @@ def show_researcher_network_pyvis_from_row(row, output_file=None, researcher_row
             <h4 style="margin-bottom: 10px; color: #333; font-size: 16px;">Funding Source Categories:</h4>
             <div style="display: flex; flex-wrap: wrap; gap: 12px;">
                 <div style="display: flex; align-items: center;">
-                    <div style="width: 16px; height: 16px; background: #FF6B6B; border-radius: 50%; margin-right: 8px;"></div>
+                    <div style="width: 16px; height: 16px; background: #DD403A; border-radius: 50%; margin-right: 8px;"></div>
                     <span style="font-size: 13px; color: #333;">Government</span>
                 </div>
                 <div style="display: flex; align-items: center;">
-                    <div style="width: 16px; height: 16px; background: #96CEB4; border-radius: 50%; margin-right: 8px;"></div>
+                    <div style="width: 16px; height: 16px; background: #7B4B94; border-radius: 50%; margin-right: 8px;"></div>
                     <span style="font-size: 13px; color: #333;">University</span>
                 </div>
                 <div style="display: flex; align-items: center;">
-                    <div style="width: 16px; height: 16px; background: #4ECDC4; border-radius: 50%; margin-right: 8px;"></div>
+                    <div style="width: 16px; height: 16px; background: #B7E3CC; border-radius: 50%; margin-right: 8px;"></div>
                     <span style="font-size: 13px; color: #333;">Foundation</span>
                 </div>
                 <div style="display: flex; align-items: center;">
-                    <div style="width: 16px; height: 16px; background: #FFEAA7; border-radius: 50%; margin-right: 8px;"></div>
+                    <div style="width: 16px; height: 16px; background: #7D82B8; border-radius: 50%; margin-right: 8px;"></div>
                     <span style="font-size: 13px; color: #333;">Company</span>
                 </div>
                 <div style="display: flex; align-items: center;">
-                    <div style="width: 16px; height: 16px; background: #DDD6FE; border-radius: 50%; margin-right: 8px;"></div>
+                    <div style="width: 16px; height: 16px; background: #FFC145; border-radius: 50%; margin-right: 8px;"></div>
                     <span style="font-size: 13px; color: #333;">Not Recognized</span>
                 </div>
             </div>
