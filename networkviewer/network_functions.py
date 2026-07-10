@@ -366,11 +366,11 @@ def categorize_funding_source_keywords(entity_name):
 #graphing funding source function to get category color
 def get_category_color(category):
     color_map = {
-        'Government': '#FF6B6B',      # Red
-        'University': '#96CEB4',      # Light Green
-        'Foundation': '#4ECDC4',      # Teal
-        'Company': '#FFEAA7',         # Yellow
-        'Unknown': '#DDD6FE'          # Light Purple
+        'Government': '#DD403A',      # Cinnabar
+        'University': '#7B4B94',      # Deep Lilac
+        'Foundation': '#B7E3CC',      # Celadon
+        'Company': '#7D82B8',         # Blue Gray
+        'Unknown': '#FFC145'          # Gold
       }
     return color_map.get(category, "#DDD6FE")
 
