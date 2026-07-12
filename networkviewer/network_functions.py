@@ -2836,12 +2836,6 @@ def show_res_connections(researcher, matches=None, researcher_rows=None, categor
             seen_company_keys.add(company_key)
     labeled_companies = sorted(labeled_companies, key=count_key, reverse=True)
 
-    if category_key == 'Collaborators':
-        return {
-            "Affiliation(s)": aff,
-            "Collaborators": labeled_companies,
-        }
-
     return {
         "Affiliation(s)": aff,
         "Funding Sources": labeled_companies,
