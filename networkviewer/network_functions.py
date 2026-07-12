@@ -2799,31 +2799,38 @@ def show_res_connections(researcher, matches=None, researcher_rows=None, categor
         row = matches.iloc[0]
 
     category_key = 'Collaborators' if str(category).strip().lower() == 'collaborators' else 'Funding Sources'
-    data = row['Collaborators'] if category_key == 'Collaborators' and 'Collaborators' in row else row['Companies']
+    collaborator_data = row['Collaborators']
+    funding_data = row['Companies']
     aff = row['Affiliation']
     if aff == '':
         aff = 'Not Found'
 
     seen_company_keys = set()
+    seen_collaborator_keys = set()
     labeled_companies = []
-
-    for comp in data:
-        if category_key == 'Collaborators':
-            original_name, _ = parse_collaborator_entry(comp)
-        else:
-            original_name, _ = extract_name_and_class(comp)
+    labeled_collaborators = []
+    for comp in collaborator_data:
+        original_name, _ = parse_collaborator_entry(comp)
+        if not original_name:
+            continue
+        company_key = original_name.strip().lower()
+        if company_key not in seen_collaborator_keys:
+            studies = researcher_rows[
+                author_match_mask(researcher_rows["Authors"], original_name)
+            ]
+            study_count = len(studies.drop_duplicates(subset=['DOI']))
+            labeled_collaborators.append(f"{original_name} ({study_count})")
+            seen_collaborator_keys.add(company_key)
+    labeled_collaborators = sorted(labeled_collaborators, key=count_key, reverse=True)
+    for comp in funding_data:
+        original_name, _ = extract_name_and_class(comp)
         if not original_name:
             continue
         company_key = original_name.strip().lower()
         if company_key not in seen_company_keys:
-            if category_key == 'Collaborators':
-                studies = researcher_rows[
-                    author_match_mask(researcher_rows["Authors"], original_name)
-                ]
-            else:
-                studies = researcher_rows[
-                    funding_source_match_mask(researcher_rows["Funding Sources"], original_name)
-                ]
+            studies = researcher_rows[
+                funding_source_match_mask(researcher_rows["Funding Sources"], original_name)
+            ]
             study_count = len(studies.drop_duplicates(subset=['DOI']))
             labeled_companies.append(f"{original_name} ({study_count})")
             seen_company_keys.add(company_key)
@@ -2838,6 +2845,7 @@ def show_res_connections(researcher, matches=None, researcher_rows=None, categor
     return {
         "Affiliation(s)": aff,
         "Funding Sources": labeled_companies,
+        "Collaborators": labeled_collaborators,
     }
 
 def show_chem_connections(chemical=None, inchikey=None, row=None):
