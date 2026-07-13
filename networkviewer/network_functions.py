@@ -12,6 +12,7 @@ import requests
 import time
 from functools import lru_cache
 import logging
+from html import escape as html_escape
 
 logger = logging.getLogger(__name__)
 
@@ -943,6 +944,138 @@ def inject_node_slider(html, center_node):
     return html
 
 
+def _format_study_entries_html(studies, empty_message="No studies found for this connection."):
+    if studies is None or getattr(studies, 'empty', True):
+        return f'<p class="study-empty">{html_escape(empty_message)}</p>'
+
+    if 'DOI' in studies.columns:
+        studies = studies.drop_duplicates(subset=['DOI'])
+
+    items = []
+    for _, study_row in studies.iterrows():
+        title = html_escape(str(study_row.get('Title', '')).strip() or 'Untitled Study')
+        doi = str(study_row.get('DOI', '')).strip()
+        doi_html = f'<div class="study-doi">DOI: {html_escape(doi)}</div>' if doi and doi.lower() != 'nan' else ''
+        items.append(f'<li class="study-item"><div class="study-title">{title}</div>{doi_html}</li>')
+
+    if not items:
+        return f'<p class="study-empty">{html_escape(empty_message)}</p>'
+
+    return '<ul class="study-list">' + ''.join(items) + '</ul>'
+
+
+def _build_graph_study_panel_injection(
+    company_study_map,
+    center_node_id,
+    controls_html,
+    *,
+    lookup_expr='node.label',
+    heading_expr=None,
+    include_scroll_disable=False,
+):
+    heading_expr = heading_expr or lookup_expr
+    scroll_disable_script = """
+        setTimeout(function() {
+            var visContainers = document.querySelectorAll('.vis-network');
+            visContainers.forEach(function(container) {
+                container.addEventListener('wheel', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    return false;
+                }, { passive: false });
+            });
+        }, 1000);
+    """ if include_scroll_disable else ""
+
+    return f"""
+    <style>
+        #study-info {{
+            --study-line-height: 1.45;
+            --study-item-gap: 0.9rem;
+            --study-line-gap: 0.2rem;
+            --study-list-indent: 1.35rem;
+            margin-top: 20px;
+            background: #fff;
+            color: #222;
+            padding: 10px;
+            border-radius: 8px;
+        }}
+        .study-list {{
+            margin: 0;
+            padding-left: var(--study-list-indent);
+        }}
+        .study-item + .study-item {{
+            margin-top: var(--study-item-gap);
+        }}
+        .study-title, .study-doi {{
+            line-height: var(--study-line-height);
+        }}
+        .study-doi {{
+            margin-top: var(--study-line-gap);
+            color: #555;
+            font-size: 0.96rem;
+        }}
+        .study-empty {{
+            margin: 0;
+            color: #555;
+            line-height: var(--study-line-height);
+        }}
+    </style>
+    {controls_html}
+    <div id="study-info"></div>
+    <script type="text/javascript">
+        network.setOptions({{
+            interaction: {{
+                zoomView: true,
+                dragView: true,
+                wheelSensitivity: 0,
+                minZoom: 0.05,
+                maxZoom: 5.0
+            }}
+        }});
+
+        {scroll_disable_script}
+
+        function zoomIn() {{
+            var scale = network.getScale();
+            network.moveTo({{
+                scale: Math.min(scale * 1.4, 5.0),
+                animation: {{duration: 400, easingFunction: 'easeOutCubic'}}
+            }});
+        }}
+
+        function zoomOut() {{
+            var scale = network.getScale();
+            network.moveTo({{
+                scale: Math.max(scale * 0.7, 0.05),
+                animation: {{duration: 400, easingFunction: 'easeOutCubic'}}
+            }});
+        }}
+
+        function resetZoom() {{
+            network.moveTo({{
+                scale: 1.0,
+                animation: {{duration: 600, easingFunction: 'easeInOutCubic'}}
+            }});
+        }}
+
+        var companyStudyMap = {json.dumps(company_study_map)};
+        var centerNodeId = {json.dumps(center_node_id)};
+
+        network.on("click", function(params) {{
+            if (params.nodes.length > 0) {{
+                var nodeId = params.nodes[0];
+                var node = nodes.get(nodeId);
+                var studyLookupKey = node.id === centerNodeId ? centerNodeId : ({lookup_expr});
+                var heading = node.id === centerNodeId ? centerNodeId : ({heading_expr});
+                var studies = companyStudyMap[studyLookupKey] || '<p class="study-empty">No studies found for this connection.</p>';
+                document.getElementById("study-info").innerHTML = "<h3>Studies for " + heading + ":</h3>" + studies;
+            }}
+        }});
+    </script>
+    """
+
+
 def get_company_funding_rows(company_name):
     return main[funding_source_match_mask(main['Funding Sources'], company_name)]
 
@@ -1356,9 +1489,7 @@ def show_company_network_pyvis(company_name, category='Affiliations', chemical_g
                 studies = company_funding_rows[
                     company_funding_rows['Chemicals with InChIKey'].str.contains(name, na=False, regex=False)
                 ]
-            study_info = "<br>".join(
-                f"{row['Title']} (DOI: {row['DOI']})" for _, row in studies.iterrows()
-            ) or "No studies found for this connection"
+            study_info = _format_study_entries_html(studies, empty_message="No studies found for this connection.")
             company_study_map[key] = study_info
     elif category == 'Affiliations':
         if sep_country:
@@ -1372,9 +1503,7 @@ def show_company_network_pyvis(company_name, category='Affiliations', chemical_g
                 studies = company_funding_rows[
                     company_funding_rows['Affiliations'].str.contains(affil_str, na=False, regex=False)
                 ]
-                study_info = "<br>".join(
-                    f"{row['Title']} (DOI: {row['DOI']})" for _, row in studies.iterrows()
-                ) or "No studies found for this connection"
+                study_info = _format_study_entries_html(studies, empty_message="No studies found for this connection.")
                 company_study_map[affil_str] = study_info
 
 
@@ -1384,9 +1513,7 @@ def show_company_network_pyvis(company_name, category='Affiliations', chemical_g
                 studies = company_funding_rows[
                     company_funding_rows['Affiliations'].str.contains(country_str, na=False, regex=False)
                 ]
-                study_info = "<br>".join(
-                    f"{row['Title']} (DOI: {row['DOI']})" for _, row in studies.iterrows()
-                ) or "No studies found for this connection"
+                study_info = _format_study_entries_html(studies, empty_message="No studies found for this connection.")
                 company_study_map[country_str] = study_info
         else:
             for affil in data:
@@ -1394,18 +1521,14 @@ def show_company_network_pyvis(company_name, category='Affiliations', chemical_g
                 studies = company_funding_rows[
                     company_funding_rows['Affiliations'].str.contains(affil_str, na=False, regex=False)
                 ]
-                study_info = "<br>".join(
-                    f"{row['Title']} (DOI: {row['DOI']})" for _, row in studies.iterrows()
-                ) or "No studies found for this connection"
+                study_info = _format_study_entries_html(studies, empty_message="No studies found for this connection.")
                 company_study_map[affil_str] = study_info
     elif category =='Universities':
         for uni in data:
             studies = company_funding_rows[
                 company_funding_rows['Affiliations'].str.contains(uni, na=False, regex=False)
             ]
-            study_info = '<br>'.join(
-                f"{row['Title']} (DOI: {row['DOI']})" for _, row in studies.iterrows()
-            ) or "No studies found for this connection"
+            study_info = _format_study_entries_html(studies, empty_message="No studies found for this connection.")
             company_study_map[uni] = study_info
     elif category == 'Researchers':
         res_list = row.iloc[0]['Researchers']
@@ -1413,10 +1536,12 @@ def show_company_network_pyvis(company_name, category='Affiliations', chemical_g
             studies = company_funding_rows[
                 author_match_mask(company_funding_rows['Authors'], res)
             ]
-            study_info = "<br>".join(
-                f"{row['Title']} (DOI: {row['DOI']})" for _, row in studies.iterrows()
-            ) or "No studies found for this connection"
+            study_info = _format_study_entries_html(studies, empty_message="No studies found for this connection.")
             company_study_map[res] = study_info
+    company_study_map[company_name] = _format_study_entries_html(
+        company_funding_rows,
+        empty_message="No studies found for this funding source."
+    )
     net.show(output_file)
     with open(output_file, "r", encoding="utf-8") as f:
         html = f.read()
@@ -1425,17 +1550,16 @@ def show_company_network_pyvis(company_name, category='Affiliations', chemical_g
         js_lookup = "node.title"
     else:
         js_lookup = "node.label"
-
-    injection = f"""
+    controls_html = """
     <style>
-        .zoom-controls {{
+        .zoom-controls {
             margin: 10px 0;
             text-align: center;
             padding: 10px;
             background: #f8f9fa;
             border-radius: 8px;
-        }}
-        .zoom-btn {{
+        }
+        .zoom-btn {
             padding: 10px 16px;
             margin: 4px;
             border: none;
@@ -1444,70 +1568,28 @@ def show_company_network_pyvis(company_name, category='Affiliations', chemical_g
             font-weight: 500;
             font-size: 14px;
             transition: all 0.2s ease;
-        }}
-        .zoom-btn:hover {{
+        }
+        .zoom-btn:hover {
             transform: translateY(-1px);
             box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-        }}
-        .zoom-in {{ background: #007bff; color: white; }}
-        .zoom-out {{ background: #6c757d; color: white; }}
-        .zoom-reset {{ background: #28a745; color: white; }}
+        }
+        .zoom-in { background: #007bff; color: white; }
+        .zoom-out { background: #6c757d; color: white; }
+        .zoom-reset { background: #28a745; color: white; }
     </style>
     <div class="zoom-controls">
         <button class="zoom-btn zoom-in" onclick="zoomIn()">🔍+ Zoom In</button>
         <button class="zoom-btn zoom-out" onclick="zoomOut()">🔍- Zoom Out</button>
         <button class="zoom-btn zoom-reset" onclick="resetZoom()">🎯 Reset View</button>
     </div>
-    <div id="study-info" style="margin-top:20px; background:#fff; color:#222; padding:10px; border-radius:8px;"></div>
-    <script type="text/javascript">
-        // Configure zoom options to disable scroll zoom
-        network.setOptions({{
-            interaction: {{
-                zoomView: true,
-                dragView: true,
-                wheelSensitivity: 0,  // DISABLE scroll zoom
-                minZoom: 0.05,
-                maxZoom: 5.0
-            }}
-        }});
-        
-        // Zoom button functions
-        function zoomIn() {{
-            var scale = network.getScale();
-            network.moveTo({{
-                scale: Math.min(scale * 1.4, 5.0),
-                animation: {{duration: 400, easingFunction: 'easeOutCubic'}}
-            }});
-        }}
-        
-        function zoomOut() {{
-            var scale = network.getScale();
-            network.moveTo({{
-                scale: Math.max(scale * 0.7, 0.05),
-                animation: {{duration: 400, easingFunction: 'easeOutCubic'}}
-            }});
-        }}
-        
-        function resetZoom() {{
-            network.moveTo({{
-                scale: 1.0,
-                animation: {{duration: 600, easingFunction: 'easeInOutCubic'}}
-            }});
-        }}
-        
-        
-        // Study click functionality
-        var companyStudyMap = {json.dumps(company_study_map)};
-        network.on("click", function(params) {{
-            if (params.nodes.length > 0) {{
-                var nodeId = params.nodes[0];
-                var node = nodes.get(nodeId);
-                var studies = companyStudyMap[{js_lookup}] || "No studies found for this connection.";
-                document.getElementById("study-info").innerHTML = "<h3>Studies for " + {js_lookup} + ":</h3>" + studies;
-            }}
-        }});
-    </script>
     """
+    injection = _build_graph_study_panel_injection(
+        company_study_map,
+        company_name,
+        controls_html,
+        lookup_expr=js_lookup,
+        heading_expr=js_lookup,
+    )
     html = html.replace("</body>", injection + "\n</body>")
     html = inject_node_slider(html, company_name)
 
@@ -1746,9 +1828,7 @@ def show_uni_network_pyvis(uni_name, category='Funding Sources', chemical_group=
             studies = uni_rows[
                 uni_rows['Funding Sources'].str.contains(original_name, na=False, regex=False)
             ]
-            study_info = "<br>".join(
-                f"{row['Title']} (DOI: {row['DOI']})" for _, row in studies.drop_duplicates(subset=['DOI']).iterrows()
-            ) or "No studies found for this connection."
+            study_info = _format_study_entries_html(studies, empty_message="No studies found for this connection.")
             company_study_map[original_name] = study_info
     elif category == 'Chemicals':
         parsed_chems = [parse_chemical_entry(c) for c in data]
@@ -1764,10 +1844,12 @@ def show_uni_network_pyvis(uni_name, category='Funding Sources', chemical_group=
                 studies = uni_rows[
                     uni_rows['Chemicals with InChIKey'].str.contains(name, na=False, regex=False)
                 ]
-            study_info = "<br>".join(
-                f"{row['Title']} (DOI: {row['DOI']})" for _, row in studies.drop_duplicates(subset=['DOI']).iterrows()
-            ) or "No studies found for this connection."
+            study_info = _format_study_entries_html(studies, empty_message="No studies found for this connection.")
             company_study_map[key] = study_info
+    company_study_map[uni_name] = _format_study_entries_html(
+        uni_rows,
+        empty_message="No studies found for this university."
+    )
     os.makedirs(os.path.dirname(output_file), exist_ok=True)
     net.show(output_file)
     with open(output_file, "r", encoding="utf-8") as f:
@@ -1801,7 +1883,7 @@ def show_uni_network_pyvis(uni_name, category='Funding Sources', chemical_group=
             </div>
         </div>
         """
-    injection = f"""
+    controls_html = f"""
     <style>
         .controls-container {{
             display: flex;
@@ -1843,67 +1925,15 @@ def show_uni_network_pyvis(uni_name, category='Funding Sources', chemical_group=
             <button class="zoom-btn zoom-reset" onclick="resetZoom()">🎯 Reset View</button>
         </div>
     </div>
-    <div id="study-info" style="margin-top:20px; background:#fff; color:#222; padding:10px; border-radius:8px;"></div>
-    <script type="text/javascript">
-        // Configure zoom options to disable scroll zoom
-        network.setOptions({{
-            interaction: {{
-                zoomView: true,
-                dragView: true,
-                wheelSensitivity: 0,  // DISABLE scroll zoom
-                minZoom: 0.05,
-                maxZoom: 5.0
-            }}
-        }});
-        
-        // AGGRESSIVE SCROLL DISABLE
-        setTimeout(function() {{
-            var visContainers = document.querySelectorAll('.vis-network');
-            visContainers.forEach(function(container) {{
-                container.addEventListener('wheel', function(e) {{
-                    e.preventDefault();
-                    e.stopPropagation();
-                    return false;
-                }}, {{ passive: false }});
-            }});
-        }}, 1000);
-        
-        // Zoom button functions
-        function zoomIn() {{
-            var scale = network.getScale();
-            network.moveTo({{
-                scale: Math.min(scale * 1.4, 5.0),
-                animation: {{duration: 400, easingFunction: 'easeOutCubic'}}
-            }});
-        }}
-        
-        function zoomOut() {{
-            var scale = network.getScale();
-            network.moveTo({{
-                scale: Math.max(scale * 0.7, 0.05),
-                animation: {{duration: 400, easingFunction: 'easeOutCubic'}}
-            }});
-        }}
-        
-        function resetZoom() {{
-            network.moveTo({{
-                scale: 1.0,
-                animation: {{duration: 600, easingFunction: 'easeInOutCubic'}}
-            }});
-        }}
-        
-        // Study click functionality
-        var companyStudyMap = {json.dumps(company_study_map)};
-        network.on("click", function(params) {{
-            if (params.nodes.length > 0) {{
-                var nodeId = params.nodes[0];
-                var node = nodes.get(nodeId);
-                var studies = companyStudyMap[node.label] || "No studies found for this connection.";
-                document.getElementById("study-info").innerHTML = "<h3>Studies for " + node.label + ":</h3>" + studies;
-            }}
-        }});
-    </script>
     """
+    injection = _build_graph_study_panel_injection(
+        company_study_map,
+        uni_name,
+        controls_html,
+        lookup_expr='node.label',
+        heading_expr='node.label',
+        include_scroll_disable=True,
+    )
     html = html.replace("</body>", injection + "\n</body>")
     html = inject_node_slider(html, uni_name)
 
@@ -2183,10 +2213,12 @@ def show_chemical_network(chemical, inch='Error', output_file=None, row=None, ma
         studies = chem_rows[
             chem_rows['Funding Sources'].str.contains(original_name, na=False, regex=False)
         ]
-        study_info = "<br>".join(
-            f"{row['Title']} (DOI: {row['DOI']})" for _, row in studies.iterrows()
-        ) or "No studies found for this connection."
+        study_info = _format_study_entries_html(studies, empty_message="No studies found for this connection.")
         company_study_map[original_name] = study_info
+    company_study_map[chemical] = _format_study_entries_html(
+        chem_rows,
+        empty_message="No studies found for this chemical."
+    )
     net.show(output_file)
     with open(output_file, "r", encoding="utf-8") as f:
         html = f.read()
@@ -2217,7 +2249,7 @@ def show_chemical_network(chemical, inch='Error', output_file=None, row=None, ma
             </div>
         </div>
     """
-    injection = f"""
+    controls_html = f"""
     <style>
         .controls-container {{
             display: flex;
@@ -2259,67 +2291,15 @@ def show_chemical_network(chemical, inch='Error', output_file=None, row=None, ma
             <button class="zoom-btn zoom-reset" onclick="resetZoom()">🎯 Reset View</button>
         </div>
     </div>
-    <div id="study-info" style="margin-top:20px; background:#fff; color:#222; padding:10px; border-radius:8px;"></div>
-    <script type="text/javascript">
-        // Configure zoom options to disable scroll zoom
-        network.setOptions({{
-            interaction: {{
-                zoomView: true,
-                dragView: true,
-                wheelSensitivity: 0,  // DISABLE scroll zoom
-                minZoom: 0.05,
-                maxZoom: 5.0
-            }}
-        }});
-        
-        // AGGRESSIVE SCROLL DISABLE
-        setTimeout(function() {{
-            var visContainers = document.querySelectorAll('.vis-network');
-            visContainers.forEach(function(container) {{
-                container.addEventListener('wheel', function(e) {{
-                    e.preventDefault();
-                    e.stopPropagation();
-                    return false;
-                }}, {{ passive: false }});
-            }});
-        }}, 1000);
-        
-        // Zoom button functions
-        function zoomIn() {{
-            var scale = network.getScale();
-            network.moveTo({{
-                scale: Math.min(scale * 1.4, 5.0),
-                animation: {{duration: 400, easingFunction: 'easeOutCubic'}}
-            }});
-        }}
-        
-        function zoomOut() {{
-            var scale = network.getScale();
-            network.moveTo({{
-                scale: Math.max(scale * 0.7, 0.05),
-                animation: {{duration: 400, easingFunction: 'easeOutCubic'}}
-            }});
-        }}
-        
-        function resetZoom() {{
-            network.moveTo({{
-                scale: 1.0,
-                animation: {{duration: 600, easingFunction: 'easeInOutCubic'}}
-            }});
-        }}
-        
-        // Study click functionality
-        var companyStudyMap = {json.dumps(company_study_map)};
-        network.on("click", function(params) {{
-            if (params.nodes.length > 0) {{
-                var nodeId = params.nodes[0];
-                var node = nodes.get(nodeId);
-                var studies = companyStudyMap[node.label] || "No studies found for this connection.";
-                document.getElementById("study-info").innerHTML = "<h3>Studies for " + node.label + ":</h3>" + studies;
-            }}
-        }});
-    </script>
     """
+    injection = _build_graph_study_panel_injection(
+        company_study_map,
+        chemical,
+        controls_html,
+        lookup_expr='node.label',
+        heading_expr='node.label',
+        include_scroll_disable=True,
+    )
     html = html.replace("</body>", injection + "\n</body>")
     html = inject_node_slider(html, chemical)
 
@@ -2463,10 +2443,12 @@ def show_researcher_network_pyvis_from_row(row, output_file=None, researcher_row
             studies = researcher_main[
                 researcher_main['Funding Sources'].str.contains(original_name, na=False, regex=False)
             ]
-        study_info = "<br>".join(
-            f"{row['Title']} (DOI: {row['DOI']})" for _, row in studies.drop_duplicates(subset=['DOI']).iterrows()
-        ) or "No studies found for this connection."
+        study_info = _format_study_entries_html(studies, empty_message="No studies found for this connection.")
         company_study_map[original_name] = study_info
+    company_study_map[researcher] = _format_study_entries_html(
+        researcher_main,
+        empty_message="No studies found for this researcher."
+    )
     net.show(output_file)
     with open(output_file, "r", encoding="utf-8") as f:
         html = f.read()
@@ -2497,7 +2479,7 @@ def show_researcher_network_pyvis_from_row(row, output_file=None, researcher_row
             </div>
         </div>
         """
-    injection = f"""
+    controls_html = f"""
     <style>
         .controls-container {{
             display: flex;
@@ -2530,7 +2512,6 @@ def show_researcher_network_pyvis_from_row(row, output_file=None, researcher_row
         .zoom-out {{ background: #6c757d; color: white; }}
         .zoom-reset {{ background: #28a745; color: white; }}
     </style>
-    </style>
     <div class="controls-container">
         {color_legend}
         <div class="zoom-controls">
@@ -2539,67 +2520,15 @@ def show_researcher_network_pyvis_from_row(row, output_file=None, researcher_row
             <button class="zoom-btn zoom-reset" onclick="resetZoom()">🎯 Reset View</button>
         </div>
     </div>
-    <div id="study-info" style="margin-top:20px; background:#fff; color:#222; padding:10px; border-radius:8px;"></div>
-    <script type="text/javascript">
-        // Configure zoom options to disable scroll zoom
-        network.setOptions({{
-            interaction: {{
-                zoomView: true,
-                dragView: true,
-                wheelSensitivity: 0,  // DISABLE scroll zoom
-                minZoom: 0.05,
-                maxZoom: 5.0
-            }}
-        }});
-        
-        // AGGRESSIVE SCROLL DISABLE
-        setTimeout(function() {{
-            var visContainers = document.querySelectorAll('.vis-network');
-            visContainers.forEach(function(container) {{
-                container.addEventListener('wheel', function(e) {{
-                    e.preventDefault();
-                    e.stopPropagation();
-                    return false;
-                }}, {{ passive: false }});
-            }});
-        }}, 1000);
-        
-        // Zoom button functions
-        function zoomIn() {{
-            var scale = network.getScale();
-            network.moveTo({{
-                scale: Math.min(scale * 1.4, 5.0),
-                animation: {{duration: 400, easingFunction: 'easeOutCubic'}}
-            }});
-        }}
-        
-        function zoomOut() {{
-            var scale = network.getScale();
-            network.moveTo({{
-                scale: Math.max(scale * 0.7, 0.05),
-                animation: {{duration: 400, easingFunction: 'easeOutCubic'}}
-            }});
-        }}
-        
-        function resetZoom() {{
-            network.moveTo({{
-                scale: 1.0,
-                animation: {{duration: 600, easingFunction: 'easeInOutCubic'}}
-            }});
-        }}
-        
-        // Study click functionality
-        var companyStudyMap = {json.dumps(company_study_map)};
-        network.on("click", function(params) {{
-            if (params.nodes.length > 0) {{
-                var nodeId = params.nodes[0];
-                var node = nodes.get(nodeId);
-                var studies = companyStudyMap[node.label] || "No studies found for this connection.";
-                document.getElementById("study-info").innerHTML = "<h3>Studies for " + node.label + ":</h3>" + studies;
-            }}
-        }});
-    </script>
     """
+    injection = _build_graph_study_panel_injection(
+        company_study_map,
+        researcher,
+        controls_html,
+        lookup_expr='node.label',
+        heading_expr='node.label',
+        include_scroll_disable=True,
+    )
     if "</body>" in html:
         html = html.replace("</body>", injection + "\n</body>")
     else:
