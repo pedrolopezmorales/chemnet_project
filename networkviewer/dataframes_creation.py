@@ -63,7 +63,7 @@ def create_company_classifications(force_reclassify=False):
 
 #creating the main dataframe
 def create_main_dataframe():
-    data_years = range(2013, 2025)
+    data_years = range(2012, 2025)
     dataframes_list = []
 
     for year in data_years:
@@ -107,7 +107,7 @@ def clean_chemicals_cell(value):
     return "; ".join(cleaned)
 
 def create_filtered_main_dataframe():
-    all_studies_csv_url = "https://ucsf.box.com/shared/static/2icgan3yd62xhzglav98iaprhk9ecglb" #change to whatever all_studies link is 
+    all_studies_csv_url = "https://ucsf.box.com/shared/static/9opirilxmi2d1spger8geg785810743z.csv" #change to whatever all_studies link is 
     all_studies = pd.read_csv(all_studies_csv_url)
 
     if "DOI" not in all_studies.columns:
@@ -115,7 +115,7 @@ def create_filtered_main_dataframe():
 
     if "Year" in all_studies.columns:
         year_values = pd.to_numeric(all_studies["Year"], errors="coerce")
-        exempt_years = year_values.isin([2013, 2014])
+        exempt_years = year_values.isin([2012, 2013, 2014])
     else:
         exempt_years = pd.Series(False, index=all_studies.index)
 
