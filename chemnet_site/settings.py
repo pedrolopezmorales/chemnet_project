@@ -178,6 +178,7 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",  # Next.js development server
     "http://127.0.0.1:3000",
     # Add your production URLs here
+    "https://chemnet.vercel.app",
     "https://chemnet-project-frontend.vercel.app",  # Replace with your actual Vercel URL
 ]
 
