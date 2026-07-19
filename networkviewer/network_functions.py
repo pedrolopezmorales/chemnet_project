@@ -1185,9 +1185,19 @@ def _format_study_entries_html(studies, empty_message="No studies found for this
     if 'DOI' in studies.columns:
         studies = studies.drop_duplicates(subset=['DOI'])
 
+    def _render_study_title_html(raw_title):
+        # Escape everything first, then allow a small safe subset used by titles.
+        escaped = html_escape(str(raw_title or '').strip() or 'Untitled Study')
+        return re.sub(
+            r'&lt;(/?)\s*(i|em|b|strong|sub|sup)\s*&gt;',
+            lambda m: f"<{m.group(1)}{m.group(2).lower()}>",
+            escaped,
+            flags=re.IGNORECASE,
+        )
+
     items = []
     for _, study_row in studies.iterrows():
-        title = html_escape(str(study_row.get('Title', '')).strip() or 'Untitled Study')
+        title = _render_study_title_html(study_row.get('Title', ''))
         doi = str(study_row.get('DOI', '')).strip()
         doi_html = f'<div class="study-doi">DOI: {html_escape(doi)}</div>' if doi and doi.lower() != 'nan' else ''
         items.append(f'<li class="study-item"><div class="study-title">{title}</div>{doi_html}</li>')
