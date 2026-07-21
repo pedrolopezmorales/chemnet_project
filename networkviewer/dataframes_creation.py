@@ -19,7 +19,61 @@ from .network_functions import (
         main,
         classify_companies_series,
         categorize_funding_source,
+        categorize_affiliation_text,
     )
+
+
+AFFILIATION_CLASSIFICATION_FILE = os.path.join(settings.BASE_DIR, 'data', 'affiliation_classifications.json')
+
+
+def load_affiliation_classifications():
+    if os.path.exists(AFFILIATION_CLASSIFICATION_FILE):
+        try:
+            with open(AFFILIATION_CLASSIFICATION_FILE, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+            if isinstance(data, dict):
+                return data
+        except Exception as e:
+            print(f"Error loading affiliation classifications from {AFFILIATION_CLASSIFICATION_FILE}: {e}")
+    return {}
+
+
+def save_affiliation_classifications(classification_dict):
+    with open(AFFILIATION_CLASSIFICATION_FILE, 'w', encoding='utf-8') as f:
+        json.dump(classification_dict, f, indent=2, ensure_ascii=False)
+
+
+def create_affiliation_classifications(force_reclassify=False):
+    """Build or update affiliation classifications and persist them to data/affiliation_classifications.json."""
+    classification_dict = load_affiliation_classifications()
+
+    raw_affiliations = (
+        main['Affiliations']
+        .dropna()
+        .astype(str)
+        .apply(lambda text: [item.strip() for item in text.split('|') if item.strip()])
+    )
+    affiliations = sorted({aff for row in raw_affiliations for aff in row})
+
+    if force_reclassify:
+        affiliations_to_classify = affiliations
+    else:
+        affiliations_to_classify = [aff for aff in affiliations if aff not in classification_dict]
+
+    if not affiliations_to_classify:
+        print("All affiliations already classified")
+        return classification_dict
+
+    print(f"Classifying {len(affiliations_to_classify)} affiliations...")
+    for idx, affiliation in enumerate(affiliations_to_classify, start=1):
+        classification_dict[affiliation] = categorize_affiliation_text(affiliation)
+        if idx % 100 == 0 or idx == len(affiliations_to_classify):
+            progress = (idx / len(affiliations_to_classify)) * 100
+            print(f"Classified {idx}/{len(affiliations_to_classify)} affiliations ({progress:.1f}%)")
+
+    save_affiliation_classifications(classification_dict)
+    print(f"Saved {len(classification_dict)} affiliation classifications to {AFFILIATION_CLASSIFICATION_FILE}")
+    return classification_dict
 
 
 def create_company_classifications(force_reclassify=False):
@@ -60,6 +114,9 @@ def create_company_classifications(force_reclassify=False):
 
     print(f"Saved {len(company_classification_dict)} classifications to {classification_file_path}")
     return company_classification_dict
+
+
+affiliation_classification_dict = create_affiliation_classifications(force_reclassify=False)
 
 #creating the main dataframe
 def create_main_dataframe():
@@ -286,6 +343,16 @@ comparing_unis.to_csv(os.path.join(settings.BASE_DIR, 'data', 'comparing_unis.cs
 
 
 # showing researchers and their company funding
+def categorize_collaborator_affiliation(affiliation):
+    if not isinstance(affiliation, str) or not affiliation.strip():
+        return 'Unknown'
+
+    aff_key = affiliation.strip()
+    if aff_key not in affiliation_classification_dict:
+        affiliation_classification_dict[aff_key] = categorize_affiliation_text(aff_key)
+    return affiliation_classification_dict[aff_key]
+
+
 def create_researcher_collaborator_pairs(row):
     researchers = row['Researchers']
     affiliations = row['Aff']
@@ -310,7 +377,8 @@ def create_researcher_collaborator_pairs(row):
 
             collaborators.append({
                 "Researcher": coauthor,
-                "Affiliation": coaffiliation
+                "Affiliation": coaffiliation,
+                "Category": categorize_collaborator_affiliation(coaffiliation),
             })
 
         records.append(
@@ -326,8 +394,9 @@ def unique_collaborators(collaborators, researcher):
 
     for collaborator in collaborators:
 
-        name = collaborator["Researcher"]
-        affiliation = collaborator["Affiliation"]
+        name = collaborator.get("Researcher", "")
+        affiliation = collaborator.get("Affiliation", "")
+        category = collaborator.get("Category") or categorize_collaborator_affiliation(affiliation)
 
         if normalize_name(name) == researcher:
             continue
@@ -336,7 +405,11 @@ def unique_collaborators(collaborators, researcher):
 
         if key not in seen:
             seen.add(key)
-            unique.append(collaborator)
+            unique.append({
+                "Researcher": name,
+                "Affiliation": affiliation,
+                "Category": category,
+            })
 
     return unique
 reduced = main.drop(['DOI', 'URL','Year','Title','Chemicals Mentioned','Abstract','Chemicals with InChIKey'], axis = 1)
@@ -388,6 +461,9 @@ comparing_researchers["Collaborators"] = comparing_researchers.apply(
 )
 
 comparing_researchers['Companies'] = comparing_researchers['Companies'].apply(classify_companies_series)
+
+# Persist any newly seen collaborator affiliations classified during dataframe build.
+save_affiliation_classifications(affiliation_classification_dict)
 
 comparing_researchers.to_csv(os.path.join(settings.BASE_DIR, 'data', 'comparing_researchers.csv'), index=False)
 

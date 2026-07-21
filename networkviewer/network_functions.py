@@ -185,6 +185,46 @@ _UNIVERSITY_PATTERNS = [
     r'\buniversita\b',
     r'\buniversit\b',
 ]
+
+_AFFILIATION_UNIVERSITY_PATTERNS = [
+    r'\buniversity\b',
+    r'\bcollege\b',
+    r'\bschool\b',
+    r'\bfaculty\b',
+    r'\bacademy\b',
+    r'\binstitute\b',
+    r'\blaborator(y|ies)\b',
+    r'\bdepartment\b',
+]
+
+_AFFILIATION_GOVERNMENT_PATTERNS = [
+    r'\bministry\b',
+    r'\bdepartment\s+of\b',
+    r'\bagency\b',
+    r'\bbureau\b',
+    r'\boffice\b',
+    r'\bnational\s+(institute|institutes|laboratory|laboratories|lab|labs)\b',
+    r'\bgovernment\b',
+]
+
+_AFFILIATION_FOUNDATION_PATTERNS = [
+    r'\bfoundation\b',
+    r'\btrust\b',
+    r'\bendowment\b',
+    r'\bcharity\b',
+]
+
+_AFFILIATION_COMPANY_PATTERNS = [
+    r'\binc\.?\b',
+    r'\bcorp\.?\b',
+    r'\bcorporation\b',
+    r'\bcompany\b',
+    r'\bllc\b',
+    r'\bltd\b',
+    r'\bplc\b',
+    r'\bbiotech\b',
+    r'\bpharma(ceutical)?\b',
+]
 CORPORATE_SUFFIXES = {
 
     "inc","inc.",
@@ -343,6 +383,51 @@ def regex_lookup(entity):
         return "Company"
 
     return None
+
+
+def _classify_affiliation_segment(segment):
+    text = normalize_entity_name(segment)
+    if not text:
+        return 'Unknown'
+
+    is_university = any(re.search(p, text) for p in _AFFILIATION_UNIVERSITY_PATTERNS)
+    is_government = any(re.search(p, text) for p in _AFFILIATION_GOVERNMENT_PATTERNS)
+
+    if any(re.search(p, text) for p in _AFFILIATION_FOUNDATION_PATTERNS):
+        return 'Foundation'
+    if any(re.search(p, text) for p in _AFFILIATION_COMPANY_PATTERNS):
+        return 'Company'
+    if is_university:
+        return 'University'
+    if is_government and not is_university:
+        return 'Government'
+    return 'Unknown'
+
+
+def categorize_affiliation_text(affiliation_text):
+    """Categorize affiliation strings (institution-style text) into a broad entity type."""
+    if not isinstance(affiliation_text, str) or not affiliation_text.strip():
+        return 'Unknown'
+
+    segments = [seg.strip() for seg in affiliation_text.split(';') if seg.strip()]
+    if not segments:
+        segments = [affiliation_text.strip()]
+
+    votes = Counter()
+    for segment in segments:
+        category = _classify_affiliation_segment(segment)
+        if category != 'Unknown':
+            votes[category] += 1
+
+    if votes:
+        max_votes = max(votes.values())
+        top = [category for category, count in votes.items() if count == max_votes]
+        priority = ['University', 'Government', 'Company', 'Foundation']
+        for preferred in priority:
+            if preferred in top:
+                return preferred
+
+    return 'Unknown'
 
 @lru_cache(maxsize=1000)
 def categorize_funding_source(entity_name):
@@ -952,9 +1037,15 @@ def parse_collaborators_cell(value):
         name, affiliation = parse_collaborator_entry(collaborator)
         if not name:
             continue
+        category = 'Unknown'
+        if isinstance(collaborator, dict) and collaborator.get('Category'):
+            category = str(collaborator.get('Category')).strip() or 'Unknown'
+        elif affiliation:
+            category = categorize_affiliation_text(affiliation)
         normalized.append({
             'Researcher': name,
             'Affiliation': affiliation,
+            'Category': category,
         })
     return normalized
 def extract_university_comp(affil, university_keys):
