@@ -1011,6 +1011,17 @@ def parse_collaborator_entry(entry):
     return str(entry).strip(), ''
 
 
+def parse_collaborator_details(entry):
+    """Return collaborator (name, affiliation, category) from mixed collaborator inputs."""
+    name, affiliation = parse_collaborator_entry(entry)
+    category = 'Unknown'
+    if isinstance(entry, dict):
+        category = str(entry.get('Category', '')).strip() or 'Unknown'
+    if category == 'Unknown' and affiliation:
+        category = categorize_affiliation_text(affiliation)
+    return name, affiliation, category
+
+
 def parse_collaborators_cell(value):
     """Normalize collaborator cell to a list of {'Researcher', 'Affiliation'} dicts."""
     parsed = value
@@ -2343,7 +2354,7 @@ def show_researcher_network_pyvis(researcher, output_file = os.path.join(_GRAPH_
     collaborator_affiliations = {}
     for affil in data:
         if category_key == 'Collaborators':
-            collaborator_name, collaborator_aff = parse_collaborator_entry(affil)
+            collaborator_name, collaborator_aff, collaborator_category = parse_collaborator_details(affil)
             if not collaborator_name:
                 continue
             if collaborator_name not in collaborator_affiliations:
@@ -2352,16 +2363,18 @@ def show_researcher_network_pyvis(researcher, output_file = os.path.join(_GRAPH_
                 collaborator_affiliations[collaborator_name].add(collaborator_aff)
             node_id = collaborator_name
             aff_text = '; '.join(sorted(collaborator_affiliations[collaborator_name])) if collaborator_affiliations[collaborator_name] else 'Not Found'
-            node_title = f"Collaborator: {collaborator_name}\\nAffiliation: {aff_text}"
+            node_title = f"Collaborator: {collaborator_name}\\nAffiliation: {aff_text}\\nCategory: {get_category_display_name(collaborator_category)}"
+            node_color = get_category_color(collaborator_category)
         else:
             node_id = affil
             node_title = affil
+            node_color = "lightblue"
 
         if node_id not in total_comp:
             if category_key == 'Collaborators':
-                net.add_node(node_id, label=node_id, title=node_title, color="#A78BFA", shape="ellipse", size=15)
+                net.add_node(node_id, label=node_id, title=node_title, color=node_color, shape="ellipse", size=15)
             else:
-                net.add_node(node_id, label=node_id, title=node_title, color="lightblue", shape="ellipse", size=15)
+                net.add_node(node_id, label=node_id, title=node_title, color=node_color, shape="ellipse", size=15)
             total_comp.append(node_id)
     study_counts = {}
     # Pre-filter to this researcher's rows once instead of scanning all of
@@ -2675,7 +2688,7 @@ def show_researcher_network_pyvis_from_row(row, output_file=None, researcher_row
     collaborator_affiliations = {}
     for comp in data:
         if category_key == 'collaborators':
-            original_name, collaborator_aff = parse_collaborator_entry(comp)
+            original_name, collaborator_aff, collaborator_category = parse_collaborator_details(comp)
             if not original_name:
                 continue
             if original_name not in collaborator_affiliations:
@@ -2684,8 +2697,8 @@ def show_researcher_network_pyvis_from_row(row, output_file=None, researcher_row
                 collaborator_affiliations[original_name].add(collaborator_aff)
             aff_text = '; '.join(sorted(collaborator_affiliations[original_name])) if collaborator_affiliations[original_name] else 'Not Found'
             node_key = original_name
-            entity_color = '#A78BFA'
-            node_title = f"Collaborator: {original_name}\nAffiliation: {aff_text}"
+            entity_color = get_category_color(collaborator_category)
+            node_title = f"Collaborator: {original_name}\nAffiliation: {aff_text}\nCategory: {get_category_display_name(collaborator_category)}"
         else:
             original_name, entity_type = extract_name_and_class(comp)
             node_key = comp
