@@ -1059,6 +1059,46 @@ def parse_collaborators_cell(value):
             'Category': category,
         })
     return normalized
+
+
+def build_company_researcher_details(researchers, affiliations):
+    """Build normalized researcher detail records with affiliation-derived categories."""
+    if not isinstance(researchers, list):
+        researchers = []
+    if not isinstance(affiliations, list):
+        affiliations = []
+
+    if len(researchers) > len(affiliations):
+        affiliations = affiliations + [''] * (len(researchers) - len(affiliations))
+    elif len(affiliations) > len(researchers):
+        affiliations = affiliations[:len(researchers)]
+
+    details = []
+    seen = set()
+    for researcher, affiliation in zip(researchers, affiliations):
+        researcher_name = str(researcher).strip() if isinstance(researcher, str) else ''
+        affiliation_text = str(affiliation).strip() if isinstance(affiliation, str) else ''
+        if not researcher_name:
+            continue
+        key = (normalize_name(researcher_name), affiliation_text)
+        if key in seen:
+            continue
+        seen.add(key)
+        details.append({
+            'Researcher': researcher_name,
+            'Affiliation': affiliation_text,
+            'Category': categorize_affiliation_text(affiliation_text) if affiliation_text else 'Unknown',
+        })
+
+    return details
+
+
+def _populate_company_researcher_details(row):
+    details = row.get('ResearcherDetails', [])
+    if isinstance(details, list) and details:
+        return details
+    return build_company_researcher_details(row.get('Researchers', []), row.get('Affs', []))
+
 def extract_university_comp(affil, university_keys):
     if pd.isna(affil) or affil is None:
         return None
@@ -1211,6 +1251,11 @@ company_assoc['Researchers'] = company_assoc['Researchers'].apply(_safe_parse_li
 company_assoc['Affs'] = company_assoc['Affs'].apply(_safe_parse_list_cell)
 company_assoc['Universities'] = company_assoc['Universities'].apply(_safe_parse_list_cell)
 company_assoc['Countries'] = company_assoc['Countries'].apply(_safe_parse_list_cell)
+if 'ResearcherDetails' in company_assoc.columns:
+    company_assoc['ResearcherDetails'] = company_assoc['ResearcherDetails'].apply(parse_collaborators_cell)
+else:
+    company_assoc['ResearcherDetails'] = [[] for _ in range(len(company_assoc))]
+company_assoc['ResearcherDetails'] = company_assoc.apply(_populate_company_researcher_details, axis=1)
 
 company_assoc['Company'] = company_assoc['Company'].fillna('').astype(str).str.strip()
 company_assoc = company_assoc[company_assoc['Company'] != ''].reset_index(drop=True)
@@ -1524,8 +1569,7 @@ def show_company_network_pyvis(company_name, category='Affiliations', chemical_g
     if category == 'Chemicals':
         parsed_chems = (parse_chemical_entry(c) for c in data)
     if category == 'Researchers':
-        res_list = row.iloc[0]['Researchers']
-        aff_list = row.iloc[0]['Affs']
+        researcher_details = row.iloc[0].get('ResearcherDetails', [])
     # Initialize PyVis network
     net = Network(height="600px", width="100%", bgcolor="#ffffff", font_color="black",notebook=True)
     net.barnes_hut()  # for better layout dynamics
@@ -1762,12 +1806,25 @@ def show_company_network_pyvis(company_name, category='Affiliations', chemical_g
                     )
     elif category == 'Researchers':
         total_res = []
-        for res, aff in zip(res_list, aff_list):
-            if (res + '|' + aff[:20]) not in total_res:
-                net.add_node(res,label=res,title=aff, color='lightblue',shape='ellipse',size = 15)
-                total_res.append(res+'|'+aff[:20])
+        for entry in researcher_details:
+            res, aff, researcher_category = parse_collaborator_details(entry)
+            if not res:
+                continue
+            unique_key = res + '|' + aff[:20]
+            if unique_key not in total_res:
+                display_category = get_category_display_name(researcher_category)
+                title_parts = [f"Affiliation: {aff or 'Not Found'}", f"Category: {display_category}"]
+                net.add_node(
+                    res,
+                    label=res,
+                    title='\n'.join(title_parts),
+                    color=get_category_color(researcher_category),
+                    shape='ellipse',
+                    size=15,
+                )
+                total_res.append(unique_key)
             else:
-                total_res.append(res+'|'+aff[:20])
+                total_res.append(unique_key)
         study_counts = {}
         for node in net.nodes:
             if node['id'] != company_name:  # Skip the company node itself
@@ -2900,6 +2957,7 @@ def show_company_connections(company_name, company_funding_rows=None):
     countries = row.iloc[0]['Countries']
     parsed_chems = list(parse_chemical_entry(c) for c in row.iloc[0]['Chemicals'])
     res_list = row.iloc[0]['Researchers']
+    researcher_details = row.iloc[0].get('ResearcherDetails', [])
     universities = row.iloc[0]['Universities']
 
     # Chemicals
@@ -2956,18 +3014,32 @@ def show_company_connections(company_name, company_funding_rows=None):
             unique_affiliations.append(affil)
     labeled_affiliations = sorted(labeled_affiliations, key=count_key, reverse=True)
     # Researchers
-    unique_researchers = []
+    unique_researchers = set()
+    researcher_categories = {}
     labeled_researchers = []
-    
+
+    if not isinstance(researcher_details, list) or not researcher_details:
+        researcher_details = build_company_researcher_details(res_list, affiliations)
+
+    for entry in researcher_details:
+        res, _, researcher_category = parse_collaborator_details(entry)
+        if not res:
+            continue
+        researcher_key = normalize_name(res)
+        if researcher_key not in researcher_categories or researcher_categories[researcher_key] == 'Unknown':
+            researcher_categories[researcher_key] = researcher_category or 'Unknown'
+
     for res in res_list:
-        if res not in unique_researchers:
+        researcher_key = normalize_name(res)
+        if researcher_key not in unique_researchers:
             studies = company_funding_rows[
                 (author_match_mask(company_funding_rows['Authors'], res))
             ]
             study_count = len(studies.drop_duplicates(subset=['DOI']))
-            
-            labeled_researchers.append(f"{res} ({study_count})")
-            unique_researchers.append(res)
+
+            category_label = researcher_categories.get(researcher_key, 'Unknown')
+            labeled_researchers.append(f"{res} [{category_label}] ({study_count})")
+            unique_researchers.add(researcher_key)
     labeled_researchers = sorted(labeled_researchers, key=count_key, reverse=True)
     # Universities
     unique_universities = []
