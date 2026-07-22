@@ -1953,16 +1953,52 @@ def show_company_network_pyvis(company_name, category='Affiliations', chemical_g
         js_lookup = "node.title"
     else:
         js_lookup = "node.label"
-    controls_html = """
+    color_legend = ""
+    if category == 'Researchers':
+        color_legend = """
+        <div class="color-legend" style="flex: 1; padding: 10px; background: #f8f9fa; border-radius: 8px; margin-right: 10px;">
+            <h4 style="margin-bottom: 10px; color: #333; font-size: 16px;">Researcher Categories:</h4>
+            <div style="display: flex; flex-wrap: wrap; gap: 12px;">
+                <div style="display: flex; align-items: center;">
+                    <div style="width: 16px; height: 16px; background: #DD403A; border-radius: 50%; margin-right: 8px;"></div>
+                    <span style="font-size: 13px; color: #333;">Government</span>
+                </div>
+                <div style="display: flex; align-items: center;">
+                    <div style="width: 16px; height: 16px; background: #7B4B94; border-radius: 50%; margin-right: 8px;"></div>
+                    <span style="font-size: 13px; color: #333;">University</span>
+                </div>
+                <div style="display: flex; align-items: center;">
+                    <div style="width: 16px; height: 16px; background: #B7E3CC; border-radius: 50%; margin-right: 8px;"></div>
+                    <span style="font-size: 13px; color: #333;">Foundation</span>
+                </div>
+                <div style="display: flex; align-items: center;">
+                    <div style="width: 16px; height: 16px; background: #7D82B8; border-radius: 50%; margin-right: 8px;"></div>
+                    <span style="font-size: 13px; color: #333;">Company</span>
+                </div>
+                <div style="display: flex; align-items: center;">
+                    <div style="width: 16px; height: 16px; background: #FFC145; border-radius: 50%; margin-right: 8px;"></div>
+                    <span style="font-size: 13px; color: #333;">Not Recognized</span>
+                </div>
+            </div>
+        </div>
+        """
+    controls_html = f"""
     <style>
-        .zoom-controls {
+        .controls-container {{
+            display: flex;
             margin: 10px 0;
+            gap: 0;
+            align-items:stretch;
+        }}
+        .zoom-controls {{
+            flex: 0 0 auto;
             text-align: center;
             padding: 10px;
             background: #f8f9fa;
             border-radius: 8px;
-        }
-        .zoom-btn {
+            min-width:300px;
+        }}
+        .zoom-btn {{
             padding: 10px 16px;
             margin: 4px;
             border: none;
@@ -1971,19 +2007,22 @@ def show_company_network_pyvis(company_name, category='Affiliations', chemical_g
             font-weight: 500;
             font-size: 14px;
             transition: all 0.2s ease;
-        }
-        .zoom-btn:hover {
+        }}
+        .zoom-btn:hover {{
             transform: translateY(-1px);
             box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-        }
-        .zoom-in { background: #007bff; color: white; }
-        .zoom-out { background: #6c757d; color: white; }
-        .zoom-reset { background: #28a745; color: white; }
+        }}
+        .zoom-in {{ background: #007bff; color: white; }}
+        .zoom-out {{ background: #6c757d; color: white; }}
+        .zoom-reset {{ background: #28a745; color: white; }}
     </style>
-    <div class="zoom-controls">
-        <button class="zoom-btn zoom-in" onclick="zoomIn()">🔍+ Zoom In</button>
-        <button class="zoom-btn zoom-out" onclick="zoomOut()">🔍- Zoom Out</button>
-        <button class="zoom-btn zoom-reset" onclick="resetZoom()">🎯 Reset View</button>
+    <div class="controls-container">
+        {color_legend}
+        <div class="zoom-controls">
+            <button class="zoom-btn zoom-in" onclick="zoomIn()">🔍+ Zoom In</button>
+            <button class="zoom-btn zoom-out" onclick="zoomOut()">🔍- Zoom Out</button>
+            <button class="zoom-btn zoom-reset" onclick="resetZoom()">🎯 Reset View</button>
+        </div>
     </div>
     """
     injection = _build_graph_study_panel_injection(
@@ -2857,33 +2896,63 @@ def show_researcher_network_pyvis_from_row(row, output_file=None, researcher_row
     net.show(output_file)
     with open(output_file, "r", encoding="utf-8") as f:
         html = f.read()
-    color_legend = """
-        <div class="color-legend" style="flex: 1; padding: 10px; background: #f8f9fa; border-radius: 8px; margin-right: 10px;">
-            <h4 style="margin-bottom: 10px; color: #333; font-size: 16px;">Funding Source Categories:</h4>
-            <div style="display: flex; flex-wrap: wrap; gap: 12px;">
-                <div style="display: flex; align-items: center;">
-                    <div style="width: 16px; height: 16px; background: #DD403A; border-radius: 50%; margin-right: 8px;"></div>
-                    <span style="font-size: 13px; color: #333;">Government</span>
-                </div>
-                <div style="display: flex; align-items: center;">
-                    <div style="width: 16px; height: 16px; background: #7B4B94; border-radius: 50%; margin-right: 8px;"></div>
-                    <span style="font-size: 13px; color: #333;">University</span>
-                </div>
-                <div style="display: flex; align-items: center;">
-                    <div style="width: 16px; height: 16px; background: #B7E3CC; border-radius: 50%; margin-right: 8px;"></div>
-                    <span style="font-size: 13px; color: #333;">Foundation</span>
-                </div>
-                <div style="display: flex; align-items: center;">
-                    <div style="width: 16px; height: 16px; background: #7D82B8; border-radius: 50%; margin-right: 8px;"></div>
-                    <span style="font-size: 13px; color: #333;">Company</span>
-                </div>
-                <div style="display: flex; align-items: center;">
-                    <div style="width: 16px; height: 16px; background: #FFC145; border-radius: 50%; margin-right: 8px;"></div>
-                    <span style="font-size: 13px; color: #333;">Not Recognized</span>
+    color_legend = ""
+    if category_key == 'funding sources':
+        color_legend = """
+            <div class="color-legend" style="flex: 1; padding: 10px; background: #f8f9fa; border-radius: 8px; margin-right: 10px;">
+                <h4 style="margin-bottom: 10px; color: #333; font-size: 16px;">Funding Source Categories:</h4>
+                <div style="display: flex; flex-wrap: wrap; gap: 12px;">
+                    <div style="display: flex; align-items: center;">
+                        <div style="width: 16px; height: 16px; background: #DD403A; border-radius: 50%; margin-right: 8px;"></div>
+                        <span style="font-size: 13px; color: #333;">Government</span>
+                    </div>
+                    <div style="display: flex; align-items: center;">
+                        <div style="width: 16px; height: 16px; background: #7B4B94; border-radius: 50%; margin-right: 8px;"></div>
+                        <span style="font-size: 13px; color: #333;">University</span>
+                    </div>
+                    <div style="display: flex; align-items: center;">
+                        <div style="width: 16px; height: 16px; background: #B7E3CC; border-radius: 50%; margin-right: 8px;"></div>
+                        <span style="font-size: 13px; color: #333;">Foundation</span>
+                    </div>
+                    <div style="display: flex; align-items: center;">
+                        <div style="width: 16px; height: 16px; background: #7D82B8; border-radius: 50%; margin-right: 8px;"></div>
+                        <span style="font-size: 13px; color: #333;">Company</span>
+                    </div>
+                    <div style="display: flex; align-items: center;">
+                        <div style="width: 16px; height: 16px; background: #FFC145; border-radius: 50%; margin-right: 8px;"></div>
+                        <span style="font-size: 13px; color: #333;">Not Recognized</span>
+                    </div>
                 </div>
             </div>
-        </div>
-        """
+            """
+    elif category_key == 'collaborators':
+        color_legend = """
+            <div class="color-legend" style="flex: 1; padding: 10px; background: #f8f9fa; border-radius: 8px; margin-right: 10px;">
+                <h4 style="margin-bottom: 10px; color: #333; font-size: 16px;">Collaborator Categories:</h4>
+                <div style="display: flex; flex-wrap: wrap; gap: 12px;">
+                    <div style="display: flex; align-items: center;">
+                        <div style="width: 16px; height: 16px; background: #DD403A; border-radius: 50%; margin-right: 8px;"></div>
+                        <span style="font-size: 13px; color: #333;">Government</span>
+                    </div>
+                    <div style="display: flex; align-items: center;">
+                        <div style="width: 16px; height: 16px; background: #7B4B94; border-radius: 50%; margin-right: 8px;"></div>
+                        <span style="font-size: 13px; color: #333;">University</span>
+                    </div>
+                    <div style="display: flex; align-items: center;">
+                        <div style="width: 16px; height: 16px; background: #B7E3CC; border-radius: 50%; margin-right: 8px;"></div>
+                        <span style="font-size: 13px; color: #333;">Foundation</span>
+                    </div>
+                    <div style="display: flex; align-items: center;">
+                        <div style="width: 16px; height: 16px; background: #7D82B8; border-radius: 50%; margin-right: 8px;"></div>
+                        <span style="font-size: 13px; color: #333;">Company</span>
+                    </div>
+                    <div style="display: flex; align-items: center;">
+                        <div style="width: 16px; height: 16px; background: #FFC145; border-radius: 50%; margin-right: 8px;"></div>
+                        <span style="font-size: 13px; color: #333;">Not Recognized</span>
+                    </div>
+                </div>
+            </div>
+            """
     controls_html = f"""
     <style>
         .controls-container {{
