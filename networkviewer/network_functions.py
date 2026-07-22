@@ -3084,19 +3084,23 @@ def show_res_connections(researcher, matches=None, researcher_rows=None, categor
 
     seen_company_keys = set()
     seen_collaborator_keys = set()
+    collaborator_categories = {}
     labeled_companies = []
     labeled_collaborators = []
     for comp in collaborator_data:
-        original_name, _ = parse_collaborator_entry(comp)
+        original_name, _, collaborator_category = parse_collaborator_details(comp)
         if not original_name:
             continue
         company_key = original_name.strip().lower()
+        if company_key not in collaborator_categories or collaborator_categories[company_key] == 'Unknown':
+            collaborator_categories[company_key] = collaborator_category or 'Unknown'
         if company_key not in seen_collaborator_keys:
             studies = researcher_rows[
                 author_match_mask(researcher_rows["Authors"], original_name)
             ]
             study_count = len(studies.drop_duplicates(subset=['DOI']))
-            labeled_collaborators.append(f"{original_name} ({study_count})")
+            category_label = collaborator_categories.get(company_key, 'Unknown')
+            labeled_collaborators.append(f"{original_name} [{category_label}] ({study_count})")
             seen_collaborator_keys.add(company_key)
     labeled_collaborators = sorted(labeled_collaborators, key=count_key, reverse=True)
     for comp in funding_data:
