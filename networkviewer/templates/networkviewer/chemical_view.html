@@ -112,7 +112,7 @@
         <div class="chemical-structure-container">
             <div class="structure-header">
                 <h3>Chemical Structure</h3>
-                <p class="structure-source">Source: PubChem</p>
+                <p class="structure-source">Source: {{ image_source|default:'Not Available' }}</p>
             </div>
             <div class="structure-image">
                 <img src="{{ image_url }}" 
@@ -125,7 +125,7 @@
 
         {% if description %}
         <div style="margin: 20px 0; padding: 20px; background: #e8f5e8; border-radius: 8px; border-left: 4px solid #28a745;">
-            <h3 style="color: #155724; margin: 0 0 10px 0;">Chemical Information</h3>
+            <h3 style="color: #155724; margin: 0 0 10px 0;">Chemical Information{% if description_source %} (Source: {{ description_source }}){% endif %}</h3>
             <p style="color: #155724; margin: 0; line-height: 1.5;">{{ description }}</p>
         </div>
         {% endif %}
@@ -283,13 +283,15 @@
 
                 if (connectionsData.success) {
                     if (connectionsData.image_url) {
-                        imageEl.innerHTML = '<div class="chemical-structure-container"><div class="structure-header"><h3>Chemical Structure</h3><p class="structure-source">Source: PubChem</p></div><div class="structure-image"><img src="' + esc(connectionsData.image_url) + '" alt="Chemical structure" class="pubchem-structure"></div></div>';
+                        var imageSource = connectionsData.image_source ? esc(connectionsData.image_source) : 'Not Available';
+                        imageEl.innerHTML = '<div class="chemical-structure-container"><div class="structure-header"><h3>Chemical Structure</h3><p class="structure-source">Source: ' + imageSource + '</p></div><div class="structure-image"><img src="' + esc(connectionsData.image_url) + '" alt="Chemical structure" class="pubchem-structure"></div></div>';
                         imageEl.style.display = 'block';
                     }
 
                     if (connectionsData.description) {
+                        var descriptionSource = connectionsData.description_source ? (' (Source: ' + esc(connectionsData.description_source) + ')') : '';
                         descEl.innerHTML = '<div style="margin: 20px 0; padding: 20px; background: #e8f5e8; border-radius: 8px; border-left: 4px solid #28a745;">' +
-                            '<h3 style="color: #155724; margin: 0 0 10px 0;">Chemical Information</h3>' +
+                            '<h3 style="color: #155724; margin: 0 0 10px 0;">Chemical Information' + descriptionSource + '</h3>' +
                             '<p style="color: #155724; margin: 0; line-height: 1.5;">' + esc(connectionsData.description) + '</p>' +
                             '</div>';
                         descEl.style.display = 'block';

@@ -31,6 +31,7 @@ from .network_functions import (
     get_company_funding_rows,
     get_university_rows,
     get_chemical_row,
+    get_chemical_image,
     get_pubchem_image_url,
 )
 import difflib
@@ -161,8 +162,12 @@ class ChemicalSearchAPI(APIView):
         if mode == 'connections':
             if inchikey:
                 connections = show_chem_connections(inchikey=inchikey)
-                image_url = get_pubchem_image_url(chemical, inchikey)
-                description = get_pubchem_description(chemical, inchikey if inchikey != 'Error' else None)
+                image_info = get_chemical_image(chemical, inchikey, include_source=True)
+                description_info = get_pubchem_description(
+                    chemical,
+                    inchikey if inchikey != 'Error' else None,
+                    include_source=True,
+                )
             else:
                 row = get_chemical_row(chemical=chemical)
                 if row is None:
@@ -175,8 +180,13 @@ class ChemicalSearchAPI(APIView):
                         'message': f"Chemical '{chemical or inchikey}' not found"
                     })
                 connections = show_chem_connections(chemical, row=row)
-                image_url = get_pubchem_image_url(chemical, inchikey)
-                description = get_pubchem_description(chemical)
+                image_info = get_chemical_image(chemical, inchikey, include_source=True)
+                description_info = get_pubchem_description(chemical, include_source=True)
+
+            image_url = image_info.get('url') if isinstance(image_info, dict) else None
+            image_source = image_info.get('source') if isinstance(image_info, dict) else None
+            description = description_info.get('description') if isinstance(description_info, dict) else None
+            description_source = description_info.get('source') if isinstance(description_info, dict) else None
 
             return Response({
                 'success': True,
@@ -184,7 +194,9 @@ class ChemicalSearchAPI(APIView):
                 'inchikey': inchikey,
                 'connections': connections,
                 'image_url': image_url,
+                'image_source': image_source,
                 'description': description,
+                'description_source': description_source,
             })
 
         # Process search
@@ -210,7 +222,13 @@ class ChemicalSearchAPI(APIView):
                 iframe_url = f"/networks/network_{safe_chemical}_no_inchikey{singleton_suffix}.html"
             
             # Get PubChem description
-            description = get_pubchem_description(chemical, inchikey if inchikey != 'Error' else None)
+            description_info = get_pubchem_description(
+                chemical,
+                inchikey if inchikey != 'Error' else None,
+                include_source=True,
+            )
+            description = description_info.get('description') if isinstance(description_info, dict) else None
+            description_source = description_info.get('source') if isinstance(description_info, dict) else None
             
             payload = {
                 'success': True,
@@ -219,11 +237,13 @@ class ChemicalSearchAPI(APIView):
                 'iframe_url': iframe_url,
                 'graph_html': load_graph_html(iframe_url) if mode == 'graph' else None,
                 'connections': connections,
-                'description': description
+                'description': description,
+                'description_source': description_source,
             }
             if mode == 'graph':
                 payload.pop('connections', None)
                 payload.pop('description', None)
+                payload.pop('description_source', None)
             return Response(payload)
         else:
             if chemical and chemical_inputted:
@@ -241,7 +261,13 @@ class ChemicalSearchAPI(APIView):
                         safe_chemical = chemical.replace(' ', '_').replace('/', '_').replace('\\', '_').replace('.', '_')
                         safe_inch = inchikey.replace('/', '_').replace('\\', '_').replace('-', '_')
                         iframe_url = f"/networks/network_{safe_chemical}_{safe_inch}{singleton_suffix}.html"
-                    description = get_pubchem_description(chemical, inchikey if inchikey != 'Error' else None)
+                    description_info = get_pubchem_description(
+                        chemical,
+                        inchikey if inchikey != 'Error' else None,
+                        include_source=True,
+                    )
+                    description = description_info.get('description') if isinstance(description_info, dict) else None
+                    description_source = description_info.get('source') if isinstance(description_info, dict) else None
 
                     payload = {
                         'success': True,
@@ -250,11 +276,13 @@ class ChemicalSearchAPI(APIView):
                         'iframe_url': iframe_url,
                         'graph_html': load_graph_html(iframe_url) if mode == 'graph' else None,
                         'connections': connections,
-                        'description': description
+                        'description': description,
+                        'description_source': description_source,
                     }
                     if mode == 'graph':
                         payload.pop('connections', None)
                         payload.pop('description', None)
+                        payload.pop('description_source', None)
                     return Response(payload)
                 else:
                     all_chemical_names = sorted((name for names in chem_per_row['chemical'] for name in names))

@@ -20,6 +20,7 @@ from .network_functions import (
     comparing_unis,
     get_pubchem_image_url,
     get_top_chemicals_for_company,
+    get_chemical_image,
     get_pubchem_description,
     get_wikipedia_description_fundingsource,
     load_funding_source_table_for_category,
@@ -107,7 +108,9 @@ def chemical_view(request):
     message = None
     connections = None 
     image_url = None
+    image_source = None
     description = None
+    description_source = None
 
     all_chemical_names = sorted((name for names in chem_per_row['chemical'] for name in names))
     example_chemicals = [
@@ -134,14 +137,26 @@ def chemical_view(request):
 
         if inchikey:  # If InChIKey is provided, use the new function
             row = get_chemical_row(chemical=chemical, inchikey=inchikey)
-            image_url = get_pubchem_image_url(chemical, inchikey)
-            description = get_pubchem_description(chemical, inchikey)
+            image_info = get_chemical_image(chemical, inchikey, include_source=True)
+            if isinstance(image_info, dict):
+                image_url = image_info.get('url')
+                image_source = image_info.get('source')
+            description_info = get_pubchem_description(chemical, inchikey, include_source=True)
+            if isinstance(description_info, dict):
+                description = description_info.get('description')
+                description_source = description_info.get('source')
             found = show_chemical_network(chemical, inch=inchikey, row=row)
             connections = show_chem_connections(inchikey=inchikey, row=row)
         elif chemical:  # If only chemical name is provided, use the old function
             row = get_chemical_row(chemical=chemical)
-            image_url = get_pubchem_image_url(chemical, inchikey)
-            description = get_pubchem_description(chemical)
+            image_info = get_chemical_image(chemical, inchikey, include_source=True)
+            if isinstance(image_info, dict):
+                image_url = image_info.get('url')
+                image_source = image_info.get('source')
+            description_info = get_pubchem_description(chemical, include_source=True)
+            if isinstance(description_info, dict):
+                description = description_info.get('description')
+                description_source = description_info.get('source')
             found = show_chemical_network(chemical, inch='Error', row=row)
             connections = show_chem_connections(chemical, row=row)
         else:
@@ -160,8 +175,14 @@ def chemical_view(request):
                 inchikey = obtain_inchikey_from_pubchem(chemical)
                 if inchikey:
                     row = get_chemical_row(chemical=chemical, inchikey=inchikey)
-                    image_url = get_pubchem_image_url(chemical, inchikey)
-                    description = get_pubchem_description(chemical, inchikey)
+                    image_info = get_chemical_image(chemical, inchikey, include_source=True)
+                    if isinstance(image_info, dict):
+                        image_url = image_info.get('url')
+                        image_source = image_info.get('source')
+                    description_info = get_pubchem_description(chemical, inchikey, include_source=True)
+                    if isinstance(description_info, dict):
+                        description = description_info.get('description')
+                        description_source = description_info.get('source')
                     found = show_chemical_network(chemical, inch=inchikey, row=row)
                     connections = show_chem_connections(inchikey=inchikey, row=row)
                 if found:
@@ -187,7 +208,9 @@ def chemical_view(request):
                'example_chemicals': random_examples,
                'all_chemical_names': all_chemical_names,
                'image_url': image_url,
-               'description': description
+                   'image_source': image_source,
+                    'description': description,
+                    'description_source': description_source
             }
     return render(request, 'networkviewer/chemical_view.html', context)
 

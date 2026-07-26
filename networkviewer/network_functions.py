@@ -3317,11 +3317,110 @@ except Exception as e:
     print(f"Error loading company classifications: {e}; using empty cache")
 
 def get_pubchem_image_url(chemical_name, inchikey=None):
+    return _get_chemical_image(chemical_name, inchikey=inchikey, include_source=False)
+
+
+def get_chemical_image(chemical_name, inchikey=None, include_source=False):
+    return _get_chemical_image(chemical_name, inchikey=inchikey, include_source=include_source)
+
+
+def _normalize_cached_chemical_image(cached_value):
+    if isinstance(cached_value, dict):
+        url = cached_value.get('url')
+        source = cached_value.get('source')
+        if isinstance(url, str) and url.strip():
+            normalized_source = str(source).strip() if isinstance(source, str) and source.strip() else 'Unknown'
+            return {
+                'url': url.strip(),
+                'source': normalized_source,
+            }
+    if isinstance(cached_value, str) and cached_value.strip():
+        return {
+            'url': cached_value.strip(),
+            'source': 'Unknown (legacy cache)',
+        }
+    return None
+
+
+def get_wikipedia_chemical_image_url(chemical_name):
+    """Fetch a representative Wikipedia image URL for chemical groups/terms."""
+    if not chemical_name or pd.isna(chemical_name):
+        return None
+
+    term = str(chemical_name).strip()
+    if not term:
+        return None
+
+    headers = {
+        'User-Agent': 'ChemNet Research Tool (no-email@example.com)'
+    }
+
+    def fetch_thumbnail(page_title):
+        encoded_title = str(page_title).replace(' ', '_')
+        url = f"https://en.wikipedia.org/api/rest_v1/page/summary/{encoded_title}"
+        response = requests.get(url, headers=headers, timeout=20)
+        if response.status_code != 200:
+            return None
+        data = response.json()
+        thumbnail = data.get('thumbnail', {})
+        source = thumbnail.get('source') if isinstance(thumbnail, dict) else None
+        return source.strip() if isinstance(source, str) and source.strip() else None
+
+    try:
+        # 1) Exact title lookup first.
+        direct_image = fetch_thumbnail(term)
+        if direct_image:
+            return direct_image
+
+        # 2) Search fallback to resolve alternate page titles.
+        search_response = requests.get(
+            "https://en.wikipedia.org/w/api.php",
+            params={
+                'action': 'query',
+                'list': 'search',
+                'srsearch': term,
+                'srlimit': 1,
+                'format': 'json',
+            },
+            headers=headers,
+            timeout=20,
+        )
+        if search_response.status_code == 200:
+            payload = search_response.json()
+            matches = payload.get('query', {}).get('search', [])
+            if matches:
+                best_title = matches[0].get('title')
+                if best_title:
+                    fallback_image = fetch_thumbnail(best_title)
+                    if fallback_image:
+                        return fallback_image
+    except Exception as e:
+        print(f"Error fetching Wikipedia chemical image for {chemical_name}: {e}")
+
+    return None
+
+
+def _get_chemical_image(chemical_name, inchikey=None, include_source=False):
     cache_key = _pubchem_cache_key(chemical_name=chemical_name, inchikey=inchikey)
     image_cache = _get_pubchem_image_cache()
-    cached_url = image_cache.get(cache_key)
-    if isinstance(cached_url, str) and cached_url.strip():
-        return cached_url
+
+    def _format_result(url_text, source_text, cache_result=True):
+        if not isinstance(url_text, str) or not url_text.strip():
+            return None
+        payload = {
+            'url': url_text.strip(),
+            'source': source_text,
+        }
+        if cache_result:
+            image_cache[cache_key] = payload
+            _save_json_cache(_PUBCHEM_IMAGE_CACHE_FILE, image_cache)
+        return payload if include_source else payload['url']
+
+    cached = _normalize_cached_chemical_image(image_cache.get(cache_key))
+    if cached and cached.get('source') != 'Unknown (legacy cache)':
+        return cached if include_source else cached['url']
+
+    legacy_cached_url = cached.get('url') if cached else None
 
     try:
         if inchikey and inchikey != 'Error':
@@ -3330,9 +3429,7 @@ def get_pubchem_image_url(chemical_name, inchikey=None):
                 if compounds:
                     cid = compounds[0].cid
                     image_url = f"https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/{cid}/PNG"
-                    image_cache[cache_key] = image_url
-                    _save_json_cache(_PUBCHEM_IMAGE_CACHE_FILE, image_cache)
-                    return image_url
+                    return _format_result(image_url, 'PubChem')
             except:
                 pass
         if chemical_name:
@@ -3341,18 +3438,25 @@ def get_pubchem_image_url(chemical_name, inchikey=None):
                 if compounds:
                     cid = compounds[0].cid
                     image_url = f"https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/{cid}/PNG"
-                    image_cache[cache_key] = image_url
-                    _save_json_cache(_PUBCHEM_IMAGE_CACHE_FILE, image_cache)
-                    return image_url
+                    return _format_result(image_url, 'PubChem')
             except:
                 pass
     except Exception as e:
         print(f"Error fetching PubChem data for InChIKey {inchikey}: {e}")
 
-    # Final fallback: return cached value if network lookups failed.
-    cached_url = image_cache.get(cache_key)
-    if isinstance(cached_url, str) and cached_url.strip():
-        return cached_url
+    # Wikipedia fallback for group-level terms (e.g., PFAS/PAHs).
+    wiki_image_url = get_wikipedia_chemical_image_url(chemical_name)
+    if wiki_image_url:
+        return _format_result(wiki_image_url, 'Wikipedia')
+
+    # Final fallback: preserve pre-existing legacy cache if present.
+    if legacy_cached_url:
+        return _format_result(legacy_cached_url, 'Unknown (legacy cache)', cache_result=False)
+
+    cached = _normalize_cached_chemical_image(image_cache.get(cache_key))
+    if cached:
+        return cached if include_source else cached['url']
+
     return None
 
 def get_top_chemicals_for_company(company_name, limit=5):
@@ -3381,13 +3485,110 @@ def get_top_chemicals_for_company(company_name, limit=5):
         print(f"Error getting top chemicals for company {company_name}: {e}")
         return []
 
-def get_pubchem_description(chemical_name, inchikey=None):
-    """Get comprehensive PubChem description for a chemical compound."""
+
+def get_wikipedia_description_chemical(chemical_name):
+    """Fetch a short Wikipedia summary for a chemical term (e.g., PAHs, PFAS)."""
+    if not chemical_name or pd.isna(chemical_name):
+        return None
+
+    term = str(chemical_name).strip()
+    if not term:
+        return None
+
+    headers = {
+        'User-Agent': 'ChemNet Research Tool (no-email@example.com)'
+    }
+
+    def fetch_summary(page_title):
+        encoded_title = str(page_title).replace(' ', '_')
+        url = f"https://en.wikipedia.org/api/rest_v1/page/summary/{encoded_title}"
+        response = requests.get(url, headers=headers, timeout=20)
+        if response.status_code != 200:
+            return None
+        data = response.json()
+        extract = data.get('extract', '')
+        return extract.strip() if isinstance(extract, str) and extract.strip() else None
+
+    try:
+        # 1) Exact title lookup first.
+        direct = fetch_summary(term)
+        if direct:
+            return direct
+
+        # 2) Search fallback to handle alternate page titles and abbreviations.
+        search_response = requests.get(
+            "https://en.wikipedia.org/w/api.php",
+            params={
+                'action': 'query',
+                'list': 'search',
+                'srsearch': term,
+                'srlimit': 1,
+                'format': 'json',
+            },
+            headers=headers,
+            timeout=20,
+        )
+        if search_response.status_code == 200:
+            payload = search_response.json()
+            matches = payload.get('query', {}).get('search', [])
+            if matches:
+                best_title = matches[0].get('title')
+                if best_title:
+                    fallback = fetch_summary(best_title)
+                    if fallback:
+                        return fallback
+    except Exception as e:
+        print(f"Error fetching Wikipedia chemical description for {chemical_name}: {e}")
+
+    return None
+
+def _normalize_cached_chemical_description(cached_value):
+    if isinstance(cached_value, dict):
+        description = cached_value.get('description')
+        source = cached_value.get('source')
+        if isinstance(description, str) and description.strip():
+            normalized_source = str(source).strip() if isinstance(source, str) and source.strip() else 'Unknown'
+            return {
+                'description': description.strip(),
+                'source': normalized_source,
+            }
+    if isinstance(cached_value, str) and cached_value.strip():
+        return {
+            'description': cached_value.strip(),
+            'source': 'Unknown (legacy cache)',
+        }
+    return None
+
+
+def get_pubchem_description(chemical_name, inchikey=None, include_source=False):
+    """Get a chemical description and optionally include the source.
+
+    When include_source=True, returns {'description': str, 'source': str} or None.
+    When include_source=False, returns description string or None.
+    """
     cache_key = _pubchem_cache_key(chemical_name=chemical_name, inchikey=inchikey)
     desc_cache = _get_pubchem_desc_cache()
-    cached_description = desc_cache.get(cache_key)
-    if isinstance(cached_description, str) and cached_description.strip():
-        return cached_description
+
+    def _format_result(description_text, source_text, cache_result=True):
+        if not isinstance(description_text, str) or not description_text.strip():
+            return None
+        payload = {
+            'description': description_text.strip(),
+            'source': source_text,
+        }
+        if cache_result:
+            desc_cache[cache_key] = payload
+            _save_json_cache(_PUBCHEM_DESC_CACHE_FILE, desc_cache)
+        return payload if include_source else payload['description']
+
+    cached_description = _normalize_cached_chemical_description(desc_cache.get(cache_key))
+    legacy_cached_description = None
+    if cached_description:
+        # Structured cache with explicit source is trusted and returned immediately.
+        if cached_description['source'] != 'Unknown (legacy cache)':
+            return cached_description if include_source else cached_description['description']
+        # Legacy string cache has no source metadata; keep as a last-resort fallback.
+        legacy_cached_description = cached_description['description']
 
     try:
         compound = None
@@ -3495,9 +3696,7 @@ def get_pubchem_description(chemical_name, inchikey=None):
                                 'is a', 'medication', 'drug', 'agent', 'compound', 'used for', 
                                 'treatment', 'inhibitor', 'analgesic', 'anti-inflammatory', 'therapeutic'
                             ]):
-                                desc_cache[cache_key] = desc
-                                _save_json_cache(_PUBCHEM_DESC_CACHE_FILE, desc_cache)
-                                return desc
+                                return _format_result(desc, 'PubChem')
                             
                         # Then try substantial descriptions with good keywords
                         for desc in all_descriptions:
@@ -3505,16 +3704,12 @@ def get_pubchem_description(chemical_name, inchikey=None):
                                 'is a member of', 'belongs to', 'medication', 'drug', 'therapeutic',
                                 'appears as', 'crystalline', 'powder', 'used for', 'treatment of'
                             ]):
-                                desc_cache[cache_key] = desc
-                                _save_json_cache(_PUBCHEM_DESC_CACHE_FILE, desc_cache)
-                                return desc
+                                return _format_result(desc, 'PubChem')
                         
                         # Finally, try any decent description
                         for desc in all_descriptions:
                             if len(desc) > 50:
-                                desc_cache[cache_key] = desc
-                                _save_json_cache(_PUBCHEM_DESC_CACHE_FILE, desc_cache)
-                                return desc
+                                return _format_result(desc, 'PubChem')
                 
                 # Fallback to basic compound information
                 full_record = pcp.Compound.from_cid(compound.cid)
@@ -3532,14 +3727,16 @@ def get_pubchem_description(chemical_name, inchikey=None):
                 
                 if description_parts:
                     description = " | ".join(description_parts)
-                    desc_cache[cache_key] = description
-                    _save_json_cache(_PUBCHEM_DESC_CACHE_FILE, desc_cache)
-                    return description
+                    wiki_description = get_wikipedia_description_chemical(chemical_name)
+                    if wiki_description:
+                        return _format_result(wiki_description, 'Wikipedia')
+                    return _format_result(description, 'PubChem')
                 else:
                     description = f"PubChem CID: {compound.cid}"
-                    desc_cache[cache_key] = description
-                    _save_json_cache(_PUBCHEM_DESC_CACHE_FILE, desc_cache)
-                    return description
+                    wiki_description = get_wikipedia_description_chemical(chemical_name)
+                    if wiki_description:
+                        return _format_result(wiki_description, 'Wikipedia')
+                    return _format_result(description, 'PubChem')
                     
             except Exception as e:
                 print(f"Error in detailed lookup: {e}")
@@ -3548,27 +3745,37 @@ def get_pubchem_description(chemical_name, inchikey=None):
                     full_record = pcp.Compound.from_cid(compound.cid)
                     if hasattr(full_record, 'molecular_formula') and full_record.molecular_formula:
                         description = f"Molecular Formula: {full_record.molecular_formula}"
-                        desc_cache[cache_key] = description
-                        _save_json_cache(_PUBCHEM_DESC_CACHE_FILE, desc_cache)
-                        return description
+                        wiki_description = get_wikipedia_description_chemical(chemical_name)
+                        if wiki_description:
+                            return _format_result(wiki_description, 'Wikipedia')
+                        return _format_result(description, 'PubChem')
                     description = f"PubChem CID: {compound.cid}"
-                    desc_cache[cache_key] = description
-                    _save_json_cache(_PUBCHEM_DESC_CACHE_FILE, desc_cache)
-                    return description
+                    wiki_description = get_wikipedia_description_chemical(chemical_name)
+                    if wiki_description:
+                        return _format_result(wiki_description, 'Wikipedia')
+                    return _format_result(description, 'PubChem')
                 except:
                     description = f"PubChem CID: {compound.cid}"
-                    desc_cache[cache_key] = description
-                    _save_json_cache(_PUBCHEM_DESC_CACHE_FILE, desc_cache)
-                    return description
+                    wiki_description = get_wikipedia_description_chemical(chemical_name)
+                    if wiki_description:
+                        return _format_result(wiki_description, 'Wikipedia')
+                    return _format_result(description, 'PubChem')
                 
     except Exception as e:
         print(f"Error fetching PubChem description for {chemical_name} (InChIKey: {inchikey}): {e}")
 
-    # Final fallback: return cached value if lookups fail.
-    cached_description = desc_cache.get(cache_key)
-    if isinstance(cached_description, str) and cached_description.strip():
-        return cached_description
-    
+    # Final fallback: return best known cache when lookups fail.
+    if legacy_cached_description:
+        return _format_result(legacy_cached_description, 'Unknown (legacy cache)', cache_result=False)
+
+    cached_description = _normalize_cached_chemical_description(desc_cache.get(cache_key))
+    if cached_description:
+        return cached_description if include_source else cached_description['description']
+
+    wiki_description = get_wikipedia_description_chemical(chemical_name)
+    if wiki_description:
+        return _format_result(wiki_description, 'Wikipedia')
+
     return None
 def get_wikipedia_description_fundingsource(funding_source):
     if not funding_source or pd.isna(funding_source):
