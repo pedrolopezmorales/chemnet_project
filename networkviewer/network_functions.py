@@ -3226,6 +3226,7 @@ def show_res_connections(researcher, matches=None, researcher_rows=None, categor
     seen_company_keys = set()
     seen_collaborator_keys = set()
     collaborator_categories = {}
+    funding_categories = {}
     labeled_companies = []
     labeled_collaborators = []
     for comp in collaborator_data:
@@ -3245,16 +3246,25 @@ def show_res_connections(researcher, matches=None, researcher_rows=None, categor
             seen_collaborator_keys.add(company_key)
     labeled_collaborators = sorted(labeled_collaborators, key=count_key, reverse=True)
     for comp in funding_data:
-        original_name, _ = extract_name_and_class(comp)
+        original_name, funding_category = extract_name_and_class(comp)
         if not original_name:
             continue
         company_key = original_name.strip().lower()
+        if funding_category == 'Unknown':
+            normalized_name = original_name.strip()
+            if normalized_name in company_classification_dict:
+                funding_category = company_classification_dict[normalized_name]
+            else:
+                funding_category = categorize_funding_source(normalized_name)
+                company_classification_dict[normalized_name] = funding_category
+        funding_categories[company_key] = funding_category
         if company_key not in seen_company_keys:
             studies = researcher_rows[
                 funding_source_match_mask(researcher_rows["Funding Sources"], original_name)
             ]
             study_count = len(studies.drop_duplicates(subset=['DOI']))
-            labeled_companies.append(f"{original_name} ({study_count})")
+            category_label = funding_categories.get(company_key, 'Unknown')
+            labeled_companies.append(f"{original_name} [{category_label}] ({study_count})")
             seen_company_keys.add(company_key)
     labeled_companies = sorted(labeled_companies, key=count_key, reverse=True)
 
