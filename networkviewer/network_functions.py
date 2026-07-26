@@ -3570,6 +3570,181 @@ def _normalize_cached_chemical_description(cached_value):
     return None
 
 
+def _resolve_wikipedia_page_title(search_term, headers):
+    encoded = str(search_term).replace(' ', '_')
+    summary_url = f"https://en.wikipedia.org/api/rest_v1/page/summary/{encoded}"
+    response = requests.get(summary_url, headers=headers, timeout=20)
+    if response.status_code == 200:
+        summary_data = response.json()
+        direct_title = summary_data.get('title')
+        if isinstance(direct_title, str) and direct_title.strip():
+            return direct_title.strip()
+
+    search_response = requests.get(
+        "https://en.wikipedia.org/w/api.php",
+        params={
+            'action': 'query',
+            'list': 'search',
+            'srsearch': search_term,
+            'srlimit': 1,
+            'format': 'json',
+        },
+        headers=headers,
+        timeout=20,
+    )
+    if search_response.status_code == 200:
+        payload = search_response.json()
+        matches = payload.get('query', {}).get('search', [])
+        if matches:
+            best_title = matches[0].get('title')
+            if isinstance(best_title, str) and best_title.strip():
+                return best_title.strip()
+    return None
+
+
+def _is_group_like_chemical_term(term, summary_extract=''):
+    normalized = str(term or '').strip().lower()
+    if not normalized:
+        return False
+
+    # Common textual signals for classes/groups of chemicals.
+    summary_text = str(summary_extract or '').lower()
+    group_indicators = [
+        'class of',
+        'group of',
+        'family of',
+        'category of',
+        'classes of',
+        'groups of',
+        'related compounds',
+        'mixture of',
+    ]
+    if any(indicator in summary_text for indicator in group_indicators):
+        return True
+
+    # Acronym-style plural groups like PAHs, PFAS, VOCs.
+    compact = re.sub(r'[^A-Za-z]', '', str(term or ''))
+    if compact.isupper() and len(compact) >= 3 and compact.endswith('S'):
+        return True
+
+    # Explicit group wording in the query itself.
+    query_indicators = ['group', 'class', 'family', 'substances', 'chemicals', 'compounds']
+    return any(token in normalized for token in query_indicators)
+
+
+@lru_cache(maxsize=500)
+def _get_chemical_group_examples(chemical_name):
+    """Discover representative chemical examples dynamically for group-like terms.
+
+    Strategy:
+    1) Resolve the best matching Wikipedia page for the term.
+    2) Collect linked page titles from that page.
+    3) Keep titles that PubChem can resolve as compounds.
+    """
+    if not isinstance(chemical_name, str):
+        return None
+
+    term = chemical_name.strip()
+    if not term:
+        return None
+
+    headers = {
+        'User-Agent': 'ChemNet Research Tool (no-email@example.com)'
+    }
+
+    try:
+        page_title = _resolve_wikipedia_page_title(term, headers)
+        if not page_title:
+            return None
+
+        summary_response = requests.get(
+            f"https://en.wikipedia.org/api/rest_v1/page/summary/{page_title.replace(' ', '_')}",
+            headers=headers,
+            timeout=20,
+        )
+        summary_extract = ''
+        if summary_response.status_code == 200:
+            summary_data = summary_response.json()
+            summary_extract = summary_data.get('extract', '')
+
+        if not _is_group_like_chemical_term(term, summary_extract=summary_extract):
+            return None
+
+        links_response = requests.get(
+            "https://en.wikipedia.org/w/api.php",
+            params={
+                'action': 'query',
+                'prop': 'links',
+                'titles': page_title,
+                'pllimit': 200,
+                'format': 'json',
+            },
+            headers=headers,
+            timeout=20,
+        )
+        if links_response.status_code != 200:
+            return None
+
+        payload = links_response.json()
+        pages = payload.get('query', {}).get('pages', {})
+        if not isinstance(pages, dict) or not pages:
+            return None
+
+        page_data = next(iter(pages.values()))
+        links = page_data.get('links', []) if isinstance(page_data, dict) else []
+        if not isinstance(links, list) or not links:
+            return None
+
+        examples = []
+        seen = set()
+        for link in links:
+            if not isinstance(link, dict):
+                continue
+            title = str(link.get('title', '')).strip()
+            if not title or ':' in title:
+                continue
+            if len(title) < 3 or len(title) > 80:
+                continue
+
+            key = title.lower()
+            if key in seen:
+                continue
+
+            try:
+                compounds = pcp.get_compounds(title, 'name')
+            except Exception:
+                compounds = []
+
+            if not compounds:
+                continue
+
+            seen.add(key)
+            examples.append(title)
+            if len(examples) >= 5:
+                break
+
+        return examples if examples else None
+    except Exception as e:
+        print(f"Error discovering dynamic examples for {chemical_name}: {e}")
+        return None
+
+
+def _enrich_group_description(description_text, chemical_name):
+    if not isinstance(description_text, str) or not description_text.strip():
+        return description_text
+
+    examples = _get_chemical_group_examples(chemical_name)
+    if not examples:
+        return description_text
+
+    marker = 'Common examples in this group:'
+    if marker.lower() in description_text.lower():
+        return description_text
+
+    examples_text = ', '.join(examples)
+    return f"{description_text.strip()} {marker} {examples_text}."
+
+
 def get_pubchem_description(chemical_name, inchikey=None, include_source=False):
     """Get a chemical description and optionally include the source.
 
@@ -3580,10 +3755,11 @@ def get_pubchem_description(chemical_name, inchikey=None, include_source=False):
     desc_cache = _get_pubchem_desc_cache()
 
     def _format_result(description_text, source_text, cache_result=True):
-        if not isinstance(description_text, str) or not description_text.strip():
+        enriched_description = _enrich_group_description(description_text, chemical_name)
+        if not isinstance(enriched_description, str) or not enriched_description.strip():
             return None
         payload = {
-            'description': description_text.strip(),
+            'description': enriched_description.strip(),
             'source': source_text,
         }
         if cache_result:
@@ -3596,7 +3772,13 @@ def get_pubchem_description(chemical_name, inchikey=None, include_source=False):
     if cached_description:
         # Structured cache with explicit source is trusted and returned immediately.
         if cached_description['source'] != 'Unknown (legacy cache)':
-            return cached_description if include_source else cached_description['description']
+            enriched_cached = _enrich_group_description(cached_description['description'], chemical_name)
+            if include_source:
+                return {
+                    'description': enriched_cached,
+                    'source': cached_description['source'],
+                }
+            return enriched_cached
         # Legacy string cache has no source metadata; keep as a last-resort fallback.
         legacy_cached_description = cached_description['description']
 
