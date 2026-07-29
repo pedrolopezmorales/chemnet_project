@@ -126,7 +126,17 @@
         {% if description %}
         <div style="margin: 20px 0; padding: 20px; background: #e8f5e8; border-radius: 8px; border-left: 4px solid #28a745;">
             <h3 style="color: #155724; margin: 0 0 10px 0;">Chemical Information{% if description_source %} (Source: {{ description_source }}){% endif %}</h3>
-            <p style="color: #155724; margin: 0; line-height: 1.5;">{{ description }}</p>
+            {% if description|length > 1200 %}
+            <div style="color: #155724; line-height: 1.5;">
+                <p style="margin: 0 0 12px 0; white-space: pre-line;">{{ description|truncatechars:700 }}</p>
+                <details>
+                    <summary style="cursor: pointer; font-weight: 700; color: #155724;">Show full description</summary>
+                    <div style="margin-top: 10px;">{{ description|linebreaksbr }}</div>
+                </details>
+            </div>
+            {% else %}
+            <div style="color: #155724; line-height: 1.5;">{{ description|linebreaksbr }}</div>
+            {% endif %}
         </div>
         {% endif %}
 
@@ -191,6 +201,32 @@
                 var displayLabel = (category === 'Unknown') ? 'Not Recognized' : category;
                 return '<span style="color: ' + color + '; font-weight: 700;">[' + displayLabel + ']</span>';
             });
+        }
+
+        function renderDescriptionBlocks(text) {
+            if (!text) {
+                return '';
+            }
+            var blocks = String(text).split(/\n\s*\n/).filter(function (block) {
+                return block.trim().length > 0;
+            });
+            return blocks.map(function (block) {
+                return '<p style="color: #155724; margin: 0 0 12px 0; line-height: 1.5; white-space: pre-line;">' + esc(block) + '</p>';
+            }).join('');
+        }
+
+        function renderCollapsibleDescription(text) {
+            var fullText = String(text || '');
+            if (fullText.length <= 1200) {
+                return renderDescriptionBlocks(fullText);
+            }
+
+            var preview = esc(fullText.slice(0, 700).trimEnd() + '...');
+            return '<p style="color: #155724; margin: 0 0 12px 0; line-height: 1.5; white-space: pre-line;">' + preview + '</p>' +
+                '<details>' +
+                '<summary style="cursor: pointer; font-weight: 700; color: #155724;">Show full description</summary>' +
+                '<div style="margin-top: 10px;">' + renderDescriptionBlocks(fullText) + '</div>' +
+                '</details>';
         }
 
         function renderConnections(connections) {
@@ -292,7 +328,7 @@
                         var descriptionSource = connectionsData.description_source ? (' (Source: ' + esc(connectionsData.description_source) + ')') : '';
                         descEl.innerHTML = '<div style="margin: 20px 0; padding: 20px; background: #e8f5e8; border-radius: 8px; border-left: 4px solid #28a745;">' +
                             '<h3 style="color: #155724; margin: 0 0 10px 0;">Chemical Information' + descriptionSource + '</h3>' +
-                            '<p style="color: #155724; margin: 0; line-height: 1.5;">' + esc(connectionsData.description) + '</p>' +
+                            renderCollapsibleDescription(connectionsData.description) +
                             '</div>';
                         descEl.style.display = 'block';
                     }

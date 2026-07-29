@@ -33,17 +33,17 @@ class NetworkviewerConfig(AppConfig):
     #         import traceback
     #         traceback.print_exc()
 
-    def ready(self):
-        import os
-        if os.environ.get("RUN_MAIN") != "true":
-            return
+    # def ready(self):
+    #     import os
+    #     if os.environ.get("RUN_MAIN") != "true":
+    #         return
 
-        try:
-            from .dataframes_creation import create_company_assoc_dataframe
-            create_company_assoc_dataframe()
+    #     try:
+    #         from .dataframes_creation import create_company_assoc_dataframe
+    #         create_company_assoc_dataframe()
 
-        except Exception as e:
-            print(f"Error creating company assoc dataframe: {e}")
+    #     except Exception as e:
+    #         print(f"Error creating company assoc dataframe: {e}")
 
 
     # def ready(self):

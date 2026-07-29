@@ -3745,6 +3745,141 @@ def _enrich_group_description(description_text, chemical_name):
     return f"{description_text.strip()} {marker} {examples_text}."
 
 
+def _iter_pubchem_sections(section):
+    if not isinstance(section, dict):
+        return
+    yield section
+    for child in section.get('Section', []) or []:
+        yield from _iter_pubchem_sections(child)
+
+
+def _collect_pubchem_info_texts(section):
+    texts = []
+    for info in section.get('Information', []) or []:
+        if not isinstance(info, dict):
+            continue
+
+        description_text = info.get('Description')
+        if isinstance(description_text, str) and description_text.strip():
+            texts.append(description_text.strip())
+
+        string_value = info.get('StringValue')
+        if isinstance(string_value, str) and string_value.strip():
+            texts.append(string_value.strip())
+
+        value = info.get('Value')
+        if isinstance(value, dict):
+            for markup in value.get('StringWithMarkup', []) or []:
+                if isinstance(markup, dict):
+                    text = markup.get('String')
+                    if isinstance(text, str) and text.strip():
+                        texts.append(text.strip())
+    return texts
+
+
+def _dedupe_preserve_order(items):
+    seen = set()
+    out = []
+    for item in items:
+        key = str(item).strip().lower()
+        if not key or key in seen:
+            continue
+        seen.add(key)
+        out.append(str(item).strip())
+    return out
+
+
+def _extract_short_use_terms(texts, max_len=80):
+    terms = []
+    for text in texts:
+        if not isinstance(text, str):
+            continue
+        for chunk in re.split(r'[\n;]+', text):
+            term = re.sub(r'\s+', ' ', chunk).strip(' .,:')
+            if not term:
+                continue
+            if ':' in term:
+                # Skip labeled lines such as "General Category: ..." in this extractor.
+                continue
+            if len(term) > max_len:
+                continue
+            terms.append(term)
+    return _dedupe_preserve_order(terms)
+
+
+def _extract_general_categories(texts):
+    categories = []
+    for text in texts:
+        if not isinstance(text, str):
+            continue
+        for match in re.finditer(r'General\s+Category\s*:\s*([^\n;]+)', text, flags=re.I):
+            value = match.group(1).strip()
+            # Keep broad category text before detailed long explanation.
+            value = re.split(r'\s+-\s+', value, maxsplit=1)[0].strip(' .,:')
+            if value:
+                categories.append(value)
+    return _dedupe_preserve_order(categories)
+
+
+def _extract_pubchem_use_details(record_data):
+    if not isinstance(record_data, dict):
+        return {
+            'industry': [],
+            'consumer': [],
+            'general_categories': [],
+        }
+
+    root_sections = ((record_data.get('Record') or {}).get('Section') or [])
+    industry_terms = []
+    consumer_terms = []
+    general_categories = []
+
+    for root_section in root_sections:
+        for section in _iter_pubchem_sections(root_section):
+            heading = str(section.get('TOCHeading') or '').strip().lower()
+            texts = _collect_pubchem_info_texts(section)
+            if not texts:
+                continue
+
+            if 'industry uses' in heading:
+                industry_terms.extend(_extract_short_use_terms(texts))
+            elif 'consumer uses' in heading:
+                consumer_terms.extend(_extract_short_use_terms(texts))
+
+            if any(token in heading for token in ['use classification', 'product use categories', 'household products', 'uses']):
+                general_categories.extend(_extract_general_categories(texts))
+
+    return {
+        'industry': _dedupe_preserve_order(industry_terms)[:12],
+        'consumer': _dedupe_preserve_order(consumer_terms)[:12],
+        'general_categories': _dedupe_preserve_order(general_categories)[:8],
+    }
+
+
+def _append_pubchem_use_details(description_text, record_data):
+    if not isinstance(description_text, str) or not description_text.strip():
+        return description_text
+
+    details = _extract_pubchem_use_details(record_data)
+    industry = details.get('industry') or []
+    consumer = details.get('consumer') or []
+    categories = details.get('general_categories') or []
+
+    sections = []
+    if industry:
+        sections.append("Industry uses:\n" + "\n".join(f"- {term}" for term in industry))
+    if consumer:
+        sections.append("Consumer uses:\n" + "\n".join(f"- {term}" for term in consumer))
+
+    if not sections and categories:
+        sections.append("General use categories:\n" + "\n".join(f"- {cat}" for cat in categories))
+
+    if not sections:
+        return description_text.strip()
+
+    return description_text.strip() + "\n\n" + "\n\n".join(sections)
+
+
 def get_pubchem_description(chemical_name, inchikey=None, include_source=False):
     """Get a chemical description and optionally include the source.
 
@@ -3754,8 +3889,10 @@ def get_pubchem_description(chemical_name, inchikey=None, include_source=False):
     cache_key = _pubchem_cache_key(chemical_name=chemical_name, inchikey=inchikey)
     desc_cache = _get_pubchem_desc_cache()
 
-    def _format_result(description_text, source_text, cache_result=True):
+    def _format_result(description_text, source_text, cache_result=True, record_data=None):
         enriched_description = _enrich_group_description(description_text, chemical_name)
+        if source_text == 'PubChem':
+            enriched_description = _append_pubchem_use_details(enriched_description, record_data)
         if not isinstance(enriched_description, str) or not enriched_description.strip():
             return None
         payload = {
@@ -3888,7 +4025,7 @@ def get_pubchem_description(chemical_name, inchikey=None, include_source=False):
                                 'is a', 'medication', 'drug', 'agent', 'compound', 'used for', 
                                 'treatment', 'inhibitor', 'analgesic', 'anti-inflammatory', 'therapeutic'
                             ]):
-                                return _format_result(desc, 'PubChem')
+                                return _format_result(desc, 'PubChem', record_data=data)
                             
                         # Then try substantial descriptions with good keywords
                         for desc in all_descriptions:
@@ -3896,12 +4033,12 @@ def get_pubchem_description(chemical_name, inchikey=None, include_source=False):
                                 'is a member of', 'belongs to', 'medication', 'drug', 'therapeutic',
                                 'appears as', 'crystalline', 'powder', 'used for', 'treatment of'
                             ]):
-                                return _format_result(desc, 'PubChem')
+                                return _format_result(desc, 'PubChem', record_data=data)
                         
                         # Finally, try any decent description
                         for desc in all_descriptions:
                             if len(desc) > 50:
-                                return _format_result(desc, 'PubChem')
+                                return _format_result(desc, 'PubChem', record_data=data)
                 
                 # Fallback to basic compound information
                 full_record = pcp.Compound.from_cid(compound.cid)
