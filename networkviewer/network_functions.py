@@ -3901,6 +3901,18 @@ def _append_pubchem_use_details(description_text, record_data):
     return description_text.strip() + "\n\n" + "\n\n".join(sections)
 
 
+def _has_pubchem_use_section(description_text):
+    if not isinstance(description_text, str):
+        return False
+    markers = [
+        'Industry uses:',
+        'Consumer uses:',
+        'Common function categories:',
+        'General use categories:',
+    ]
+    return any(marker in description_text for marker in markers)
+
+
 def get_pubchem_description(chemical_name, inchikey=None, include_source=False):
     """Get a chemical description and optionally include the source.
 
@@ -3927,16 +3939,25 @@ def get_pubchem_description(chemical_name, inchikey=None, include_source=False):
 
     cached_description = _normalize_cached_chemical_description(desc_cache.get(cache_key))
     legacy_cached_description = None
+    structured_cached_fallback = None
     if cached_description:
         # Structured cache with explicit source is trusted and returned immediately.
         if cached_description['source'] != 'Unknown (legacy cache)':
             enriched_cached = _enrich_group_description(cached_description['description'], chemical_name)
-            if include_source:
-                return {
+            if cached_description['source'] == 'PubChem' and not _has_pubchem_use_section(enriched_cached):
+                # Older cache entries may predate use-details enrichment.
+                # Keep as a fallback, but attempt a fresh PubChem fetch first.
+                structured_cached_fallback = {
                     'description': enriched_cached,
                     'source': cached_description['source'],
                 }
-            return enriched_cached
+            else:
+                if include_source:
+                    return {
+                        'description': enriched_cached,
+                        'source': cached_description['source'],
+                    }
+                return enriched_cached
         # Legacy string cache has no source metadata; keep as a last-resort fallback.
         legacy_cached_description = cached_description['description']
 
@@ -4115,6 +4136,9 @@ def get_pubchem_description(chemical_name, inchikey=None, include_source=False):
         print(f"Error fetching PubChem description for {chemical_name} (InChIKey: {inchikey}): {e}")
 
     # Final fallback: return best known cache when lookups fail.
+    if structured_cached_fallback:
+        return structured_cached_fallback if include_source else structured_cached_fallback['description']
+
     if legacy_cached_description:
         return _format_result(legacy_cached_description, 'Unknown (legacy cache)', cache_result=False)
 
