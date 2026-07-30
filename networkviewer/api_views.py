@@ -170,7 +170,16 @@ class ChemicalSearchAPI(APIView):
                 )
             else:
                 row = get_chemical_row(chemical=chemical)
-                if row is None:
+                if row is None or row.empty:
+                    # Mirror graph behavior: try resolving a PubChem InChIKey when
+                    # name lookup in chem_per_row does not match (e.g., Gold vs Au).
+                    if chemical:
+                        fallback_inchikey = obtain_inchikey_from_pubchem(chemical)
+                        if fallback_inchikey:
+                            inchikey = fallback_inchikey
+                            row = get_chemical_row(chemical=chemical, inchikey=inchikey)
+
+                if row is None or row.empty:
                     suggestions = get_close_matches_custom(chemical or inchikey, all_chemical_names)
                     return Response({
                         'success': False,
@@ -179,9 +188,32 @@ class ChemicalSearchAPI(APIView):
                         'suggestions': suggestions,
                         'message': f"Chemical '{chemical or inchikey}' not found"
                     })
-                connections = show_chem_connections(chemical, row=row)
+
+                # Prefer inchikey-based connections when available so aliases map
+                # to the same connection set as the symbol/name present in dataset.
+                row_inchikey = row.iloc[0]['inchikey'] if not row.empty and 'inchikey' in row.columns else None
+                if row_inchikey and row_inchikey != 'Error':
+                    connections = show_chem_connections(inchikey=row_inchikey, row=row)
+                    inchikey = row_inchikey
+                else:
+                    connections = show_chem_connections(chemical, row=row)
+
                 image_info = get_chemical_image(chemical, inchikey, include_source=True)
-                description_info = get_pubchem_description(chemical, include_source=True)
+                description_info = get_pubchem_description(
+                    chemical,
+                    inchikey if inchikey != 'Error' else None,
+                    include_source=True,
+                )
+
+            if not connections:
+                suggestions = get_close_matches_custom(chemical or inchikey, all_chemical_names)
+                return Response({
+                    'success': False,
+                    'chemical': chemical,
+                    'inchikey': inchikey,
+                    'suggestions': suggestions,
+                    'message': f"Chemical '{chemical or inchikey}' not found"
+                })
 
             image_url = image_info.get('url') if isinstance(image_info, dict) else None
             image_source = image_info.get('source') if isinstance(image_info, dict) else None
