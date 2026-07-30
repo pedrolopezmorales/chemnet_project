@@ -3340,10 +3340,23 @@ def _normalize_cached_chemical_image(cached_value):
         source = cached_value.get('source')
         if isinstance(url, str) and url.strip():
             normalized_source = str(source).strip() if isinstance(source, str) and source.strip() else 'Unknown'
-            return {
+            payload = {
                 'url': url.strip(),
                 'source': normalized_source,
             }
+            image_title = cached_value.get('image_title')
+            if isinstance(image_title, str) and image_title.strip():
+                payload['image_title'] = image_title.strip()
+
+            image_description = cached_value.get('image_description')
+            if isinstance(image_description, str) and image_description.strip():
+                payload['image_description'] = image_description.strip()
+
+            image_page_title = cached_value.get('image_page_title')
+            if isinstance(image_page_title, str) and image_page_title.strip():
+                payload['image_page_title'] = image_page_title.strip()
+
+            return payload
     if isinstance(cached_value, str) and cached_value.strip():
         return {
             'url': cached_value.strip(),
@@ -3352,7 +3365,7 @@ def _normalize_cached_chemical_image(cached_value):
     return None
 
 
-def get_wikipedia_chemical_image_url(chemical_name):
+def get_wikipedia_chemical_image_url(chemical_name, include_metadata=False):
     """Fetch a representative Wikipedia image URL for chemical groups/terms."""
     if not chemical_name or pd.isna(chemical_name):
         return None
@@ -3373,14 +3386,27 @@ def get_wikipedia_chemical_image_url(chemical_name):
             return None
         data = response.json()
         thumbnail = data.get('thumbnail', {})
-        source = thumbnail.get('source') if isinstance(thumbnail, dict) else None
-        return source.strip() if isinstance(source, str) and source.strip() else None
+        image_url = thumbnail.get('source') if isinstance(thumbnail, dict) else None
+        if not isinstance(image_url, str) or not image_url.strip():
+            return None
+
+        page_title_value = data.get('title')
+        page_description = data.get('description')
+        payload = {
+            'url': image_url.strip(),
+            'image_page_title': page_title_value.strip() if isinstance(page_title_value, str) and page_title_value.strip() else str(page_title).strip(),
+            'image_description': page_description.strip() if isinstance(page_description, str) and page_description.strip() else None,
+        }
+        image_title = payload['image_description'] or payload['image_page_title']
+        if image_title:
+            payload['image_title'] = image_title
+        return payload
 
     try:
         # 1) Exact title lookup first.
         direct_image = fetch_thumbnail(term)
         if direct_image:
-            return direct_image
+            return direct_image if include_metadata else direct_image['url']
 
         # 2) Search fallback to resolve alternate page titles.
         search_response = requests.get(
@@ -3403,7 +3429,7 @@ def get_wikipedia_chemical_image_url(chemical_name):
                 if best_title:
                     fallback_image = fetch_thumbnail(best_title)
                     if fallback_image:
-                        return fallback_image
+                        return fallback_image if include_metadata else fallback_image['url']
     except Exception as e:
         print(f"Error fetching Wikipedia chemical image for {chemical_name}: {e}")
 
@@ -3414,13 +3440,19 @@ def _get_chemical_image(chemical_name, inchikey=None, include_source=False):
     cache_key = _pubchem_cache_key(chemical_name=chemical_name, inchikey=inchikey)
     image_cache = _get_pubchem_image_cache()
 
-    def _format_result(url_text, source_text, cache_result=True):
+    def _format_result(url_text, source_text, cache_result=True, image_title=None, image_description=None, image_page_title=None):
         if not isinstance(url_text, str) or not url_text.strip():
             return None
         payload = {
             'url': url_text.strip(),
             'source': source_text,
         }
+        if isinstance(image_title, str) and image_title.strip():
+            payload['image_title'] = image_title.strip()
+        if isinstance(image_description, str) and image_description.strip():
+            payload['image_description'] = image_description.strip()
+        if isinstance(image_page_title, str) and image_page_title.strip():
+            payload['image_page_title'] = image_page_title.strip()
         if cache_result:
             image_cache[cache_key] = payload
             _save_json_cache(_PUBCHEM_IMAGE_CACHE_FILE, image_cache)
@@ -3428,6 +3460,19 @@ def _get_chemical_image(chemical_name, inchikey=None, include_source=False):
 
     cached = _normalize_cached_chemical_image(image_cache.get(cache_key))
     if cached and cached.get('source') != 'Unknown (legacy cache)':
+        if cached.get('source') == 'Wikipedia' and not cached.get('image_title'):
+            wiki_meta = get_wikipedia_chemical_image_url(chemical_name, include_metadata=True)
+            if isinstance(wiki_meta, dict) and wiki_meta.get('url'):
+                refreshed_payload = {
+                    'url': wiki_meta.get('url'),
+                    'source': 'Wikipedia',
+                    'image_title': wiki_meta.get('image_title'),
+                    'image_description': wiki_meta.get('image_description'),
+                    'image_page_title': wiki_meta.get('image_page_title'),
+                }
+                image_cache[cache_key] = refreshed_payload
+                _save_json_cache(_PUBCHEM_IMAGE_CACHE_FILE, image_cache)
+                cached = _normalize_cached_chemical_image(refreshed_payload)
         return cached if include_source else cached['url']
 
     legacy_cached_url = cached.get('url') if cached else None
@@ -3455,9 +3500,15 @@ def _get_chemical_image(chemical_name, inchikey=None, include_source=False):
         print(f"Error fetching PubChem data for InChIKey {inchikey}: {e}")
 
     # Wikipedia fallback for group-level terms (e.g., PFAS/PAHs).
-    wiki_image_url = get_wikipedia_chemical_image_url(chemical_name)
-    if wiki_image_url:
-        return _format_result(wiki_image_url, 'Wikipedia')
+    wiki_image_info = get_wikipedia_chemical_image_url(chemical_name, include_metadata=True)
+    if isinstance(wiki_image_info, dict) and wiki_image_info.get('url'):
+        return _format_result(
+            wiki_image_info['url'],
+            'Wikipedia',
+            image_title=wiki_image_info.get('image_title'),
+            image_description=wiki_image_info.get('image_description'),
+            image_page_title=wiki_image_info.get('image_page_title'),
+        )
 
     # Final fallback: preserve pre-existing legacy cache if present.
     if legacy_cached_url:

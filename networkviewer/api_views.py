@@ -217,6 +217,9 @@ class ChemicalSearchAPI(APIView):
 
             image_url = image_info.get('url') if isinstance(image_info, dict) else None
             image_source = image_info.get('source') if isinstance(image_info, dict) else None
+            image_title = image_info.get('image_title') if isinstance(image_info, dict) else None
+            image_description = image_info.get('image_description') if isinstance(image_info, dict) else None
+            image_page_title = image_info.get('image_page_title') if isinstance(image_info, dict) else None
             description = description_info.get('description') if isinstance(description_info, dict) else None
             description_source = description_info.get('source') if isinstance(description_info, dict) else None
 
@@ -227,6 +230,9 @@ class ChemicalSearchAPI(APIView):
                 'connections': connections,
                 'image_url': image_url,
                 'image_source': image_source,
+                'image_title': image_title,
+                'image_description': image_description,
+                'image_page_title': image_page_title,
                 'description': description,
                 'description_source': description_source,
             })
