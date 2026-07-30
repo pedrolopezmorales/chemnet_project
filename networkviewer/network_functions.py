@@ -3821,17 +3821,32 @@ def _extract_general_categories(texts):
     return _dedupe_preserve_order(categories)
 
 
+def _extract_function_categories(texts):
+    categories = []
+    for text in texts:
+        if not isinstance(text, str):
+            continue
+        for match in re.finditer(r'Function\s+Category\s*:\s*([^\n;]+)', text, flags=re.I):
+            value = match.group(1).strip()
+            value = re.split(r'\s+-\s+', value, maxsplit=1)[0].strip(' .,:')
+            if value:
+                categories.append(value)
+    return _dedupe_preserve_order(categories)
+
+
 def _extract_pubchem_use_details(record_data):
     if not isinstance(record_data, dict):
         return {
             'industry': [],
             'consumer': [],
+            'function_categories': [],
             'general_categories': [],
         }
 
     root_sections = ((record_data.get('Record') or {}).get('Section') or [])
     industry_terms = []
     consumer_terms = []
+    function_categories = []
     general_categories = []
 
     for root_section in root_sections:
@@ -3847,11 +3862,13 @@ def _extract_pubchem_use_details(record_data):
                 consumer_terms.extend(_extract_short_use_terms(texts))
 
             if any(token in heading for token in ['use classification', 'product use categories', 'household products', 'uses']):
+                function_categories.extend(_extract_function_categories(texts))
                 general_categories.extend(_extract_general_categories(texts))
 
     return {
         'industry': _dedupe_preserve_order(industry_terms)[:12],
         'consumer': _dedupe_preserve_order(consumer_terms)[:12],
+        'function_categories': _dedupe_preserve_order(function_categories)[:12],
         'general_categories': _dedupe_preserve_order(general_categories)[:8],
     }
 
@@ -3863,6 +3880,7 @@ def _append_pubchem_use_details(description_text, record_data):
     details = _extract_pubchem_use_details(record_data)
     industry = details.get('industry') or []
     consumer = details.get('consumer') or []
+    function_categories = details.get('function_categories') or []
     categories = details.get('general_categories') or []
 
     sections = []
@@ -3870,6 +3888,9 @@ def _append_pubchem_use_details(description_text, record_data):
         sections.append("Industry uses:\n" + "\n".join(f"- {term}" for term in industry))
     if consumer:
         sections.append("Consumer uses:\n" + "\n".join(f"- {term}" for term in consumer))
+
+    if not sections and function_categories:
+        sections.append("Common function categories:\n" + "\n".join(f"- {cat}" for cat in function_categories))
 
     if not sections and categories:
         sections.append("General use categories:\n" + "\n".join(f"- {cat}" for cat in categories))
