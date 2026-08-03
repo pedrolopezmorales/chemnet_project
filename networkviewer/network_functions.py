@@ -1282,37 +1282,105 @@ def inject_node_slider(html, center_node):
     (function() {{
         var _cid = {json.dumps(center_node)};
         var _an = nodes.get(), _ae = edges.get();
+
+        function _normalizeColor(value) {{
+            if (!value) return "";
+            var text = String(value).trim().toLowerCase();
+            if (!text) return "";
+            if (text.indexOf("#") === 0) return text;
+            var rgbMatch = text.match(/rgba?\((\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);
+            if (rgbMatch) {{
+                var toHex = function(num) {{
+                    return Number(num).toString(16).padStart(2, "0");
+                }};
+                return "#" + toHex(rgbMatch[1]) + toHex(rgbMatch[2]) + toHex(rgbMatch[3]);
+            }}
+            return text;
+        }}
+
+        var _nodeColors = {{}};
+        _an.forEach(function(n) {{
+            if (n.id === _cid) return;
+            var colorValue = n.color;
+            if (colorValue && typeof colorValue === "object") {{
+                colorValue = colorValue.background || colorValue.border || "";
+            }}
+            _nodeColors[n.id] = _normalizeColor(colorValue);
+        }});
+
         var _w = {{}};
         _ae.forEach(function(e) {{
-            var m = (e.title||"").match(/(\\d+)$/);
-            var w = m ? parseInt(m[1]) : 0;
+            var m = (e.title||"").match(/(\d+)$/);
+            var w = m ? parseInt(m[1], 10) : 0;
             if (e.from !== _cid) _w[e.from] = Math.max(_w[e.from]||0, w);
             if (e.to !== _cid) _w[e.to] = Math.max(_w[e.to]||0, w);
         }});
+
         var _ids = _an
             .filter(function(n) {{ return n.id !== _cid; }})
             .sort(function(a, b) {{ return (_w[b.id]||0) - (_w[a.id]||0); }})
             .map(function(n) {{ return n.id; }});
-        var _tot = _ids.length;
+
         var _sl = document.getElementById("node-slider");
-        _sl.max = _tot || 1;
-        _sl.value = _tot;
-        document.getElementById("slider-label").textContent = _tot + " / " + _tot;
-        _sl.addEventListener("input", function() {{
-            var cnt = parseInt(this.value);
-            var vis = new Set(_ids.slice(0, cnt));
+        var _label = document.getElementById("slider-label");
+        if (!_sl || !_label) return;
+
+        function _eligibleIds() {{
+            var active = (typeof window.__getActiveCategoryColor === "function")
+                ? window.__getActiveCategoryColor()
+                : null;
+            if (!active) {{
+                return _ids.slice();
+            }}
+            return _ids.filter(function(id) {{
+                return _nodeColors[id] === active;
+            }});
+        }}
+
+        function _applySliderVisibility() {{
+            var eligible = _eligibleIds();
+            var total = eligible.length;
+
+            _sl.min = total > 0 ? 1 : 0;
+            _sl.max = Math.max(total, 1);
+
+            var count = parseInt(_sl.value, 10);
+            if (isNaN(count)) count = total;
+            if (total === 0) {{
+                count = 0;
+            }} else {{
+                count = Math.max(1, Math.min(count, total));
+            }}
+            _sl.value = String(count);
+
+            var visible = new Set(eligible.slice(0, count));
             nodes.update(
                 _an.filter(function(n) {{ return n.id !== _cid; }})
-                   .map(function(n) {{ return {{id: n.id, hidden: !vis.has(n.id)}}; }})
+                   .map(function(n) {{
+                       return {{ id: n.id, hidden: !visible.has(n.id) }};
+                   }})
             );
+
             edges.update(
                 _ae.map(function(e) {{
-                    var o = (e.from === _cid) ? e.to : e.from;
-                    return {{id: e.id, hidden: !vis.has(o)}};
+                    var other;
+                    if (e.from === _cid) {{
+                        other = e.to;
+                    }} else if (e.to === _cid) {{
+                        other = e.from;
+                    }} else {{
+                        return {{ id: e.id, hidden: false }};
+                    }}
+                    return {{ id: e.id, hidden: !visible.has(other) }};
                 }})
             );
-            document.getElementById("slider-label").textContent = cnt + " / " + _tot;
-        }});
+
+            _label.textContent = count + " / " + total;
+        }}
+
+        _sl.addEventListener("input", _applySliderVisibility);
+        window.__refreshNodeSlider = _applySliderVisibility;
+        _applySliderVisibility();
     }})();
     </script>
     '''
@@ -1363,8 +1431,104 @@ def _build_graph_study_panel_injection(
     lookup_expr='node.label',
     heading_expr=None,
     include_scroll_disable=False,
+    enable_category_filter=False,
 ):
     heading_expr = heading_expr or lookup_expr
+    category_filter_script = """
+        var activeCategoryColor = null;
+
+        function normalizeLegendColor(value) {
+            if (!value) return "";
+            var text = String(value).trim().toLowerCase();
+            if (!text) return "";
+            if (text.indexOf("#") === 0) return text;
+            var rgbMatch = text.match(/rgba?\((\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);
+            if (rgbMatch) {
+                var toHex = function(num) {
+                    return Number(num).toString(16).padStart(2, "0");
+                };
+                return "#" + toHex(rgbMatch[1]) + toHex(rgbMatch[2]) + toHex(rgbMatch[3]);
+            }
+            return text;
+        }
+
+        function getNodeColor(node) {
+            var colorValue = node.color;
+            if (colorValue && typeof colorValue === "object") {
+                colorValue = colorValue.background || colorValue.border || "";
+            }
+            return normalizeLegendColor(colorValue);
+        }
+
+        function updateLegendSelectionState() {
+            var chips = document.querySelectorAll('.legend-filter-chip[data-category-color]');
+            chips.forEach(function(chip) {
+                var chipColor = normalizeLegendColor(chip.getAttribute('data-category-color'));
+                var isActive = !!activeCategoryColor && chipColor === activeCategoryColor;
+                chip.classList.toggle('active', isActive);
+                chip.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+            });
+        }
+
+        function applyCategoryFilterStandalone() {
+            var nodeUpdates = [];
+            var visibleOuterNodeIds = {};
+            nodes.get().forEach(function(node) {
+                if (node.id === centerNodeId) {
+                    nodeUpdates.push({ id: node.id, hidden: false });
+                    return;
+                }
+                var visible = !activeCategoryColor || getNodeColor(node) === activeCategoryColor;
+                if (visible) {
+                    visibleOuterNodeIds[node.id] = true;
+                }
+                nodeUpdates.push({ id: node.id, hidden: !visible });
+            });
+            nodes.update(nodeUpdates);
+
+            edges.update(edges.get().map(function(edge) {
+                var outerId = null;
+                if (edge.from === centerNodeId) {
+                    outerId = edge.to;
+                } else if (edge.to === centerNodeId) {
+                    outerId = edge.from;
+                }
+                if (outerId === null) {
+                    return { id: edge.id, hidden: false };
+                }
+                return { id: edge.id, hidden: !visibleOuterNodeIds[outerId] };
+            }));
+        }
+
+        function toggleCategoryFilter(buttonEl) {
+            if (!buttonEl) return;
+            var selectedColor = normalizeLegendColor(buttonEl.getAttribute('data-category-color'));
+            if (!selectedColor) return;
+            activeCategoryColor = (activeCategoryColor === selectedColor) ? null : selectedColor;
+            updateLegendSelectionState();
+            if (typeof window.__refreshNodeSlider === 'function') {
+                window.__refreshNodeSlider();
+            } else {
+                applyCategoryFilterStandalone();
+            }
+        }
+
+        function clearCategoryFilter() {
+            activeCategoryColor = null;
+            updateLegendSelectionState();
+            if (typeof window.__refreshNodeSlider === 'function') {
+                window.__refreshNodeSlider();
+            } else {
+                applyCategoryFilterStandalone();
+            }
+        }
+
+        window.__getActiveCategoryColor = function() {
+            return activeCategoryColor;
+        };
+
+        updateLegendSelectionState();
+    """ if enable_category_filter else ""
     scroll_disable_script = """
         setTimeout(function() {
             var visContainers = document.querySelectorAll('.vis-network');
@@ -1411,6 +1575,49 @@ def _build_graph_study_panel_injection(
             color: #555;
             line-height: var(--study-line-height);
         }}
+        .legend-filter-chip {{
+            border: 1px solid #d1d5db;
+            border-radius: 999px;
+            background: #ffffff;
+            color: #333;
+            padding: 5px 10px;
+            font-size: 12px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            transition: all 0.15s ease;
+        }}
+        .legend-filter-chip:hover {{
+            border-color: #94a3b8;
+            background: #f8fafc;
+        }}
+        .legend-filter-chip.active {{
+            border-color: #1d4ed8;
+            box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
+            background: #eff6ff;
+        }}
+        .legend-dot {{
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+            border: 1px solid rgba(0,0,0,0.08);
+        }}
+        .legend-filter-reset {{
+            margin-top: 10px;
+            display: inline-block;
+            font-size: 12px;
+            color: #1f2937;
+            background: transparent;
+            border: 1px solid #d1d5db;
+            border-radius: 999px;
+            padding: 4px 10px;
+            cursor: pointer;
+        }}
+        .legend-filter-reset:hover {{
+            background: #f3f4f6;
+        }}
     </style>
     {controls_html}
     <div id="study-info"></div>
@@ -1450,6 +1657,8 @@ def _build_graph_study_panel_injection(
             }});
         }}
 
+        {category_filter_script}
+
         var companyStudyMap = {json.dumps(company_study_map)};
         var centerNodeId = {json.dumps(center_node_id)};
 
@@ -1465,6 +1674,44 @@ def _build_graph_study_panel_injection(
         }});
     </script>
     """
+
+
+def _build_funding_category_legend_html(title='Funding Source Categories:', interactive=False):
+    category_items = [
+        ('Government', '#DD403A'),
+        ('University', '#7B4B94'),
+        ('Foundation', '#B7E3CC'),
+        ('Company', '#7D82B8'),
+        ('Not Recognized', '#FFC145'),
+    ]
+
+    entries = []
+    for label, color in category_items:
+        if interactive:
+            entries.append(
+                f'<button type="button" class="legend-filter-chip" data-category-color="{color}" '
+                f'onclick="toggleCategoryFilter(this)"><span class="legend-dot" style="background: {color};"></span>{label}</button>'
+            )
+        else:
+            entries.append(
+                '<div style="display: flex; align-items: center;">'
+                f'<div style="width: 16px; height: 16px; background: {color}; border-radius: 50%; margin-right: 8px;"></div>'
+                f'<span style="font-size: 13px; color: #333;">{label}</span>'
+                '</div>'
+            )
+
+    reset_html = ''
+    if interactive:
+        reset_html = '<div><button type="button" class="legend-filter-reset" onclick="clearCategoryFilter()">Show all categories</button></div>'
+
+    return (
+        '<div class="color-legend" style="flex: 1; padding: 10px; background: #f8f9fa; border-radius: 8px; margin-right: 10px;">'
+        f'<h4 style="margin-bottom: 10px; color: #333; font-size: 16px;">{title}</h4>'
+        '<div style="display: flex; flex-wrap: wrap; gap: 8px 10px;">'
+        + ''.join(entries) +
+        '</div>' + reset_html +
+        '</div>'
+    )
 
 
 def get_company_funding_rows(company_name):
@@ -2298,33 +2545,7 @@ def show_uni_network_pyvis(uni_name, category='Funding Sources', chemical_group=
         html = f.read()
     color_legend = ""
     if category == 'Funding Sources':
-        color_legend = """
-        <div class="color-legend" style="flex: 1; padding: 10px; background: #f8f9fa; border-radius: 8px; margin-right: 10px;">
-            <h4 style="margin-bottom: 10px; color: #333; font-size: 16px;">Funding Source Categories:</h4>
-            <div style="display: flex; flex-wrap: wrap; gap: 12px;">
-                <div style="display: flex; align-items: center;">
-                    <div style="width: 16px; height: 16px; background: #DD403A; border-radius: 50%; margin-right: 8px;"></div>
-                    <span style="font-size: 13px; color: #333;">Government</span>
-                </div>
-                <div style="display: flex; align-items: center;">
-                    <div style="width: 16px; height: 16px; background: #7B4B94; border-radius: 50%; margin-right: 8px;"></div>
-                    <span style="font-size: 13px; color: #333;">University</span>
-                </div>
-                <div style="display: flex; align-items: center;">
-                    <div style="width: 16px; height: 16px; background: #B7E3CC; border-radius: 50%; margin-right: 8px;"></div>
-                    <span style="font-size: 13px; color: #333;">Foundation</span>
-                </div>
-                <div style="display: flex; align-items: center;">
-                    <div style="width: 16px; height: 16px; background: #7D82B8; border-radius: 50%; margin-right: 8px;"></div>
-                    <span style="font-size: 13px; color: #333;">Company</span>
-                </div>
-                <div style="display: flex; align-items: center;">
-                    <div style="width: 16px; height: 16px; background: #FFC145; border-radius: 50%; margin-right: 8px;"></div>
-                    <span style="font-size: 13px; color: #333;">Not Recognized</span>
-                </div>
-            </div>
-        </div>
-        """
+        color_legend = _build_funding_category_legend_html(interactive=True)
     controls_html = f"""
     <style>
         .controls-container {{
@@ -2375,6 +2596,7 @@ def show_uni_network_pyvis(uni_name, category='Funding Sources', chemical_group=
         lookup_expr='node.label',
         heading_expr='node.label',
         include_scroll_disable=True,
+        enable_category_filter=(category == 'Funding Sources'),
     )
     html = html.replace("</body>", injection + "\n</body>")
     html = inject_node_slider(html, uni_name)
@@ -2666,33 +2888,7 @@ def show_chemical_network(chemical, inch='Error', output_file=None, row=None, ma
     net.show(output_file)
     with open(output_file, "r", encoding="utf-8") as f:
         html = f.read()
-    color_legend = """
-        <div class="color-legend" style="flex: 1; padding: 10px; background: #f8f9fa; border-radius: 8px; margin-right: 10px;">
-            <h4 style="margin-bottom: 10px; color: #333; font-size: 16px;">Funding Source Categories:</h4>
-            <div style="display: flex; flex-wrap: wrap; gap: 12px;">
-                <div style="display: flex; align-items: center;">
-                    <div style="width: 16px; height: 16px; background: #DD403A; border-radius: 50%; margin-right: 8px;"></div>
-                    <span style="font-size: 13px; color: #333;">Government</span>
-                </div>
-                <div style="display: flex; align-items: center;">
-                    <div style="width: 16px; height: 16px; background: #7B4B94; border-radius: 50%; margin-right: 8px;"></div>
-                    <span style="font-size: 13px; color: #333;">University</span>
-                </div>
-                <div style="display: flex; align-items: center;">
-                    <div style="width: 16px; height: 16px; background: #B7E3CC; border-radius: 50%; margin-right: 8px;"></div>
-                    <span style="font-size: 13px; color: #333;">Foundation</span>
-                </div>
-                <div style="display: flex; align-items: center;">
-                    <div style="width: 16px; height: 16px; background: #7D82B8; border-radius: 50%; margin-right: 8px;"></div>
-                    <span style="font-size: 13px; color: #333;">Company</span>
-                </div>
-                <div style="display: flex; align-items: center;">
-                    <div style="width: 16px; height: 16px; background: #FFC145; border-radius: 50%; margin-right: 8px;"></div>
-                    <span style="font-size: 13px; color: #333;">Not Recognized</span>
-                </div>
-            </div>
-        </div>
-    """
+    color_legend = _build_funding_category_legend_html(interactive=True)
     controls_html = f"""
     <style>
         .controls-container {{
@@ -2743,6 +2939,7 @@ def show_chemical_network(chemical, inch='Error', output_file=None, row=None, ma
         lookup_expr='node.label',
         heading_expr='node.label',
         include_scroll_disable=True,
+        enable_category_filter=True,
     )
     html = html.replace("</body>", injection + "\n</body>")
     html = inject_node_slider(html, chemical)
@@ -2898,33 +3095,7 @@ def show_researcher_network_pyvis_from_row(row, output_file=None, researcher_row
         html = f.read()
     color_legend = ""
     if category_key == 'funding sources':
-        color_legend = """
-            <div class="color-legend" style="flex: 1; padding: 10px; background: #f8f9fa; border-radius: 8px; margin-right: 10px;">
-                <h4 style="margin-bottom: 10px; color: #333; font-size: 16px;">Funding Source Categories:</h4>
-                <div style="display: flex; flex-wrap: wrap; gap: 12px;">
-                    <div style="display: flex; align-items: center;">
-                        <div style="width: 16px; height: 16px; background: #DD403A; border-radius: 50%; margin-right: 8px;"></div>
-                        <span style="font-size: 13px; color: #333;">Government</span>
-                    </div>
-                    <div style="display: flex; align-items: center;">
-                        <div style="width: 16px; height: 16px; background: #7B4B94; border-radius: 50%; margin-right: 8px;"></div>
-                        <span style="font-size: 13px; color: #333;">University</span>
-                    </div>
-                    <div style="display: flex; align-items: center;">
-                        <div style="width: 16px; height: 16px; background: #B7E3CC; border-radius: 50%; margin-right: 8px;"></div>
-                        <span style="font-size: 13px; color: #333;">Foundation</span>
-                    </div>
-                    <div style="display: flex; align-items: center;">
-                        <div style="width: 16px; height: 16px; background: #7D82B8; border-radius: 50%; margin-right: 8px;"></div>
-                        <span style="font-size: 13px; color: #333;">Company</span>
-                    </div>
-                    <div style="display: flex; align-items: center;">
-                        <div style="width: 16px; height: 16px; background: #FFC145; border-radius: 50%; margin-right: 8px;"></div>
-                        <span style="font-size: 13px; color: #333;">Not Recognized</span>
-                    </div>
-                </div>
-            </div>
-            """
+        color_legend = _build_funding_category_legend_html(interactive=True)
     elif category_key == 'collaborators':
         color_legend = """
             <div class="color-legend" style="flex: 1; padding: 10px; background: #f8f9fa; border-radius: 8px; margin-right: 10px;">
@@ -3002,6 +3173,7 @@ def show_researcher_network_pyvis_from_row(row, output_file=None, researcher_row
         lookup_expr='node.label',
         heading_expr='node.label',
         include_scroll_disable=True,
+        enable_category_filter=(category_key == 'funding sources'),
     )
     if "</body>" in html:
         html = html.replace("</body>", injection + "\n</body>")
