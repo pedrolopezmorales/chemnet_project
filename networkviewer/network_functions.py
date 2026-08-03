@@ -618,6 +618,110 @@ def obtain_inchikey_from_pubchem(chemical_name):
             return str(inchikey).strip()
     except Exception as e:
         return None
+
+
+def _dedupe_case_insensitive(values):
+    seen = set()
+    out = []
+    for value in values:
+        if not isinstance(value, str):
+            continue
+        cleaned = re.sub(r'\s+', ' ', value).strip()
+        if not cleaned:
+            continue
+        key = cleaned.lower()
+        if key in seen:
+            continue
+        seen.add(key)
+        out.append(cleaned)
+    return out
+
+
+def get_pubchem_proxy_names(chemical_name=None, inchikey=None, cid=None, max_names=12):
+    """Get alternate PubChem names (aliases/synonyms/proxy names) for a compound."""
+    try:
+        compound = None
+        resolved_cid = cid
+
+        if resolved_cid is None:
+            if inchikey and inchikey != 'Error':
+                compounds = pcp.get_compounds(inchikey, 'inchikey')
+            elif chemical_name:
+                compounds = pcp.get_compounds(chemical_name, 'name')
+            else:
+                compounds = []
+
+            if not compounds:
+                return []
+            compound = compounds[0]
+            resolved_cid = getattr(compound, 'cid', None)
+
+        if not resolved_cid:
+            return []
+
+        aliases = []
+        if compound:
+            iupac_name = getattr(compound, 'iupac_name', None)
+            if iupac_name:
+                aliases.append(str(iupac_name))
+
+        try:
+            synonym_payload = pcp.get_synonyms(int(resolved_cid), 'cid')
+        except Exception:
+            synonym_payload = []
+
+        for entry in synonym_payload or []:
+            for synonym in entry.get('Synonym', []) or []:
+                if isinstance(synonym, str):
+                    # Avoid very long registry blobs and noisy IDs.
+                    if 2 <= len(synonym.strip()) <= 80:
+                        aliases.append(synonym)
+
+        aliases = _dedupe_case_insensitive(aliases)
+        return aliases[:max_names]
+    except Exception:
+        return []
+
+
+def resolve_pubchem_alias_to_known_chemical(chemical_name, known_chemical_names, max_aliases=12):
+    """Resolve a query through PubChem aliases to a known dataset chemical name."""
+    result = {
+        'matched_name': None,
+        'inchikey': None,
+        'aliases': [],
+    }
+    if not chemical_name:
+        return result
+
+    known_lookup = {}
+    for name in known_chemical_names or []:
+        text = str(name).strip()
+        if text and text.lower() not in known_lookup:
+            known_lookup[text.lower()] = text
+
+    try:
+        compounds = pcp.get_compounds(chemical_name, 'name')
+        if not compounds:
+            return result
+
+        compound = compounds[0]
+        inchikey = getattr(compound, 'inchikey', None)
+        if inchikey and str(inchikey).strip():
+            result['inchikey'] = str(inchikey).strip()
+
+        aliases = get_pubchem_proxy_names(cid=getattr(compound, 'cid', None), max_names=max_aliases)
+        result['aliases'] = aliases
+
+        # Try exact case-insensitive alias match against known local chemicals.
+        for alias in aliases:
+            matched = known_lookup.get(alias.strip().lower())
+            if matched:
+                result['matched_name'] = matched
+                return result
+    except Exception:
+        return result
+
+    return result
         
 def check_government_databases(entity_name):
     entity_lower = normalize_entity_name(entity_name)
@@ -1337,19 +1441,26 @@ def inject_node_slider(html, center_node):
             }});
         }}
 
-        function _applySliderVisibility() {{
+        var _hasInitialized = false;
+
+        function _applySliderVisibility(forceMax) {{
             var eligible = _eligibleIds();
             var total = eligible.length;
 
             _sl.min = total > 0 ? 1 : 0;
             _sl.max = Math.max(total, 1);
 
-            var count = parseInt(_sl.value, 10);
-            if (isNaN(count)) count = total;
-            if (total === 0) {{
-                count = 0;
+            var count;
+            if (forceMax || !_hasInitialized) {{
+                count = total;
             }} else {{
-                count = Math.max(1, Math.min(count, total));
+                count = parseInt(_sl.value, 10);
+                if (isNaN(count)) count = total;
+                if (total === 0) {{
+                    count = 0;
+                }} else {{
+                    count = Math.max(1, Math.min(count, total));
+                }}
             }}
             _sl.value = String(count);
 
@@ -1376,11 +1487,14 @@ def inject_node_slider(html, center_node):
             );
 
             _label.textContent = count + " / " + total;
+            _hasInitialized = true;
         }}
 
-        _sl.addEventListener("input", _applySliderVisibility);
-        window.__refreshNodeSlider = _applySliderVisibility;
-        _applySliderVisibility();
+        _sl.addEventListener("input", function() {{ _applySliderVisibility(false); }});
+        window.__refreshNodeSlider = function(forceMax) {{
+            _applySliderVisibility(!!forceMax);
+        }};
+        _applySliderVisibility(true);
     }})();
     </script>
     '''
@@ -1507,7 +1621,7 @@ def _build_graph_study_panel_injection(
             activeCategoryColor = (activeCategoryColor === selectedColor) ? null : selectedColor;
             updateLegendSelectionState();
             if (typeof window.__refreshNodeSlider === 'function') {
-                window.__refreshNodeSlider();
+                window.__refreshNodeSlider(true);
             } else {
                 applyCategoryFilterStandalone();
             }
@@ -1517,7 +1631,7 @@ def _build_graph_study_panel_injection(
             activeCategoryColor = null;
             updateLegendSelectionState();
             if (typeof window.__refreshNodeSlider === 'function') {
-                window.__refreshNodeSlider();
+                window.__refreshNodeSlider(true);
             } else {
                 applyCategoryFilterStandalone();
             }
@@ -4136,6 +4250,27 @@ def _has_pubchem_use_section(description_text):
     return any(marker in description_text for marker in markers)
 
 
+def _append_pubchem_proxy_names(description_text, proxy_names):
+    if not isinstance(description_text, str) or not description_text.strip():
+        return description_text
+
+    names = [name for name in (proxy_names or []) if isinstance(name, str) and name.strip()]
+    if not names:
+        return description_text.strip()
+
+    marker = 'Proxy names (PubChem):'
+    if marker.lower() in description_text.lower():
+        return description_text.strip()
+
+    return description_text.strip() + "\n\n" + marker + "\n" + "\n".join(f"- {name.strip()}" for name in names[:12])
+
+
+def _has_pubchem_proxy_section(description_text):
+    if not isinstance(description_text, str):
+        return False
+    return 'Proxy names (PubChem):' in description_text
+
+
 def get_pubchem_description(chemical_name, inchikey=None, include_source=False):
     """Get a chemical description and optionally include the source.
 
@@ -4145,10 +4280,11 @@ def get_pubchem_description(chemical_name, inchikey=None, include_source=False):
     cache_key = _pubchem_cache_key(chemical_name=chemical_name, inchikey=inchikey)
     desc_cache = _get_pubchem_desc_cache()
 
-    def _format_result(description_text, source_text, cache_result=True, record_data=None):
+    def _format_result(description_text, source_text, cache_result=True, record_data=None, proxy_names=None):
         enriched_description = _enrich_group_description(description_text, chemical_name)
         if source_text == 'PubChem':
             enriched_description = _append_pubchem_use_details(enriched_description, record_data)
+            enriched_description = _append_pubchem_proxy_names(enriched_description, proxy_names)
         if not isinstance(enriched_description, str) or not enriched_description.strip():
             return None
         payload = {
@@ -4167,7 +4303,11 @@ def get_pubchem_description(chemical_name, inchikey=None, include_source=False):
         # Structured cache with explicit source is trusted and returned immediately.
         if cached_description['source'] != 'Unknown (legacy cache)':
             enriched_cached = _enrich_group_description(cached_description['description'], chemical_name)
-            if cached_description['source'] == 'PubChem' and not _has_pubchem_use_section(enriched_cached):
+            stale_pubchem_cached = (
+                cached_description['source'] == 'PubChem'
+                and (not _has_pubchem_use_section(enriched_cached) or not _has_pubchem_proxy_section(enriched_cached))
+            )
+            if stale_pubchem_cached:
                 # Older cache entries may predate use-details enrichment.
                 # Keep as a fallback, but attempt a fresh PubChem fetch first.
                 structured_cached_fallback = {
@@ -4290,7 +4430,8 @@ def get_pubchem_description(chemical_name, inchikey=None, include_source=False):
                                 'is a', 'medication', 'drug', 'agent', 'compound', 'used for', 
                                 'treatment', 'inhibitor', 'analgesic', 'anti-inflammatory', 'therapeutic'
                             ]):
-                                return _format_result(desc, 'PubChem', record_data=data)
+                                proxy_names = get_pubchem_proxy_names(cid=compound.cid, max_names=12)
+                                return _format_result(desc, 'PubChem', record_data=data, proxy_names=proxy_names)
                             
                         # Then try substantial descriptions with good keywords
                         for desc in all_descriptions:
@@ -4298,12 +4439,14 @@ def get_pubchem_description(chemical_name, inchikey=None, include_source=False):
                                 'is a member of', 'belongs to', 'medication', 'drug', 'therapeutic',
                                 'appears as', 'crystalline', 'powder', 'used for', 'treatment of'
                             ]):
-                                return _format_result(desc, 'PubChem', record_data=data)
+                                proxy_names = get_pubchem_proxy_names(cid=compound.cid, max_names=12)
+                                return _format_result(desc, 'PubChem', record_data=data, proxy_names=proxy_names)
                         
                         # Finally, try any decent description
                         for desc in all_descriptions:
                             if len(desc) > 50:
-                                return _format_result(desc, 'PubChem', record_data=data)
+                                proxy_names = get_pubchem_proxy_names(cid=compound.cid, max_names=12)
+                                return _format_result(desc, 'PubChem', record_data=data, proxy_names=proxy_names)
                 
                 # Fallback to basic compound information
                 full_record = pcp.Compound.from_cid(compound.cid)
@@ -4321,16 +4464,18 @@ def get_pubchem_description(chemical_name, inchikey=None, include_source=False):
                 
                 if description_parts:
                     description = " | ".join(description_parts)
+                    proxy_names = get_pubchem_proxy_names(cid=compound.cid, max_names=12)
                     wiki_description = get_wikipedia_description_chemical(chemical_name)
                     if wiki_description:
                         return _format_result(wiki_description, 'Wikipedia')
-                    return _format_result(description, 'PubChem')
+                    return _format_result(description, 'PubChem', proxy_names=proxy_names)
                 else:
                     description = f"PubChem CID: {compound.cid}"
+                    proxy_names = get_pubchem_proxy_names(cid=compound.cid, max_names=12)
                     wiki_description = get_wikipedia_description_chemical(chemical_name)
                     if wiki_description:
                         return _format_result(wiki_description, 'Wikipedia')
-                    return _format_result(description, 'PubChem')
+                    return _format_result(description, 'PubChem', proxy_names=proxy_names)
                     
             except Exception as e:
                 print(f"Error in detailed lookup: {e}")
@@ -4339,21 +4484,24 @@ def get_pubchem_description(chemical_name, inchikey=None, include_source=False):
                     full_record = pcp.Compound.from_cid(compound.cid)
                     if hasattr(full_record, 'molecular_formula') and full_record.molecular_formula:
                         description = f"Molecular Formula: {full_record.molecular_formula}"
+                        proxy_names = get_pubchem_proxy_names(cid=compound.cid, max_names=12)
                         wiki_description = get_wikipedia_description_chemical(chemical_name)
                         if wiki_description:
                             return _format_result(wiki_description, 'Wikipedia')
-                        return _format_result(description, 'PubChem')
+                        return _format_result(description, 'PubChem', proxy_names=proxy_names)
                     description = f"PubChem CID: {compound.cid}"
+                    proxy_names = get_pubchem_proxy_names(cid=compound.cid, max_names=12)
                     wiki_description = get_wikipedia_description_chemical(chemical_name)
                     if wiki_description:
                         return _format_result(wiki_description, 'Wikipedia')
-                    return _format_result(description, 'PubChem')
+                    return _format_result(description, 'PubChem', proxy_names=proxy_names)
                 except:
                     description = f"PubChem CID: {compound.cid}"
+                    proxy_names = get_pubchem_proxy_names(cid=compound.cid, max_names=12)
                     wiki_description = get_wikipedia_description_chemical(chemical_name)
                     if wiki_description:
                         return _format_result(wiki_description, 'Wikipedia')
-                    return _format_result(description, 'PubChem')
+                    return _format_result(description, 'PubChem', proxy_names=proxy_names)
                 
     except Exception as e:
         print(f"Error fetching PubChem description for {chemical_name} (InChIKey: {inchikey}): {e}")

@@ -27,6 +27,7 @@ from .network_functions import (
     get_funding_source_row,
     parse_chemicals_list,
     obtain_inchikey_from_pubchem,
+    resolve_pubchem_alias_to_known_chemical,
     get_company_funding_rows,
     get_university_rows,
     get_researcher_matches,
@@ -195,7 +196,50 @@ def chemical_view(request):
                     if suggestions:
                         message = "Did you mean: " + ", ".join([f"<span style='color:red'>{s}</span>" for s in suggestions])
                     else:
-                        message =  F"Chemical '{chemical}' not found"
+                        alias_result = resolve_pubchem_alias_to_known_chemical(chemical, all_chemical_names)
+                        alias_matched_name = alias_result.get('matched_name')
+                        alias_inchikey = alias_result.get('inchikey')
+                        alias_names = alias_result.get('aliases') or []
+
+                        if alias_matched_name:
+                            chemical = alias_matched_name
+                            inchikey = alias_inchikey or inchikey
+                            row = get_chemical_row(chemical=chemical, inchikey=inchikey)
+                            image_info = get_chemical_image(chemical, inchikey, include_source=True)
+                            if isinstance(image_info, dict):
+                                image_url = image_info.get('url')
+                                image_source = image_info.get('source')
+                            description_info = get_pubchem_description(chemical, inchikey, include_source=True)
+                            if isinstance(description_info, dict):
+                                description = description_info.get('description')
+                                description_source = description_info.get('source')
+                            found = show_chemical_network(chemical, inch=inchikey or 'Error', row=row)
+                            connections = show_chem_connections(inchikey=inchikey, row=row) if inchikey else show_chem_connections(chemical, row=row)
+
+                            if found:
+                                if chemical and inchikey and inchikey != 'Error':
+                                    safe_chemical = chemical.replace(' ', '_').replace('/', '_').replace('\\', '_').replace('.', '_')
+                                    safe_inch = inchikey.replace('/', '_').replace('\\', '_').replace('-', '_')
+                                    iframe = f"/networks/network_{safe_chemical}_{safe_inch}.html"
+                                else:
+                                    safe_chemical = chemical.replace(' ', '_').replace('/', '_').replace('\\', '_').replace('.', '_')
+                                    iframe = f"/networks/network_{safe_chemical}_no_inchikey.html"
+                            else:
+                                if alias_names:
+                                    message = (
+                                        f"Chemical '{chemical}' not found in dataset. "
+                                        f"PubChem aliases/proxy names: {', '.join(alias_names[:5])}"
+                                    )
+                                else:
+                                    message =  F"Chemical '{chemical}' not found"
+                        else:
+                            if alias_names:
+                                message = (
+                                    f"Chemical '{chemical}' not found in dataset. "
+                                    f"PubChem aliases/proxy names: {', '.join(alias_names[:5])}"
+                                )
+                            else:
+                                message =  F"Chemical '{chemical}' not found"
             else:
                 message = f"Chemical '{chemical}' or InChIKey '{inchikey}' not found"
 

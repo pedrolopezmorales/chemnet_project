@@ -33,6 +33,7 @@ from .network_functions import (
     get_chemical_row,
     get_chemical_image,
     get_pubchem_image_url,
+    resolve_pubchem_alias_to_known_chemical,
 )
 import difflib
 import random
@@ -74,6 +75,17 @@ def get_close_matches_custom(query, valid_names, n=3, cutoff=0.6):
         cutoff=cutoff,
     )
     return [normalized_map[key] for key in matched_keys]
+
+
+def _pubchem_alias_fallback(query, valid_names):
+    """Try resolving a query to a known dataset chemical via PubChem aliases."""
+    if query is None:
+        return {
+            'matched_name': None,
+            'inchikey': None,
+            'aliases': [],
+        }
+    return resolve_pubchem_alias_to_known_chemical(query, valid_names)
 
 
 def get_request_mode(request):
@@ -181,13 +193,39 @@ class ChemicalSearchAPI(APIView):
 
                 if row is None or row.empty:
                     suggestions = get_close_matches_custom(chemical or inchikey, all_chemical_names)
-                    return Response({
-                        'success': False,
-                        'chemical': chemical,
-                        'inchikey': inchikey,
-                        'suggestions': suggestions,
-                        'message': f"Chemical '{chemical or inchikey}' not found"
-                    })
+                    pubchem_aliases = []
+                    if not suggestions and chemical:
+                        alias_result = _pubchem_alias_fallback(chemical, all_chemical_names)
+                        pubchem_aliases = alias_result.get('aliases') or []
+                        matched_name = alias_result.get('matched_name')
+                        matched_inchikey = alias_result.get('inchikey')
+                        if matched_name:
+                            chemical = matched_name
+                            if matched_inchikey:
+                                inchikey = matched_inchikey
+                            row = get_chemical_row(chemical=chemical, inchikey=inchikey)
+                            if row is None or row.empty:
+                                row = get_chemical_row(chemical=chemical)
+                            if row is None or row.empty:
+                                row = get_chemical_row(inchikey=inchikey) if inchikey else row
+
+                    if row is not None and not row.empty:
+                        # Continue normal connection flow below using resolved chemical.
+                        pass
+                    else:
+                        if not suggestions and pubchem_aliases:
+                            suggestions = pubchem_aliases[:5]
+                        message = f"Chemical '{chemical or inchikey}' not found"
+                        if pubchem_aliases:
+                            message += ". PubChem aliases/proxy names found."
+                        return Response({
+                            'success': False,
+                            'chemical': chemical,
+                            'inchikey': inchikey,
+                            'suggestions': suggestions,
+                            'pubchem_aliases': pubchem_aliases,
+                            'message': message,
+                        })
 
                 # Prefer inchikey-based connections when available so aliases map
                 # to the same connection set as the symbol/name present in dataset.
@@ -325,16 +363,79 @@ class ChemicalSearchAPI(APIView):
                 else:
                     all_chemical_names = sorted((name for names in chem_per_row['chemical'] for name in names))
                     suggestions = get_close_matches_custom(chemical or inchikey, all_chemical_names)
+                    pubchem_aliases = []
+                    if not suggestions and chemical:
+                        alias_result = _pubchem_alias_fallback(chemical, all_chemical_names)
+                        pubchem_aliases = alias_result.get('aliases') or []
+                        matched_name = alias_result.get('matched_name')
+                        matched_inchikey = alias_result.get('inchikey')
+                        if matched_name:
+                            chemical = matched_name
+                            inchikey = matched_inchikey or inchikey
+                            found = show_chemical_network(chemical, inch=inchikey or 'Error', max_connection_count=connection_threshold)
+                            connections = show_chem_connections(inchikey=inchikey) if inchikey else show_chem_connections(chemical)
+                            if found:
+                                singleton_suffix = ''
+                                if connection_threshold == 1:
+                                    singleton_suffix = '_no_singletons'
+                                elif connection_threshold > 1:
+                                    singleton_suffix = f'_le{connection_threshold}'
+                                if chemical and inchikey and inchikey != 'Error':
+                                    safe_chemical = chemical.replace(' ', '_').replace('/', '_').replace('\\', '_').replace('.', '_')
+                                    safe_inch = inchikey.replace('/', '_').replace('\\', '_').replace('-', '_')
+                                    iframe_url = f"/networks/network_{safe_chemical}_{safe_inch}{singleton_suffix}.html"
+                                else:
+                                    safe_chemical = chemical.replace(' ', '_').replace('/', '_').replace('\\', '_').replace('.', '_')
+                                    iframe_url = f"/networks/network_{safe_chemical}_no_inchikey{singleton_suffix}.html"
+
+                                description_info = get_pubchem_description(
+                                    chemical,
+                                    inchikey if inchikey != 'Error' else None,
+                                    include_source=True,
+                                )
+                                description = description_info.get('description') if isinstance(description_info, dict) else None
+                                description_source = description_info.get('source') if isinstance(description_info, dict) else None
+
+                                payload = {
+                                    'success': True,
+                                    'chemical': chemical,
+                                    'inchikey': inchikey,
+                                    'iframe_url': iframe_url,
+                                    'graph_html': load_graph_html(iframe_url) if mode == 'graph' else None,
+                                    'connections': connections,
+                                    'description': description,
+                                    'description_source': description_source,
+                                }
+                                if mode == 'graph':
+                                    payload.pop('connections', None)
+                                    payload.pop('description', None)
+                                    payload.pop('description_source', None)
+                                return Response(payload)
+
+                    if not suggestions and pubchem_aliases:
+                        suggestions = pubchem_aliases[:5]
             else:
                 all_chemical_names = sorted((name for names in chem_per_row['chemical'] for name in names))
                 suggestions = get_close_matches_custom(chemical or inchikey, all_chemical_names)
+                pubchem_aliases = []
+                if not suggestions and chemical:
+                    alias_result = _pubchem_alias_fallback(chemical, all_chemical_names)
+                    pubchem_aliases = alias_result.get('aliases') or []
+                    if not suggestions and pubchem_aliases:
+                        suggestions = pubchem_aliases[:5]
     
+            message = f"Chemical '{chemical or inchikey}' not found"
+            if 'pubchem_aliases' not in locals():
+                pubchem_aliases = []
+            if pubchem_aliases:
+                message += ". PubChem aliases/proxy names found."
             return Response({
                 'success': False,
                 'chemical': chemical,
                 'inchikey': inchikey,
                 'suggestions': suggestions,
-                'message': f"Chemical '{chemical or inchikey}' not found"
+                'pubchem_aliases': pubchem_aliases,
+                'message': message,
             })
 
 class CompanySearchAPI(APIView):
