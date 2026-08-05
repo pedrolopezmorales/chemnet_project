@@ -126,17 +126,7 @@
         {% if description %}
         <div style="margin: 20px 0; padding: 20px; background: #e8f5e8; border-radius: 8px; border-left: 4px solid #28a745;">
             <h3 style="color: #155724; margin: 0 0 10px 0;">Chemical Information{% if description_source %} (Source: {{ description_source }}){% endif %}</h3>
-            {% if description|length > 1200 %}
-            <div style="color: #155724; line-height: 1.5;">
-                <p style="margin: 0 0 12px 0; white-space: pre-line;">{{ description|truncatechars:700 }}</p>
-                <details>
-                    <summary style="cursor: pointer; font-weight: 700; color: #155724;">Show full description</summary>
-                    <div style="margin-top: 10px;">{{ description|linebreaksbr }}</div>
-                </details>
-            </div>
-            {% else %}
-            <div style="color: #155724; line-height: 1.5;">{{ description|linebreaksbr }}</div>
-            {% endif %}
+            <div id="chemical-server-description-body" data-description="{{ description|escapejs }}"></div>
         </div>
         {% endif %}
 
@@ -215,18 +205,92 @@
             }).join('');
         }
 
-        function renderCollapsibleDescription(text) {
-            var fullText = String(text || '');
-            if (fullText.length <= 1200) {
-                return renderDescriptionBlocks(fullText);
+        var DESCRIPTION_SECTION_TITLES = [
+            'Industry uses:',
+            'Consumer uses:',
+            'Common function categories:',
+            'General use categories:',
+            'Proxy names (PubChem):'
+        ];
+
+        function parseDescriptionSections(text) {
+            var normalized = String(text || '').replace(/\r\n/g, '\n').trim();
+            if (!normalized) {
+                return { mainText: '', sections: [] };
             }
 
-            var preview = esc(fullText.slice(0, 700).trimEnd() + '...');
-            return '<p style="color: #155724; margin: 0 0 12px 0; line-height: 1.5; white-space: pre-line;">' + preview + '</p>' +
-                '<details>' +
-                '<summary style="cursor: pointer; font-weight: 700; color: #155724;">Show full description</summary>' +
-                '<div style="margin-top: 10px;">' + renderDescriptionBlocks(fullText) + '</div>' +
-                '</details>';
+            var blocks = normalized.split(/\n\s*\n/).map(function (block) {
+                return block.trim();
+            }).filter(function (block) {
+                return block.length > 0;
+            });
+
+            var result = { mainText: '', sections: [] };
+            var mainBlocks = [];
+
+            blocks.forEach(function (block) {
+                var lines = block.split('\n');
+                var title = (lines[0] || '').trim();
+                if (DESCRIPTION_SECTION_TITLES.indexOf(title) !== -1) {
+                    result.sections.push({
+                        title: title,
+                        body: lines.slice(1).join('\n').trim()
+                    });
+                } else {
+                    mainBlocks.push(block);
+                }
+            });
+
+            result.mainText = mainBlocks.join('\n\n').trim();
+            return result;
+        }
+
+        function renderSectionBody(text) {
+            var lines = String(text || '').split('\n').map(function (line) {
+                return line.trim();
+            }).filter(function (line) {
+                return line.length > 0;
+            });
+
+            var bulletLines = lines.filter(function (line) {
+                return /^-\s+/.test(line);
+            });
+
+            if (bulletLines.length === lines.length && bulletLines.length > 0) {
+                var items = bulletLines.map(function (line) {
+                    return '<li>' + esc(line.replace(/^-\s+/, '')) + '</li>';
+                }).join('');
+                return '<ul style="margin: 0; padding-left: 18px; color: #155724; line-height: 1.5;">' + items + '</ul>';
+            }
+
+            return '<p style="color: #155724; margin: 0; line-height: 1.5; white-space: pre-line;">' + esc(text || 'No details available.') + '</p>';
+        }
+
+        function renderCollapsibleDescription(text) {
+            var parsed = parseDescriptionSections(text);
+            var html = '';
+
+            if (parsed.mainText) {
+                if (parsed.mainText.length <= 1200) {
+                    html += renderDescriptionBlocks(parsed.mainText);
+                } else {
+                    var preview = esc(parsed.mainText.slice(0, 700).trimEnd() + '...');
+                    html += '<p style="color: #155724; margin: 0 0 12px 0; line-height: 1.5; white-space: pre-line;">' + preview + '</p>' +
+                        '<details>' +
+                        '<summary style="cursor: pointer; font-weight: 700; color: #155724;">Show full main description</summary>' +
+                        '<div style="margin-top: 10px;">' + renderDescriptionBlocks(parsed.mainText) + '</div>' +
+                        '</details>';
+                }
+            }
+
+            parsed.sections.forEach(function (section) {
+                html += '<details style="margin-top: 10px; background: rgba(255,255,255,0.6); border: 1px solid #b7e3cc; border-radius: 6px; padding: 8px 10px;">' +
+                    '<summary style="cursor: pointer; font-weight: 700; color: #155724;">' + esc(section.title) + '</summary>' +
+                    '<div style="margin-top: 8px;">' + renderSectionBody(section.body) + '</div>' +
+                    '</details>';
+            });
+
+            return html;
         }
 
         function renderConnections(connections) {
@@ -382,6 +446,12 @@
                 statusEl.textContent = 'Loading graph and chemical details...';
             }
         });
+
+        var serverDescEl = document.getElementById('chemical-server-description-body');
+        if (serverDescEl) {
+            var serverDescription = serverDescEl.getAttribute('data-description') || '';
+            serverDescEl.innerHTML = renderCollapsibleDescription(serverDescription);
+        }
     })();
     </script>
 
