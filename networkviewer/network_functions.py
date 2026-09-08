@@ -4238,6 +4238,95 @@ def _append_pubchem_use_details(description_text, record_data):
     return description_text.strip() + "\n\n" + "\n\n".join(sections)
 
 
+def _append_pubchem_molecular_details(description_text, record_data=None, compound_obj=None):
+    if not isinstance(description_text, str):
+        return description_text
+
+    metadata = []
+    if compound_obj is not None:
+        for field_name, attribute_name, label in [
+            ('molecular_formula', 'molecular_formula', 'Molecular formula'),
+            ('molecular_weight', 'molecular_weight', 'Molecular mass'),
+            ('exact_mass', 'exact_mass', 'Exact mass'),
+            ('iupac_name', 'iupac_name', 'IUPAC name'),
+        ]:
+            value = getattr(compound_obj, attribute_name, None)
+            if value is not None and not pd.isna(value):
+                clean = str(value).strip()
+                if clean:
+                    if field_name == 'molecular_weight' and clean.endswith(' g/mol'):
+                        clean = clean.replace(' g/mol', '').strip()
+                    metadata.append(f"- {label}: {clean}")
+
+    if isinstance(record_data, dict):
+        for key, label in [
+            ('Molecular Formula', 'Molecular formula'),
+            ('Molecular Weight', 'Molecular mass'),
+            ('Exact Mass', 'Exact mass'),
+            ('IUPAC Name', 'IUPAC name'),
+            ('Chemical Name', 'Preferred name'),
+        ]:
+            if key in record_data:
+                value = record_data.get(key)
+                if value is not None and not pd.isna(value):
+                    clean = str(value).strip()
+                    if clean and not any(f"- {label}: {clean}" in line for line in metadata):
+                        metadata.append(f"- {label}: {clean}")
+
+    if not metadata:
+        return description_text.strip()
+
+    marker = 'Molecular details:'
+    if marker.lower() in description_text.lower():
+        return description_text.strip()
+
+    return description_text.strip() + "\n\n" + marker + "\n" + "\n".join(metadata)
+
+
+def _append_pubchem_additional_details(description_text, record_data=None, proxy_names=None):
+    if not isinstance(description_text, str):
+        return description_text
+
+    extra_lines = []
+    if isinstance(record_data, dict):
+        for info in record_data.get('Record', {}).get('Section', []):
+            if isinstance(info, dict):
+                heading = str(info.get('TOCHeading', '') or '').strip()
+                if heading.lower() in {'synonyms', 'names and identifiers'}:
+                    for item in info.get('Information', []) or []:
+                        value = item.get('Value') if isinstance(item, dict) else None
+                        if isinstance(value, dict):
+                            markup = value.get('StringWithMarkup') or []
+                            for entry in markup:
+                                if isinstance(entry, dict):
+                                    name = str(entry.get('String', '') or '').strip()
+                                    if name and len(name) < 120:
+                                        extra_lines.append(name)
+
+    names = []
+    if proxy_names:
+        for name in proxy_names:
+            item = str(name).strip()
+            if item and len(item) < 120 and item not in names:
+                names.append(item)
+    if names:
+        extra_lines.extend(names)
+
+    unique_lines = []
+    for line in extra_lines:
+        if line and line not in unique_lines:
+            unique_lines.append(line)
+
+    if not unique_lines:
+        return description_text.strip()
+
+    marker = 'Additional details:'
+    if marker.lower() in description_text.lower():
+        return description_text.strip()
+
+    return description_text.strip() + "\n\n" + marker + "\n" + "\n".join(f"- {line}" for line in unique_lines[:10])
+
+
 def _has_pubchem_use_section(description_text):
     if not isinstance(description_text, str):
         return False
@@ -4280,10 +4369,12 @@ def get_pubchem_description(chemical_name, inchikey=None, include_source=False):
     cache_key = _pubchem_cache_key(chemical_name=chemical_name, inchikey=inchikey)
     desc_cache = _get_pubchem_desc_cache()
 
-    def _format_result(description_text, source_text, cache_result=True, record_data=None, proxy_names=None):
+    def _format_result(description_text, source_text, cache_result=True, record_data=None, proxy_names=None, compound_obj=None):
         enriched_description = _enrich_group_description(description_text, chemical_name)
         if source_text == 'PubChem':
             enriched_description = _append_pubchem_use_details(enriched_description, record_data)
+            enriched_description = _append_pubchem_molecular_details(enriched_description, record_data, compound_obj)
+            enriched_description = _append_pubchem_additional_details(enriched_description, record_data, proxy_names)
             enriched_description = _append_pubchem_proxy_names(enriched_description, proxy_names)
         if not isinstance(enriched_description, str) or not enriched_description.strip():
             return None
@@ -4468,14 +4559,14 @@ def get_pubchem_description(chemical_name, inchikey=None, include_source=False):
                     wiki_description = get_wikipedia_description_chemical(chemical_name)
                     if wiki_description:
                         return _format_result(wiki_description, 'Wikipedia')
-                    return _format_result(description, 'PubChem', proxy_names=proxy_names)
+                    return _format_result(description, 'PubChem', proxy_names=proxy_names, compound_obj=full_record)
                 else:
                     description = f"PubChem CID: {compound.cid}"
                     proxy_names = get_pubchem_proxy_names(cid=compound.cid, max_names=12)
                     wiki_description = get_wikipedia_description_chemical(chemical_name)
                     if wiki_description:
                         return _format_result(wiki_description, 'Wikipedia')
-                    return _format_result(description, 'PubChem', proxy_names=proxy_names)
+                    return _format_result(description, 'PubChem', proxy_names=proxy_names, compound_obj=full_record)
                     
             except Exception as e:
                 print(f"Error in detailed lookup: {e}")
@@ -4488,13 +4579,13 @@ def get_pubchem_description(chemical_name, inchikey=None, include_source=False):
                         wiki_description = get_wikipedia_description_chemical(chemical_name)
                         if wiki_description:
                             return _format_result(wiki_description, 'Wikipedia')
-                        return _format_result(description, 'PubChem', proxy_names=proxy_names)
+                        return _format_result(description, 'PubChem', proxy_names=proxy_names, compound_obj=full_record)
                     description = f"PubChem CID: {compound.cid}"
                     proxy_names = get_pubchem_proxy_names(cid=compound.cid, max_names=12)
                     wiki_description = get_wikipedia_description_chemical(chemical_name)
                     if wiki_description:
                         return _format_result(wiki_description, 'Wikipedia')
-                    return _format_result(description, 'PubChem', proxy_names=proxy_names)
+                    return _format_result(description, 'PubChem', proxy_names=proxy_names, compound_obj=full_record)
                 except:
                     description = f"PubChem CID: {compound.cid}"
                     proxy_names = get_pubchem_proxy_names(cid=compound.cid, max_names=12)

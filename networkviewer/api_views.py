@@ -34,6 +34,10 @@ from .network_functions import (
     get_chemical_image,
     get_pubchem_image_url,
     resolve_pubchem_alias_to_known_chemical,
+    company_classification_dict,
+    main,
+    get_category_color,
+    get_category_display_name,
 )
 import difflib
 import random
@@ -846,3 +850,106 @@ class FundingTableAPI(APIView):
                     'success': False,
                     'error': str(e)
                 }, status=500)
+
+
+class FundingSourceHierarchyAPI(APIView):
+    """API endpoint for hierarchical funding source data (category → sources).
+    
+    Supports drill-down visualization showing:
+    - Top level: Category pie chart (Government, University, Foundation, Company, Unknown)
+    - Drill-down level: Top sources within each category
+    """
+    
+    def get(self, request):
+        """Get hierarchical funding source data for sunburst/drill-down chart."""
+        try:
+            category = request.GET.get('category', '').strip().lower()
+            top_n = int(request.GET.get('top_n', 20))
+            top_n = max(1, min(top_n, 100))  # Limit to 1-100
+            
+            # Get funding sources from main DataFrame
+            if 'Funding Sources' not in main.columns:
+                return Response({
+                    'success': False,
+                    'error': 'Funding Sources column not found in data'
+                }, status=400)
+            
+            funding_sources_series = main['Funding Sources'].dropna()
+            
+            # Phase 1: Category-level aggregation
+            category_stats = {}
+            for cat in ['Government', 'University', 'Foundation', 'Company', 'Unknown']:
+                count = 0
+                for funding_source_str in funding_sources_series:
+                    sources = [s.strip() for s in str(funding_source_str).split(';') if s.strip()]
+                    for source in sources:
+                        source_cat = company_classification_dict.get(source, 'Unknown')
+                        if source_cat == cat:
+                            count += 1
+                category_stats[cat] = count
+            
+            # Normalize category name to title case for lookup
+            category_title = category.title() if category else ''
+            
+            # Phase 2: Drill-down to specific sources in selected category
+            if category_title and category_title in category_stats:
+                # Get top sources for this category
+                source_counts = {}
+                for funding_source_str in funding_sources_series:
+                    sources = [s.strip() for s in str(funding_source_str).split(';') if s.strip()]
+                    for source in sources:
+                        source_cat = company_classification_dict.get(source, 'Unknown')
+                        if source_cat == category_title:
+                            source_counts[source] = source_counts.get(source, 0) + 1
+                
+                # Sort and take top N
+                sorted_sources = sorted(source_counts.items(), key=lambda x: x[1], reverse=True)[:top_n]
+                
+                drilldown_data = [
+                    {
+                        'name': source,
+                        'value': count,
+                        'category': category_title,
+                        'color': get_category_color(category_title),
+                        'displayName': source[:40] + '...' if len(source) > 40 else source
+                    }
+                    for source, count in sorted_sources
+                ]
+                
+                return Response({
+                    'success': True,
+                    'mode': 'drilldown',
+                    'category': category_title,
+                    'categoryDisplay': get_category_display_name(category_title),
+                    'drilldownData': drilldown_data,
+                    'categoryTotal': category_stats.get(category_title, 0),
+                    'overallTotal': sum(category_stats.values())
+                })
+            else:
+                # Return top-level category breakdown
+                categories_data = [
+                    {
+                        'name': cat,
+                        'value': count,
+                        'color': get_category_color(cat),
+                        'displayName': get_category_display_name(cat)
+                    }
+                    for cat, count in sorted(category_stats.items(), key=lambda x: x[1], reverse=True)
+                    if count > 0
+                ]
+                
+                return Response({
+                    'success': True,
+                    'mode': 'categories',
+                    'categoriesData': categories_data,
+                    'overallTotal': sum(category_stats.values())
+                })
+                
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            return Response({
+                'success': False,
+                'error': str(e)
+            }, status=500)
+

@@ -1000,5 +1000,101 @@
     "title": "Helmholtz Association",
     "url": "https://en.wikipedia.org/wiki/Helmholtz_Association",
     "thumbnail": null
+  },
+  "academy of finland": {
+    "description": "The Research Council of Finland is a governmental funding body for scientific research in Finland. Until August 2023, its official English-language name was Academy of Finland. It is based in Helsinki. Yearly, the council administers over 260 million euros to Finnish research activities. Over 5000 researchers are working on projects supported by the council.",
+    "title": "Research Council of Finland",
+    "url": "https://en.wikipedia.org/wiki/Research_Council_of_Finland",
+    "thumbnail": null
+  },
+  "conselho nacional de desenvolvimento científico e tecnológico": {
+    "description": "The National Council for Scientific and Technological Development is a government agency under the Ministry of Science and Technology of the Brazilian federal government. The council is dedicated to the promotion of scientific and technological research and to the formation of human resources for research in the country.",
+    "title": "National Council for Scientific and Technological Development",
+    "url": "https://en.wikipedia.org/wiki/National_Council_for_Scientific_and_Technological_Development",
+    "thumbnail": null
+  },
+  "swiss national science foundation": {
+    "description": "The Swiss National Science Foundation SNSF is a research funding agency mandated by the Swiss Confederation.",
+    "title": "Swiss National Science Foundation",
+    "url": "https://en.wikipedia.org/wiki/Swiss_National_Science_Foundation",
+    "thumbnail": null
+  },
+  "central china normal university": {
+    "description": "Central China Normal University (CCNU) is a public normal school located in Wuhan, Hubei, China. It is affiliated with the Ministry of Education, and co-funded by the Hubei Provincial People's Government. The university is part of Project 211 and the Double First-Class Construction.",
+    "title": "Central China Normal University",
+    "url": "https://en.wikipedia.org/wiki/Central_China_Normal_University",
+    "thumbnail": "https://upload.wikimedia.org/wikipedia/en/thumb/4/4f/CCNU_Logo.svg/330px-CCNU_Logo.svg.png?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail"
+  },
+  "korea institute of science and technology": {
+    "description": "The Korea Institute of Science and Technology is a multi-disciplinary research institute located in Seoul, South Korea. Founded in 1966, it was the first multi-disciplinary scientific research institute in Korea and has contributed significantly to the economic development of the country, particularly during the years of accelerated growth in the 1970s and 1980s. It has a research staff of over 1,800 research scientists, visiting scientists, fellows and trainees, and foreign scientists involved in basic research in various fields of science and technology.",
+    "title": "Korea Institute of Science and Technology",
+    "url": "https://en.wikipedia.org/wiki/Korea_Institute_of_Science_and_Technology",
+    "thumbnail": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/bd/KIST_Logo.jpg/330px-KIST_Logo.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail"
+  },
+  "princeton university": {
+    "description": "Princeton University is a private Ivy League research university in Princeton, New Jersey, United States. Founded in 1746 in Elizabeth as the College of New Jersey, Princeton is the fourth-oldest institution of higher education in the United States and one of the nine colonial colleges chartered before the American Revolution. The institution moved to Newark in 1747 and then to its Mercer County campus in Princeton nine years later. It officially became a university in 1896 and was subsequently renamed Princeton University.",
+    "title": "Princeton University",
+    "url": "https://en.wikipedia.org/wiki/Princeton_University",
+    "thumbnail": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d0/Princeton_seal.svg/330px-Princeton_seal.svg.png?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail"
+  },
+  "university of washington": {
+    "description": "The University of Washington is a public research university in Seattle, Washington, United States. Founded in 1861, it is one of the oldest universities on the West Coast of the United States.",
+    "title": "University of Washington",
+    "url": "https://en.wikipedia.org/wiki/University_of_Washington",
+    "thumbnail": "https://upload.wikimedia.org/wikipedia/en/thumb/5/58/University_of_Washington_seal.svg/330px-University_of_Washington_seal.svg.png?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail"
+  },
+  "walton family foundation": {
+    "description": "The Walton Family Foundation is an American private foundation and the main philanthropic organization of the Walton family. It was created in 1987 by Walmart founder Sam Walton and his wife Helen Walton. As of 2023, the foundation's giving focuses on environmental and educational causes, as well as supporting communities in Northwest Arkansas and the Arkansas-Mississippi Delta. The board of directors includes four members of the Walton family, and Stephanie Cornell serves as the foundation's executive director.",
+    "title": "Walton Family Foundation",
+    "url": "https://en.wikipedia.org/wiki/Walton_Family_Foundation",
+    "thumbnail": null
+  },
+  "heising-simons foundation": {
+    "description": "The Heising-Simons Foundation is a private foundation established by philanthropists Elizabeth (Liz) Simons and Mark Heising in Los Altos, California in 2007. Liz Simons and Mark Heising signed the Giving Pledge in 2016.",
+    "title": "Heising-Simons Foundation",
+    "url": "https://en.wikipedia.org/wiki/Heising-Simons_Foundation",
+    "thumbnail": null
+  },
+  "heinz endowments": {
+    "description": "The Heinz Endowments is a philanthropic organization in the United States, and was formed with the combined support from two smaller, private foundations: the Howard Heinz Endowment and the Vira I. Heinz Endowment. It awards more than $60 million annually in grants to a range of nonprofit organizations.",
+    "title": "Heinz Endowments",
+    "url": "https://en.wikipedia.org/wiki/Heinz_Endowments",
+    "thumbnail": null
+  },
+  "baker hughes": {
+    "description": "Baker Hughes Company is an American global energy technology company co-headquartered in Houston, Texas and London, UK. As one of the world's largest oil field services, industrial and energy technology companies, it provides products and services to the oil and gas industry for exploration and production, as well as other energy and industrial applications. It operates in over 120 countries, with facilities in Australia, Brazil, Singapore, Malaysia, India, UAE, Saudi Arabia, Italy, Germany, Norway, the United Kingdom, Namibia, Nigeria and the United States.",
+    "title": "Baker Hughes",
+    "url": "https://en.wikipedia.org/wiki/Baker_Hughes",
+    "thumbnail": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/43/Baker_Hughes.jpg/330px-Baker_Hughes.jpg?utm_source=en.wikipedia.org&utm_campaign=api&utm_content=thumbnail"
+  },
+  "research corporation for science advancement": {
+    "description": "Research Corporation for Science Advancement (RCSA) is an organization in the United States devoted to the advancement of science, funding research projects in the physical sciences. It was one of the first foundations in the United States. Since 1912, RCSA has identified trends in science and education, financing many scientific research projects. It has various grants programs and strategic partnerships, and has funded the early work of at least 40 scientists who have received Nobel Prizes.",
+    "title": "Research Corporation",
+    "url": "https://en.wikipedia.org/wiki/Research_Corporation",
+    "thumbnail": null
+  },
+  "agco power oy": {
+    "description": "AGCO Power Inc. is a Finnish company owned by AGCO Corporation. The company is located in Nokia, Finland, and it manufactures, for example, diesel engines for agricultural machinery.",
+    "title": "AGCO Power",
+    "url": "https://en.wikipedia.org/wiki/AGCO_Power",
+    "thumbnail": null
+  },
+  "suomen akatemia": {
+    "description": "The Research Council of Finland is a governmental funding body for scientific research in Finland. Until August 2023, its official English-language name was Academy of Finland. It is based in Helsinki. Yearly, the council administers over 260 million euros to Finnish research activities. Over 5000 researchers are working on projects supported by the council.",
+    "title": "Research Council of Finland",
+    "url": "https://en.wikipedia.org/wiki/Research_Council_of_Finland",
+    "thumbnail": null
+  },
+  "environment canada": {
+    "description": "Environment and Climate Change Canada is the department of the Government of Canada responsible for coordinating environmental policies and programs, as well as preserving and enhancing the natural environment and renewable resources. It is also colloquially known by its former name, Environment Canada.",
+    "title": "Environment and Climate Change Canada",
+    "url": "https://en.wikipedia.org/wiki/Environment_and_Climate_Change_Canada",
+    "thumbnail": null
+  },
+  "fundação de amparo à pesquisa do estado de são paulo": {
+    "description": "The São Paulo Research Foundation is a public foundation located in São Paulo, Brazil, with the aim of providing grants, funds and programs to support research, education and innovation of private and public institutions and companies in the state of São Paulo. It was founded in 1962 and is maintained by endowments by the state government which are guaranteed as a fixed percentage of the state's tax, besides the income generated by the financial revenues of its own assets.",
+    "title": "São Paulo Research Foundation",
+    "url": "https://en.wikipedia.org/wiki/S%C3%A3o_Paulo_Research_Foundation",
+    "thumbnail": null
   }
 }
