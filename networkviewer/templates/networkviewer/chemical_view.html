@@ -324,6 +324,26 @@
             var match = text.match(/\((\d+)\)\s*$/);
             return match ? parseInt(match[1], 10) : null;
         }
+
+        async function parseJsonResponse(response) {
+            var contentType = (response.headers && response.headers.get('content-type')) || '';
+            var rawText = await response.text();
+
+            if (!rawText || rawText.trim() === '') {
+                throw new Error('The server returned an empty response. Please refresh and try again.');
+            }
+
+            if (!contentType.includes('application/json') && !contentType.includes('+json')) {
+                var snippet = rawText.replace(/\s+/g, ' ').trim().slice(0, 180);
+                throw new Error('The server returned an HTML error page instead of JSON. This usually means the backend crashed or is still starting. Response preview: ' + snippet);
+            }
+
+            try {
+                return JSON.parse(rawText);
+            } catch (error) {
+                throw new Error('The server response was not valid JSON. Please refresh and try again.');
+            }
+        }
         function showConnectionThresholdModal(count, eligibleCount) {
             return new Promise(function (resolve) {
                 var modal = document.getElementById('singleton-modal');
@@ -378,7 +398,7 @@
                 var connectionsPromise = fetch('/api/chemicals/?mode=connections', requestOptions);
 
                 var connectionsResponse = await connectionsPromise;
-                var connectionsData = await connectionsResponse.json();
+                var connectionsData = await parseJsonResponse(connectionsResponse);
                 if (!connectionsResponse.ok) {
                     throw new Error(connectionsData && connectionsData.detail ? connectionsData.detail : 'Request failed');
                 }
@@ -430,7 +450,7 @@
                 }
 
                 var graphResponse = await fetch(graphUrl, requestOptions);
-                var graphData = await graphResponse.json();
+                var graphData = await parseJsonResponse(graphResponse);
                 if (!graphResponse.ok) {
                     throw new Error(graphData && graphData.detail ? graphData.detail : 'Graph request failed');
                 }
