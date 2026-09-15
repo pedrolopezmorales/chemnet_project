@@ -2,6 +2,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from pathlib import Path
+from collections import Counter
 from .serializers import (
     ChemicalSearchSerializer,
     CompanySearchSerializer, 
@@ -39,47 +40,41 @@ from .network_functions import (
     get_category_color,
     get_category_display_name,
 )
-import difflib
+from .utils.search_helpers import (
+    build_normalized_lookup,
+    resolve_case_insensitive_name,
+    get_close_matches_custom,
+)
 import random
 import pandas as pd
 
-def resolve_case_insensitive_name(query, valid_names):
-    if query is None:
-        return query
-    query_str = str(query).strip()
-    if not query_str:
-        return query_str
 
-    lookup = {}
-    for name in valid_names:
-        name_str = str(name).strip()
-        if name_str and name_str.lower() not in lookup:
-            lookup[name_str.lower()] = name_str
-
-    return lookup.get(query_str.lower(), query_str)
+ALL_CHEMICAL_NAMES = sorted({name for names in chem_per_row['chemical'] for name in names})
+ALL_CHEMICAL_NAME_LOOKUP = build_normalized_lookup(ALL_CHEMICAL_NAMES)
+ALL_COMPANY_NAMES = sorted(set(no_dup_comp))
+ALL_COMPANY_NAME_LOOKUP = build_normalized_lookup(ALL_COMPANY_NAMES)
+ALL_UNIVERSITY_NAMES = sorted(comparing_unis['University'].dropna().unique())
+ALL_UNIVERSITY_NAME_LOOKUP = build_normalized_lookup(ALL_UNIVERSITY_NAMES)
+ALL_RESEARCHER_NAMES = sorted(comparing_researchers['Researcher'].dropna().unique())
+ALL_RESEARCHER_NAME_LOOKUP = build_normalized_lookup(ALL_RESEARCHER_NAMES)
+CATEGORY_ORDER = ('Government', 'University', 'Foundation', 'Company', 'Unknown')
 
 
-def get_close_matches_custom(query, valid_names, n=3, cutoff=0.6):
-    if query is None:
-        return []
-    query_str = str(query).strip()
-    if not query_str:
-        return []
+def build_funding_stats_cache():
+    """Build category totals and per-category source counts in a single pass."""
+    category_totals = Counter({category: 0 for category in CATEGORY_ORDER})
+    source_counts_by_category = {category: Counter() for category in CATEGORY_ORDER}
 
-    normalized_map = {}
-    for name in valid_names:
-        name_str = str(name).strip()
-        if name_str and name_str.lower() not in normalized_map:
-            normalized_map[name_str.lower()] = name_str
+    for funding_source_str in main['Funding Sources'].dropna():
+        for source in [s.strip() for s in str(funding_source_str).split(';') if s.strip()]:
+            source_category = company_classification_dict.get(source, 'Unknown')
+            if source_category not in category_totals:
+                source_category = 'Unknown'
 
-    matched_keys = difflib.get_close_matches(
-        query_str.lower(),
-        list(normalized_map.keys()),
-        n=n,
-        cutoff=cutoff,
-    )
-    return [normalized_map[key] for key in matched_keys]
+            category_totals[source_category] += 1
+            source_counts_by_category[source_category][source] += 1
 
+    return category_totals, source_counts_by_category
 
 def _pubchem_alias_fallback(query, valid_names):
     """Try resolving a query to a known dataset chemical via PubChem aliases."""
@@ -126,7 +121,7 @@ def load_graph_html(iframe_url):
 class ChemicalSearchAPI(APIView):
     def get(self, request):
         # Return example chemicals and all chemical names for autocomplete
-        all_chemical_names = sorted((name for names in chem_per_row['chemical'] for name in names))
+        all_chemical_names = ALL_CHEMICAL_NAMES
         example_chemicals = [
             {"name": "Aspirin", "inchikey": "BSYNRYMUTXBXSQ-UHFFFAOYSA-N"},
             {"name": "Caffeine", "inchikey": "RYYVLZVUVIJVGH-UHFFFAOYSA-N"},
@@ -155,9 +150,13 @@ class ChemicalSearchAPI(APIView):
         data = serializer.validated_data
         chemical = data.get('chemical', '').strip()
         inchikey = data.get('inchikey', '').strip().upper()
-        all_chemical_names = sorted((name for names in chem_per_row['chemical'] for name in names))
+        all_chemical_names = ALL_CHEMICAL_NAMES
         if chemical:
-            chemical = resolve_case_insensitive_name(chemical, all_chemical_names)
+            chemical = resolve_case_insensitive_name(
+                chemical,
+                all_chemical_names,
+                normalized_lookup=ALL_CHEMICAL_NAME_LOOKUP,
+            )
         chemical_inputted = bool(chemical)
 
         if inchikey and not chemical:
@@ -196,7 +195,11 @@ class ChemicalSearchAPI(APIView):
                             row = get_chemical_row(chemical=chemical, inchikey=inchikey)
 
                 if row is None or row.empty:
-                    suggestions = get_close_matches_custom(chemical or inchikey, all_chemical_names)
+                    suggestions = get_close_matches_custom(
+                        chemical or inchikey,
+                        all_chemical_names,
+                        normalized_lookup=ALL_CHEMICAL_NAME_LOOKUP,
+                    )
                     pubchem_aliases = []
                     if not suggestions and chemical:
                         alias_result = _pubchem_alias_fallback(chemical, all_chemical_names)
@@ -248,7 +251,11 @@ class ChemicalSearchAPI(APIView):
                 )
 
             if not connections:
-                suggestions = get_close_matches_custom(chemical or inchikey, all_chemical_names)
+                suggestions = get_close_matches_custom(
+                    chemical or inchikey,
+                    all_chemical_names,
+                    normalized_lookup=ALL_CHEMICAL_NAME_LOOKUP,
+                )
                 return Response({
                     'success': False,
                     'chemical': chemical,
@@ -365,8 +372,11 @@ class ChemicalSearchAPI(APIView):
                         payload.pop('description_source', None)
                     return Response(payload)
                 else:
-                    all_chemical_names = sorted((name for names in chem_per_row['chemical'] for name in names))
-                    suggestions = get_close_matches_custom(chemical or inchikey, all_chemical_names)
+                    suggestions = get_close_matches_custom(
+                        chemical or inchikey,
+                        all_chemical_names,
+                        normalized_lookup=ALL_CHEMICAL_NAME_LOOKUP,
+                    )
                     pubchem_aliases = []
                     if not suggestions and chemical:
                         alias_result = _pubchem_alias_fallback(chemical, all_chemical_names)
@@ -419,8 +429,11 @@ class ChemicalSearchAPI(APIView):
                     if not suggestions and pubchem_aliases:
                         suggestions = pubchem_aliases[:5]
             else:
-                all_chemical_names = sorted((name for names in chem_per_row['chemical'] for name in names))
-                suggestions = get_close_matches_custom(chemical or inchikey, all_chemical_names)
+                suggestions = get_close_matches_custom(
+                    chemical or inchikey,
+                    all_chemical_names,
+                    normalized_lookup=ALL_CHEMICAL_NAME_LOOKUP,
+                )
                 pubchem_aliases = []
                 if not suggestions and chemical:
                     alias_result = _pubchem_alias_fallback(chemical, all_chemical_names)
@@ -444,7 +457,7 @@ class ChemicalSearchAPI(APIView):
 
 class CompanySearchAPI(APIView):
     def get(self, request):
-        all_company_names = sorted(set(no_dup_comp))
+        all_company_names = ALL_COMPANY_NAMES
         example_companies = [
             "Dow Chemical Company",
             "U.S. Department of Energy", 
@@ -472,8 +485,12 @@ class CompanySearchAPI(APIView):
         connection_threshold = get_connection_threshold(request)
         
         data = serializer.validated_data
-        all_company_names = sorted(set(no_dup_comp))
-        company = resolve_case_insensitive_name(data['company'], all_company_names)
+        all_company_names = ALL_COMPANY_NAMES
+        company = resolve_case_insensitive_name(
+            data['company'],
+            all_company_names,
+            normalized_lookup=ALL_COMPANY_NAME_LOOKUP,
+        )
         category = data['category']
         chemical_group = data['chemical_group']
         sep_country = data['sep_country']
@@ -481,7 +498,11 @@ class CompanySearchAPI(APIView):
 
         if mode == 'connections':
             if company_funding_rows is None or company_funding_rows.empty:
-                suggestions = get_close_matches_custom(company, all_company_names)
+                suggestions = get_close_matches_custom(
+                    company,
+                    all_company_names,
+                    normalized_lookup=ALL_COMPANY_NAME_LOOKUP,
+                )
                 return Response({
                     'success': False,
                     'company': company,
@@ -543,8 +564,11 @@ class CompanySearchAPI(APIView):
                 payload.pop('description', None)
             return Response(payload)
         else:
-            all_company_names = sorted(set(no_dup_comp))
-            suggestions = get_close_matches_custom(company, all_company_names)
+            suggestions = get_close_matches_custom(
+                company,
+                all_company_names,
+                normalized_lookup=ALL_COMPANY_NAME_LOOKUP,
+            )
             
             return Response({
                 'success': False,
@@ -555,7 +579,7 @@ class CompanySearchAPI(APIView):
 
 class UniversitySearchAPI(APIView):
     def get(self, request):
-        all_university_names = sorted(comparing_unis['University'].dropna().unique())
+        all_university_names = ALL_UNIVERSITY_NAMES
         example_universities = [
             "Harvard University",
             "Stanford University", 
@@ -587,15 +611,23 @@ class UniversitySearchAPI(APIView):
         connection_threshold = get_connection_threshold(request)
         
         data = serializer.validated_data
-        all_university_names = sorted(comparing_unis['University'].dropna().unique())
-        university = resolve_case_insensitive_name(data['university'], all_university_names)
+        all_university_names = ALL_UNIVERSITY_NAMES
+        university = resolve_case_insensitive_name(
+            data['university'],
+            all_university_names,
+            normalized_lookup=ALL_UNIVERSITY_NAME_LOOKUP,
+        )
         category = data['category']
         chemical_group = data['chemical_group']
         uni_rows = get_university_rows(university)
 
         if mode == 'connections':
             if uni_rows is None or uni_rows.empty:
-                suggestions = get_close_matches_custom(university, all_university_names)
+                suggestions = get_close_matches_custom(
+                    university,
+                    all_university_names,
+                    normalized_lookup=ALL_UNIVERSITY_NAME_LOOKUP,
+                )
                 return Response({
                     'success': False,
                     'university': university,
@@ -645,8 +677,11 @@ class UniversitySearchAPI(APIView):
                 payload.pop('connections', None)
             return Response(payload)
         else:
-            all_university_names = sorted(comparing_unis['University'].dropna().unique())
-            suggestions = get_close_matches_custom(university, all_university_names)
+            suggestions = get_close_matches_custom(
+                university,
+                all_university_names,
+                normalized_lookup=ALL_UNIVERSITY_NAME_LOOKUP,
+            )
             
             return Response({
                 'success': False,
@@ -657,7 +692,7 @@ class UniversitySearchAPI(APIView):
 
 class ResearcherSearchAPI(APIView):
     def get(self, request):
-        all_researcher_names = sorted(comparing_researchers['Researcher'].dropna().unique())
+        all_researcher_names = ALL_RESEARCHER_NAMES
         example_researchers = [
             'Abrahamsson, Dimitri',
             'Jiang, Guibin',
@@ -693,8 +728,11 @@ class ResearcherSearchAPI(APIView):
         matches = all_matches.to_dict('records')
         
         if not matches:
-            all_researcher_names = sorted(comparing_researchers['Researcher'].dropna().unique())
-            suggestions = get_close_matches_custom(researcher, all_researcher_names)
+            suggestions = get_close_matches_custom(
+                researcher,
+                ALL_RESEARCHER_NAMES,
+                normalized_lookup=ALL_RESEARCHER_NAME_LOOKUP,
+            )
             
             return Response({
                 'success': False,
@@ -863,17 +901,7 @@ class FundingSourceStatsAPI(APIView):
                     'error': 'Funding Sources column not found in data'
                 }, status=400)
 
-            funding_sources_series = main['Funding Sources'].dropna()
-            category_stats = {}
-            for cat in ['Government', 'University', 'Foundation', 'Company', 'Unknown']:
-                count = 0
-                for funding_source_str in funding_sources_series:
-                    sources = [s.strip() for s in str(funding_source_str).split(';') if s.strip()]
-                    for source in sources:
-                        source_cat = company_classification_dict.get(source, 'Unknown')
-                        if source_cat == cat:
-                            count += 1
-                category_stats[cat] = count
+            category_stats, _ = build_funding_stats_cache()
 
             data = [
                 {
@@ -916,30 +944,12 @@ class FundingSourceHierarchyAPI(APIView):
                     'error': 'Funding Sources column not found in data'
                 }, status=400)
 
-            funding_sources_series = main['Funding Sources'].dropna()
-            category_stats = {}
-            for cat in ['Government', 'University', 'Foundation', 'Company', 'Unknown']:
-                count = 0
-                for funding_source_str in funding_sources_series:
-                    sources = [s.strip() for s in str(funding_source_str).split(';') if s.strip()]
-                    for source in sources:
-                        source_cat = company_classification_dict.get(source, 'Unknown')
-                        if source_cat == cat:
-                            count += 1
-                category_stats[cat] = count
+            category_stats, source_counts_by_category = build_funding_stats_cache()
 
             category_title = category.title() if category else ''
 
             if category_title and category_title in category_stats:
-                source_counts = {}
-                for funding_source_str in funding_sources_series:
-                    sources = [s.strip() for s in str(funding_source_str).split(';') if s.strip()]
-                    for source in sources:
-                        source_cat = company_classification_dict.get(source, 'Unknown')
-                        if source_cat == category_title:
-                            source_counts[source] = source_counts.get(source, 0) + 1
-
-                sorted_sources = sorted(source_counts.items(), key=lambda x: x[1], reverse=True)[:top_n]
+                sorted_sources = source_counts_by_category.get(category_title, Counter()).most_common(top_n)
                 drilldown_data = [
                     {
                         'name': source,

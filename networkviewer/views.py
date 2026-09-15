@@ -1,10 +1,10 @@
 from django.shortcuts import render
 import random
-import difflib
 import os
 from django.conf import settings
 from django.http import JsonResponse, FileResponse, Http404
 from django.views.decorators.clickjacking import xframe_options_sameorigin
+from .utils.search_helpers import resolve_case_insensitive_name, get_close_matches_custom
 from .network_functions import (
     show_chemical_network,
     show_company_network_pyvis,
@@ -61,43 +61,6 @@ def serve_network_graph(request, filename):
         raise Http404('Graph not found')
     return FileResponse(open(filepath, 'rb'), content_type='text/html')
 
-
-def resolve_case_insensitive_name(query, valid_names):
-    if query is None:
-        return query
-    query_str = str(query).strip()
-    if not query_str:
-        return query_str
-
-    lookup = {}
-    for name in valid_names:
-        name_str = str(name).strip()
-        if name_str and name_str.lower() not in lookup:
-            lookup[name_str.lower()] = name_str
-
-    return lookup.get(query_str.lower(), query_str)
-
-
-def get_close_matches_custom(query, valid_names, n=3, cutoff=0.6):
-    if query is None:
-        return []
-    query_str = str(query).strip()
-    if not query_str:
-        return []
-
-    normalized_map = {}
-    for name in valid_names:
-        name_str = str(name).strip()
-        if name_str and name_str.lower() not in normalized_map:
-            normalized_map[name_str.lower()] = name_str
-
-    matched_keys = difflib.get_close_matches(
-        query_str.lower(),
-        list(normalized_map.keys()),
-        n=n,
-        cutoff=cutoff,
-    )
-    return [normalized_map[key] for key in matched_keys]
 
 def home_view(request):
     return render(request, 'networkviewer/home.html', {'show_main_nav': False})
