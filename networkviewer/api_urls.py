@@ -6,7 +6,8 @@ from .api_views import (
     ResearcherSearchAPI,
     FundingTableAPI,
     FundingSourceStatsAPI,
-    FundingSourceHierarchyAPI
+    FundingSourceHierarchyAPI,
+    FundingSourceStudiesAPI,
 )
 
 urlpatterns = [
@@ -17,4 +18,5 @@ urlpatterns = [
     path('funding-table/', FundingTableAPI.as_view(), name='funding-table-api'),
     path('funding-stats/', FundingSourceStatsAPI.as_view(), name='funding-stats-api'),
     path('funding-hierarchy/', FundingSourceHierarchyAPI.as_view(), name='funding-hierarchy-api'),
+    path('funding-source-studies/', FundingSourceStudiesAPI.as_view(), name='funding-source-studies-api'),
 ]

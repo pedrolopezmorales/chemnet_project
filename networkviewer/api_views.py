@@ -997,3 +997,85 @@ class FundingSourceHierarchyAPI(APIView):
                 'error': str(e)
             }, status=500)
 
+
+class FundingSourceStudiesAPI(APIView):
+    """Study list for a specific funding source in the dashboard drill-down."""
+
+    def get(self, request):
+        try:
+            source = (request.GET.get('source') or '').strip()
+            if not source:
+                return Response({
+                    'success': False,
+                    'error': 'source query parameter is required',
+                }, status=400)
+
+            try:
+                limit = int(request.GET.get('limit', 100))
+            except (TypeError, ValueError):
+                limit = 100
+            limit = max(1, min(limit, 500))
+
+            if 'Funding Sources' not in main.columns:
+                return Response({
+                    'success': False,
+                    'error': 'Funding Sources column not found in data'
+                }, status=400)
+
+            source_lower = source.lower()
+            studies = []
+            seen = set()
+
+            for _, row in main.iterrows():
+                funding_sources_cell = row.get('Funding Sources')
+                if pd.isna(funding_sources_cell):
+                    continue
+
+                sources = [item.strip() for item in str(funding_sources_cell).split(';') if item.strip()]
+                if not any(item.lower() == source_lower for item in sources):
+                    continue
+
+                title_raw = row.get('Title')
+                doi_raw = row.get('DOI')
+                url_raw = row.get('URL')
+                year_raw = row.get('Year')
+
+                title = str(title_raw).strip() if pd.notna(title_raw) else ''
+                doi = str(doi_raw).strip() if pd.notna(doi_raw) else ''
+                url = str(url_raw).strip() if pd.notna(url_raw) else ''
+
+                year = None
+                if pd.notna(year_raw):
+                    try:
+                        year = int(float(year_raw))
+                    except (TypeError, ValueError):
+                        year = None
+
+                dedupe_key = doi or f"{title}|{year}|{url}"
+                if dedupe_key in seen:
+                    continue
+                seen.add(dedupe_key)
+
+                studies.append({
+                    'title': title or 'Untitled Study',
+                    'doi': doi or None,
+                    'url': url or None,
+                    'year': year,
+                })
+
+            studies.sort(key=lambda item: (item['year'] is None, -(item['year'] or 0), item['title']))
+            limited_studies = studies[:limit]
+
+            return Response({
+                'success': True,
+                'source': source,
+                'studyCount': len(studies),
+                'returnedCount': len(limited_studies),
+                'studies': limited_studies,
+            })
+        except Exception as e:
+            return Response({
+                'success': False,
+                'error': str(e)
+            }, status=500)
+
