@@ -17,6 +17,57 @@ from rapidfuzz import fuzz
 
 logger = logging.getLogger(__name__)
 
+
+def normalize_dataframe_string_value(value):
+    if pd.isna(value) or value is None:
+        return value
+    if not isinstance(value, str):
+        return value
+
+    cleaned = re.sub(r'\s+', ' ', value.strip())
+    return cleaned.casefold() if cleaned else cleaned
+
+
+def normalize_dataframe_text_columns(df, columns):
+    if df is None or df.empty:
+        return df
+    normalized_df = df.copy()
+    for column in columns:
+        if column in normalized_df.columns:
+            normalized_df[column] = normalized_df[column].map(normalize_dataframe_string_value)
+    return normalized_df
+
+
+def format_dataframe_value_for_display(value):
+    if pd.isna(value) or value is None:
+        return value
+    if not isinstance(value, str):
+        return value
+
+    text = re.sub(r'\s+', ' ', value.strip())
+    if not text:
+        return text
+
+    tokens = text.split()
+    formatted_tokens = []
+    for token in tokens:
+        if token.isupper() and len(token) <= 3:
+            formatted_tokens.append(token)
+        else:
+            formatted_tokens.append(token.capitalize())
+    return ' '.join(formatted_tokens)
+
+
+def format_dataframe_columns_for_display(df, columns):
+    if df is None or df.empty:
+        return df
+    display_df = df.copy()
+    for column in columns:
+        if column in display_df.columns:
+            display_df[column] = display_df[column].map(format_dataframe_value_for_display)
+    return display_df
+
+
 # Directory for locally cached copies of the remote datasets. These act as a
 # fallback so the app can still start (with slightly stale data) if the remote
 # host is temporarily unavailable, instead of failing to import entirely.
@@ -123,7 +174,15 @@ def load_remote_csv(url, cache_name, **read_csv_kwargs):
 
 MAIN_CSV_URL = "https://ucsf.box.com/shared/static/7qewv44vv8hntoesleo7q5d04zwlu6of.csv"
 main = load_remote_csv(MAIN_CSV_URL, 'main.csv')
+main = normalize_dataframe_text_columns(
+    main,
+    ['Title', 'Authors', 'Affiliations', 'Funding Sources', 'Chemicals with InChIKey', 'Chemicals Mentioned', 'Abstract']
+)
 main = main.dropna(subset=['Authors'])
+
+for column in ['Title', 'Authors', 'Affiliations', 'Funding Sources', 'Chemicals with InChIKey', 'Chemicals Mentioned', 'Abstract']:
+    if column in main.columns:
+        main[column] = main[column].fillna('').map(lambda value: normalize_dataframe_string_value(value) if isinstance(value, str) else value)
 
 countries = dict(countries_for_language('en'))
 country_names = list(countries.values())
@@ -139,7 +198,7 @@ countries.update({'U.K.':'United Kingdom',
                   'England':'England',
                   'Chinese':'China'
                  })
-university_keys = ['institute of','university','instituto','Universidad','Universita','Universit']
+university_keys = ['instituto','Universidad','Universita','Universit']
 
 _GOVERNMENT_PATTERNS = [
     r'\bdepartment\s+of\b',

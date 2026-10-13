@@ -16,7 +16,6 @@ CANONICAL_CLASSIFICATIONS = {
     "company": "Company",
     "corporate": "Company",
     "corp": "Company",
-    "university": "University",
     "uni": "University",
     "foundation": "Foundation",
     "nonprofit": "Foundation",

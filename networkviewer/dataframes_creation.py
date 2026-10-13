@@ -120,26 +120,97 @@ affiliation_classification_dict = create_affiliation_classifications(force_recla
 
 #creating the main dataframe
 def create_main_dataframe():
-    data_years = range(2012, 2025)
+    data_years = range(2002, 2025)
     dataframes_list = []
+    missing_years = []
 
     for year in data_years:
-        filename = f'esandt_papers_{year}_with_inchikeys.csv'
+        filename = f'esandt_papers_{year}_with_inchikeys_affil_fixed.csv'
         file_path = os.path.join(settings.BASE_DIR, 'data', filename)
-        df =pd.read_csv(file_path)
+
+        if not os.path.exists(file_path):
+            missing_years.append(year)
+            print(f"Skipping missing dataset file for year {year}: {filename}")
+            continue
+
+        df = pd.read_csv(file_path)
         dataframes_list.append(df)
 
+    if not dataframes_list:
+        raise FileNotFoundError(
+            "No yearly dataset files were found in the data directory. "
+            "Expected files like esandt_papers_2002_with_inchikeys_affil_fixed.csv."
+        )
+
     combined_df = pd.concat(dataframes_list, ignore_index=True)
+    combined_df = normalize_dataframe_text_columns(
+        combined_df,
+        ['Title', 'Authors', 'Affiliations', 'Funding Sources', 'Chemicals with InChIKey', 'Chemicals Mentioned']
+    )
+
+    display_df = format_dataframe_for_display(
+        combined_df,
+        ['Title', 'Authors', 'Affiliations', 'Funding Sources', 'Chemicals with InChIKey', 'Chemicals Mentioned']
+    )
 
     combined_path = os.path.join(settings.BASE_DIR, 'data', "esandt_papers_all.csv")
-    combined_df.to_csv(combined_path, index=False)
+    display_df.to_csv(combined_path, index=False)
     print(f"Combined dataset created! Total rows: {len(combined_df)}")
+    if missing_years:
+        print(f"Skipped missing year files: {missing_years}")
 #cleansing main dataframe
 
 PLACEHOLDER_CHEMICALS = {
 "graphical abstract",
 "no chemicals found",
 }
+
+def normalize_dataframe_string_value(value):
+    if pd.isna(value) or value is None:
+        return value
+    if not isinstance(value, str):
+        return value
+
+    cleaned = re.sub(r'\s+', ' ', value.strip())
+    return cleaned.casefold() if cleaned else cleaned
+
+
+def normalize_dataframe_text_columns(df, columns):
+    for column in columns:
+        if column not in df.columns:
+            continue
+        df[column] = df[column].map(normalize_dataframe_string_value)
+    return df
+
+
+def display_case_string(value):
+    if pd.isna(value) or value is None:
+        return value
+    if not isinstance(value, str):
+        return value
+
+    text = re.sub(r'\s+', ' ', value.strip())
+    if not text:
+        return text
+
+    tokens = text.split()
+    formatted_tokens = []
+    for token in tokens:
+        if token.isupper() and len(token) <= 3:
+            formatted_tokens.append(token)
+        else:
+            formatted_tokens.append(token.capitalize())
+    return ' '.join(formatted_tokens)
+
+
+def format_dataframe_for_display(df, columns):
+    display_df = df.copy()
+    for column in columns:
+        if column not in display_df.columns:
+            continue
+        display_df[column] = display_df[column].map(display_case_string)
+    return display_df
+
 
 def clean_chemicals_cell(value):
     if pd.isna(value) or value is None:
@@ -182,12 +253,21 @@ def create_filtered_main_dataframe():
     ].reset_index(drop=True)
 
     all_studies["Chemicals with InChIKey"] = all_studies["Chemicals with InChIKey"].apply(clean_chemicals_cell)
+    all_studies = normalize_dataframe_text_columns(
+        all_studies,
+        ['Title', 'Authors', 'Affiliations', 'Funding Sources', 'Chemicals with InChIKey', 'Chemicals Mentioned', 'Abstract']
+    )
     all_studies = all_studies[
         all_studies["Chemicals with InChIKey"].str.strip() != ""
     ].reset_index(drop=True)
 
+    display_all_studies = format_dataframe_for_display(
+        all_studies,
+        ['Title', 'Authors', 'Affiliations', 'Funding Sources', 'Chemicals with InChIKey', 'Chemicals Mentioned', 'Abstract']
+    )
+
     main_path = os.path.join(settings.BASE_DIR, "data", "esandt_papers_filtered_all.csv")
-    all_studies.to_csv(main_path, index=False)
+    display_all_studies.to_csv(main_path, index=False)
     print(f"Filtered main dataframe saved to {main_path}")
     print(f"Total rows: {len(all_studies)}")
 
